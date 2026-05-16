@@ -5,7 +5,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: './',
+  base: '/Daily-Tracker/',
   plugins: [
     react(),
     tailwindcss(),
@@ -16,8 +16,8 @@ export default defineConfig({
         name: 'Trackit Pro',
         short_name: 'Trackit',
         description: 'Personal Daily Expense & Utility Tracker',
-        theme_color: '#000000',
-        background_color: '#000000',
+        theme_color: '#F8F4FF',
+        background_color: '#F8F4FF',
         display: 'standalone',
         orientation: 'portrait',
         icons: [

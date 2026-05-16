@@ -146,7 +146,7 @@ const db = new LocalDB();
 
 // Default Settings
 const DEFAULT_SETTINGS = {
-  id: 'main', theme: 'dark', currency: '₹', 
+  id: 'main', theme: 'light', currency: '₹', 
   milkPrice: 84, milkQty: 1, gasWeight: 14.2,
   waterTarget: 4
 };
@@ -159,7 +159,7 @@ const GlassCard = ({ children, className = '', onClick, style = {} }) => (
     whileTap={onClick ? { scale: 0.98 } : {}}
     onClick={onClick}
     style={style}
-    className={`bg-neutral-900/60 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-3xl overflow-hidden ${className}`}
+    className={`m3-card ${className}`}
   >
     {children}
   </motion.div>
@@ -169,8 +169,10 @@ const IconButton = ({ icon: Icon, onClick, className = '', active }) => (
   <motion.button
     whileTap={{ scale: 0.85 }}
     onClick={onClick}
-    className={`p-3 rounded-full flex items-center justify-center transition-colors
-      ${active ? 'bg-blue-500/20 text-blue-400' : 'bg-white/5 text-neutral-400 hover:bg-white/10'} ${className}`}
+    style={active 
+      ? {background:'var(--m3-icon-btn-active-bg)', color:'var(--m3-icon-btn-active-color)'}
+      : {background:'var(--m3-icon-btn-bg)', color:'var(--m3-icon-btn-color)'}}
+    className={`p-3 rounded-full flex items-center justify-center transition-colors ${className}`}
   >
     <Icon size={24} strokeWidth={active ? 2.5 : 2} />
   </motion.button>
@@ -181,10 +183,10 @@ const ICONS_MAP = { Droplet, Zap, Wifi, ShoppingCart, Wrench, Package };
 // Swipeable List Item
 const SwipeableItem = ({ children, onDelete, onEdit }) => {
   return (
-    <div className="relative w-full rounded-2xl overflow-hidden mb-3 bg-neutral-800/50">
+    <div className="relative w-full rounded-2xl overflow-hidden mb-3 m3-swipe-outer">
       <div className="absolute inset-0 flex items-center justify-between px-6">
-        <div className="text-blue-500 flex items-center gap-2"><Edit3 size={20}/> Edit</div>
-        <div className="text-red-500 flex items-center gap-2">Delete <Trash2 size={20}/></div>
+        <div className="flex items-center gap-2 font-semibold text-sm" style={{color:'#4A90D9'}}><Edit3 size={18}/> Edit</div>
+        <div className="flex items-center gap-2 font-semibold text-sm" style={{color:'#E05C5C'}}>Delete <Trash2 size={18}/></div>
       </div>
       <motion.div
         drag="x"
@@ -194,7 +196,7 @@ const SwipeableItem = ({ children, onDelete, onEdit }) => {
           if (info.offset.x < -80 && onDelete) onDelete();
           if (info.offset.x > 80 && onEdit) onEdit();
         }}
-        className="relative bg-neutral-900 border border-white/5 rounded-2xl p-4 shadow-lg z-10"
+        className="relative rounded-2xl p-4 z-10 m3-swipe-inner"
       >
         {children}
       </motion.div>
@@ -242,10 +244,19 @@ export default function App() {
     await db.put('settings', updated);
   };
 
-  if (!isReady) return <div className="min-h-screen bg-black flex items-center justify-center text-white">Loading...</div>;  return (
-    <div className={`min-h-screen w-full font-sans selection:bg-blue-500/30 ${settings.theme === 'dark' ? 'dark bg-black text-white' : 'bg-gray-50 text-neutral-900'}`}>
+  if (!isReady) return (
+    <div style={{minHeight:'100vh', background:'linear-gradient(160deg,#F0EBFF 0%,#E8F4FF 40%,#E8FFF4 100%)', display:'flex', alignItems:'center', justifyContent:'center'}}>
+      <div style={{display:'flex', flexDirection:'column', alignItems:'center', gap:'16px'}}>
+        <div className="m3-pulse" style={{width:48, height:48, borderRadius:'50%', background:'linear-gradient(135deg,#EADDFF,#C8E6FF)'}} />
+        <p style={{color:'#6750A4', fontWeight:600, fontSize:14}}>Loading Trackit…</p>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen w-full" data-theme={settings.theme} style={{background:'var(--m3-bg)', color:'var(--m3-on-surface)'}}>
       {/* Mobile Wrapper */}
-      <div className="max-w-md mx-auto h-screen flex flex-col relative overflow-hidden bg-black">
+      <div className="max-w-md mx-auto h-screen flex flex-col relative overflow-hidden" style={{background:'var(--m3-bg-app)'}}>
         
         {/* Main Content Area - Scrollable */}
         <div className="flex-1 overflow-y-auto pb-24 scroll-smooth">
@@ -282,8 +293,8 @@ export default function App() {
         </div>
 
         {/* Bottom Navigation Bar */}
-        <div className="absolute bottom-0 w-full px-4 pb-6 pt-2 bg-gradient-to-t from-black via-black/90 to-transparent z-40">
-          <div className="flex items-center justify-around bg-neutral-900/80 backdrop-blur-3xl border border-white/10 rounded-full py-2 px-2 shadow-[0_0_40px_rgba(0,0,0,0.5)]">
+        <div className="absolute bottom-0 w-full px-4 pb-6 pt-2 z-40" style={{background:'var(--m3-nav-gradient)'}}>
+          <div className="flex items-center justify-around rounded-full py-2 px-2" style={{background:'var(--m3-nav-bg)', backdropFilter:'blur(24px)', WebkitBackdropFilter:'blur(24px)', border:'1px solid var(--m3-nav-border)', boxShadow:'var(--m3-nav-shadow)'}}>
             <NavIcon icon={Milk} label="Milk" isActive={activeTab === 'milk'} onClick={() => setActiveTab('milk')} />
             <NavIcon icon={Flame} label="Gas" isActive={activeTab === 'gas'} onClick={() => setActiveTab('gas')} />
             <NavIcon icon={Droplet} label="Water" isActive={activeTab === 'water'} onClick={() => setActiveTab('water')} />
@@ -292,9 +303,10 @@ export default function App() {
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={() => setIsAddSheetOpen(true)}
-              className="bg-blue-500 text-white p-4 rounded-full shadow-[0_0_20px_rgba(59,130,246,0.5)] -mt-6 border-4 border-black z-50"
+              className="-mt-6 z-50 p-4 rounded-full"
+              style={{background:'linear-gradient(135deg,#7C3AED,#6750A4)', color:'#fff', boxShadow:'0 4px 20px rgba(103,80,164,0.4)', border:'4px solid var(--m3-fab-border)'}}
             >
-              <Plus size={28} />
+              <Plus size={26} />
             </motion.button>
 
             <NavIcon icon={Settings} label="Settings" isActive={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
@@ -317,19 +329,21 @@ export default function App() {
 }
 
 const ExpenseMenuItem = ({ icon: Icon, label, onClick, color }) => (
-  <button onClick={onClick} className="flex items-center gap-3 bg-neutral-800/50 hover:bg-neutral-800 border border-white/5 p-4 rounded-2xl transition-colors">
-    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${color}20`, color }}>
+  <motion.button whileTap={{scale:0.96}} onClick={onClick} className="flex items-center gap-3 p-4 rounded-2xl transition-all" style={{background:'#FFFFFF', border:'1px solid #EDE7F6', boxShadow:'0 1px 8px rgba(103,80,164,0.07)'}}>
+    <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ backgroundColor: `${color}20`, color }}>
       <Icon size={20} />
     </div>
-    <span className="text-white font-semibold text-sm">{label}</span>
-  </button>
+    <span className="font-semibold text-sm" style={{color:'#1C1B1F'}}>{label}</span>
+  </motion.button>
 );
 
 const NavIcon = ({ icon: Icon, label, isActive, onClick }) => (
-  <button onClick={onClick} className="flex flex-col items-center gap-1 w-16">
-    <Icon size={24} className={`transition-colors duration-300 ${isActive ? 'text-blue-500' : 'text-neutral-500'}`} strokeWidth={isActive ? 2.5 : 2} />
-    <span className={`text-[10px] font-medium transition-colors duration-300 ${isActive ? 'text-blue-500' : 'text-neutral-500'}`}>{label}</span>
-  </button>
+  <motion.button whileTap={{scale:0.9}} onClick={onClick} className="flex flex-col items-center gap-1 w-16">
+    <div className="p-1.5 rounded-full transition-all duration-300" style={{background: isActive ? 'var(--m3-nav-icon-active-bg)' : 'transparent'}}>
+      <Icon size={22} strokeWidth={isActive ? 2.5 : 2} style={{color: isActive ? 'var(--m3-nav-icon-active-color)' : 'var(--m3-nav-icon-color)'}} />
+    </div>
+    <span className="text-[10px] font-semibold transition-colors duration-300" style={{color: isActive ? 'var(--m3-nav-icon-active-color)' : 'var(--m3-nav-icon-color)'}}>{label}</span>
+  </motion.button>
 );
 
 // ==========================================
@@ -343,7 +357,8 @@ const BottomSheet = ({ isOpen, onClose, title, children, isCentered = false }) =
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm z-50"
+            className="absolute inset-0 z-50"
+            style={{background:'rgba(0,0,0,0.5)', backdropFilter:'blur(4px)'}}
           />
           <div className={`absolute inset-0 z-50 flex ${isCentered ? 'items-center justify-center p-4' : 'items-end'}`}>
             <motion.div
@@ -351,14 +366,15 @@ const BottomSheet = ({ isOpen, onClose, title, children, isCentered = false }) =
               animate={isCentered ? { scale: 1, opacity: 1 } : { y: 0 }}
               exit={isCentered ? { scale: 0.9, opacity: 0 } : { y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className={`bg-neutral-900 border-t border-white/10 w-full max-h-[85vh] overflow-y-auto 
-                ${isCentered ? 'rounded-[40px] border shadow-2xl relative' : 'rounded-t-[40px] pb-12'}`}
+              className={`w-full max-h-[85vh] overflow-y-auto m3-sheet
+                ${isCentered ? 'relative' : ''}`}
+              style={{borderRadius: isCentered ? '28px' : '28px 28px 0 0', paddingBottom: isCentered ? 0 : 48}}
             >
-              {!isCentered && <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto mt-6 mb-6" />}
+              {!isCentered && <div className="w-10 h-1 rounded-full mx-auto mt-5 mb-4" style={{background:'var(--m3-on-surface-muted)', opacity:0.4}} />}
               <div className="p-6">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-2xl font-bold text-white tracking-tight">{title}</h2>
-                  <button onClick={onClose} className="p-2 bg-white/10 rounded-full text-white"><X size={20}/></button>
+                  <h2 className="text-xl font-bold tracking-tight" style={{color:'var(--m3-on-surface)'}}>{title}</h2>
+                  <motion.button whileTap={{scale:0.9}} onClick={onClose} className="p-2 rounded-full" style={{background:'var(--m3-close-btn-bg)', color:'var(--m3-close-btn-color)'}}><X size={18}/></motion.button>
                 </div>
                 {children}
               </div>
@@ -371,20 +387,18 @@ const BottomSheet = ({ isOpen, onClose, title, children, isCentered = false }) =
 };
 
 const StickyHeader = ({ title, date, setDate }) => {
-  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  
+  const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const handlePrev = () => setDate(new Date(date.getFullYear(), date.getMonth() - 1, 1));
   const handleNext = () => setDate(new Date(date.getFullYear(), date.getMonth() + 1, 1));
-
   return (
-    <div className="sticky top-0 pt-12 pb-4 px-2 z-30 bg-black/80 backdrop-blur-xl flex justify-between items-end mb-6 border-b border-white/5">
-      <h1 className="text-3xl font-bold tracking-tight text-white">{title}</h1>
-      <div className="flex items-center gap-3 bg-white/5 px-3 py-1.5 rounded-full border border-white/10">
-        <button onClick={handlePrev} className="text-neutral-400 hover:text-white"><ChevronLeft size={18}/></button>
-        <span className="text-sm font-semibold text-white min-w-[70px] text-center">
+    <div className="sticky top-0 pt-12 pb-4 px-2 z-30 flex justify-between items-end mb-6" style={{background:'var(--m3-header-bg)', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', borderBottom:'1px solid var(--m3-header-border)'}}>
+      <h1 className="text-2xl font-bold tracking-tight" style={{color:'var(--m3-on-surface)'}}>{title}</h1>
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{background:'var(--m3-input-bg)', border:'1px solid var(--m3-input-border)'}}>
+        <motion.button whileTap={{scale:0.85}} onClick={handlePrev} style={{color:'#6750A4'}}><ChevronLeft size={16}/></motion.button>
+        <span className="text-sm font-semibold min-w-[68px] text-center" style={{color:'var(--m3-on-surface)'}}>
           {monthNames[date.getMonth()]} {date.getFullYear()}
         </span>
-        <button onClick={handleNext} className="text-neutral-400 hover:text-white"><ChevronRight size={18}/></button>
+        <motion.button whileTap={{scale:0.85}} onClick={handleNext} style={{color:'#6750A4'}}><ChevronRight size={16}/></motion.button>
       </div>
     </div>
   );
@@ -499,43 +513,45 @@ function MilkView({ filterDate, setFilterDate, settings }) {
       <StickyHeader title="Milk Tracker" date={filterDate} setDate={setFilterDate} />
       
       {/* Summary Card */}
-      <GlassCard className="p-5 mb-6 bg-gradient-to-br from-blue-500/20 to-purple-500/10 relative overflow-hidden">
-        <img src="./milk-icon.png" alt="Milk" className="absolute -right-4 -top-4 w-24 h-24 opacity-30 rotate-12 pointer-events-none" />
+      <GlassCard className="p-5 mb-6 relative overflow-hidden" style={{background:'linear-gradient(135deg,#C8E6FF 0%,#EDE7F6 100%)'}}>
+        <img src="./milk-icon.png" alt="Milk" className="absolute -right-4 -top-4 w-24 h-24 opacity-50 rotate-12 pointer-events-none drop-shadow-lg" />
         <div className="grid grid-cols-2 gap-4 relative z-10">
           <div>
-            <p className="text-neutral-400 text-xs font-medium uppercase tracking-wider mb-1">Total Amount</p>
-            <p className="text-3xl font-bold text-white">{settings.currency}{stats.amount}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color:'#49454F'}}>Total Amount</p>
+            <p className="text-3xl font-bold" style={{color:'#1A1C1E'}}>{settings.currency}{stats.amount}</p>
           </div>
           <div>
-            <p className="text-neutral-400 text-xs font-medium uppercase tracking-wider mb-1">Total Quantity</p>
-            <p className="text-3xl font-bold text-white">{stats.qty} L</p>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color:'#49454F'}}>Total Quantity</p>
+            <p className="text-3xl font-bold" style={{color:'#1A1C1E'}}>{stats.qty} L</p>
           </div>
-          <div className="pt-3 border-t border-white/10">
-            <p className="text-neutral-400 text-xs font-medium uppercase tracking-wider mb-1">Active Days</p>
-            <p className="text-xl font-semibold text-green-400">{stats.active}</p>
+          <div className="pt-3" style={{borderTop:'1px solid rgba(103,80,164,0.15)'}}>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color:'#49454F'}}>Active Days</p>
+            <p className="text-xl font-bold" style={{color:'#1B6E3A'}}>{stats.active}</p>
           </div>
-          <div className="pt-3 border-t border-white/10">
-            <p className="text-neutral-400 text-xs font-medium uppercase tracking-wider mb-1">Pause Days</p>
-            <p className="text-xl font-semibold text-orange-400">{stats.pause}</p>
+          <div className="pt-3" style={{borderTop:'1px solid rgba(103,80,164,0.15)'}}>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color:'#49454F'}}>Pause Days</p>
+            <p className="text-xl font-bold" style={{color:'#B85C00'}}>{stats.pause}</p>
           </div>
         </div>
       </GlassCard>
 
       {/* Calendar Grid */}
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold text-white">Daily Tracking</h3>
-        <button 
+        <h3 className="text-base font-bold" style={{color:'var(--m3-on-surface)'}}>Daily Tracking</h3>
+        <motion.button
+          whileTap={{scale:0.95}}
           onClick={() => { setIsSelectMode(!isSelectMode); setSelectedDates([]); }}
-          className={`text-sm font-medium px-3 py-1 rounded-full ${isSelectMode ? 'bg-orange-500 text-white' : 'bg-white/10 text-neutral-300'}`}
+          className="text-sm font-semibold px-4 py-1.5 rounded-full"
+          style={isSelectMode ? {background:'#FFCAA5', color:'#7C3010'} : {background:'#EDE7F6', color:'#6750A4'}}
         >
-          {isSelectMode ? 'Cancel Selection' : 'Bulk Pause'}
-        </button>
+          {isSelectMode ? 'Cancel' : 'Bulk Pause'}
+        </motion.button>
       </div>
 
       <div className="grid grid-cols-7 gap-2 mb-6">
         {['S','M','T','W','T','F','S'].map((d, i) => (
-          <div key={i} className="text-center text-[10px] text-neutral-500 font-bold">{d}</div>
-        ))}
+          <div key={i} className="text-center text-[10px] font-bold" style={{color:'#79747E'}}>{d}</div>
+        ))}  
         
         {/* Empty slots for offset */}
         {Array.from({length: new Date(filterDate.getFullYear(), filterDate.getMonth(), 1).getDay()}).map((_, i) => (
@@ -563,16 +579,19 @@ function MilkView({ filterDate, setFilterDate, settings }) {
               }}
               onContextMenu={(e) => { e.preventDefault(); togglePauseStatus(dateStr); }} // Quick pause on long press/right click
               className={`
-                aspect-square rounded-xl flex flex-col items-center justify-center relative border transition-colors
-                ${isToday ? 'border-blue-500' : 'border-transparent'}
-                ${isSelected ? 'bg-orange-500/40 border-orange-500' : 
-                  entry?.isPaused ? 'bg-neutral-800/80 border-dashed border-orange-500/50 opacity-60' : 
-                  entry ? 'bg-blue-500/20 border-blue-500/30' : 'bg-white/5'}
+                aspect-square rounded-2xl flex flex-col items-center justify-center relative transition-all border
+                ${isToday ? 'border-[#6750A4]' : 'border-transparent'}
+                ${isSelected ? 'border-[#E67E22]' : 
+                  entry?.isPaused ? 'border-dashed border-[#E67E22] opacity-60' : 
+                  entry ? 'border-[#4A90D9]/40' : 'border-transparent'}
               `}
+              style={{
+                background: isSelected ? '#FFCAA5' : entry?.isPaused ? '#FFF3E0' : entry ? '#C8E6FF' : 'rgba(103,80,164,0.06)'
+              }}
             >
-              <span className={`text-sm font-medium ${entry ? 'text-white' : 'text-neutral-400'}`}>{dayNum}</span>
-              {entry && !entry.isPaused && <span className="text-[9px] text-blue-300 font-bold">{entry.qty}L</span>}
-              {entry?.isPaused && <PauseCircle size={12} className="text-orange-400 mt-1 absolute bottom-1" />}
+              <span className="text-sm font-semibold" style={{color: entry ? '#1C1B1F' : '#79747E'}}>{dayNum}</span>
+              {entry && !entry.isPaused && <span className="text-[9px] font-bold" style={{color:'#4A90D9'}}>{entry.qty}L</span>}
+              {entry?.isPaused && <PauseCircle size={12} className="mt-1 absolute bottom-1" style={{color:'#E67E22'}} />}
             </motion.button>
           );
         })}
@@ -582,9 +601,9 @@ function MilkView({ filterDate, setFilterDate, settings }) {
       <AnimatePresence>
         {isSelectMode && selectedDates.length > 0 && (
           <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="fixed bottom-24 left-4 right-4 z-40">
-            <button onClick={handleBulkPause} className="w-full bg-orange-500 text-white font-bold py-4 rounded-2xl shadow-xl flex items-center justify-center gap-2">
+            <motion.button whileTap={{scale:0.97}} onClick={handleBulkPause} className="w-full font-bold py-4 rounded-2xl shadow-xl flex items-center justify-center gap-2" style={{background:'linear-gradient(135deg,#FF9A5C,#E67E22)', color:'#fff'}}>
               <PauseCircle size={20} /> Mark {selectedDates.length} {selectedDates.length === 1 ? 'Day' : 'Days'} as Paused
-            </button>
+            </motion.button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -592,13 +611,15 @@ function MilkView({ filterDate, setFilterDate, settings }) {
       {/* List View (Recent) */}
       <div className="mt-8">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-white">Entries List</h3>
-          <button 
+          <h3 className="text-base font-bold" style={{color:'var(--m3-on-surface)'}}>Entries List</h3>
+          <motion.button
+            whileTap={{scale:0.95}}
             onClick={() => setIsListExpanded(!isListExpanded)}
-            className="text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors"
+            className="text-sm font-semibold px-4 py-1.5 rounded-full"
+            style={{background:'#C8E6FF', color:'#1A5276'}}
           >
             {isListExpanded ? 'Collapse' : 'Expand'}
-          </button>
+          </motion.button>
         </div>
         
         <AnimatePresence>
@@ -609,23 +630,23 @@ function MilkView({ filterDate, setFilterDate, settings }) {
               exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden"
             >
-              {entries.length === 0 && <p className="text-neutral-500 text-center py-4 text-sm">No entries this month.</p>}
+              {entries.length === 0 && <p className="text-center py-4 text-sm" style={{color:'var(--m3-on-surface-muted)'}}>No entries this month.</p>}
               {entries.map(entry => (
                 <SwipeableItem key={entry.id} onDelete={() => handleDelete(entry.id)} onEdit={() => openEdit(entry)}>
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${entry.isPaused ? 'bg-orange-500/20 text-orange-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center`} style={{background: entry.isPaused ? 'var(--m3-error-container)' : 'var(--m3-primary-container)', color: entry.isPaused ? 'var(--m3-on-error-container)' : 'var(--m3-on-primary-container)'}}>
                         {entry.isPaused ? <PauseCircle size={20}/> : <Droplet size={20}/>}
                       </div>
                       <div>
-                        <p className="text-white font-semibold">{new Date(entry.date).toLocaleDateString('en-US', {day: 'numeric', month: 'short'})}</p>
-                        <p className="text-xs text-neutral-400">{entry.isPaused ? 'Paused' : `${entry.qty}L @ ${settings.currency}${entry.price}`}</p>
+                        <p className="font-semibold" style={{color:'var(--m3-on-surface)'}}>{new Date(entry.date).toLocaleDateString('en-US', {day: 'numeric', month: 'short'})}</p>
+                        <p className="text-xs" style={{color:'var(--m3-on-surface-muted)'}}>{entry.isPaused ? 'Paused' : `${entry.qty}L @ ${settings.currency}${entry.price}`}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className={`font-bold ${entry.isPaused ? 'text-neutral-500' : 'text-white'}`}>
-                        {entry.isPaused ? '-' : `${settings.currency}${entry.total}`}
-                      </p>
+                      <p className="font-bold" style={{color: entry.isPaused ? 'var(--m3-on-surface-muted)' : 'var(--m3-on-surface)'}}>
+                         {entry.isPaused ? '-' : `${settings.currency}${entry.total}`}
+                       </p>
                     </div>
                   </div>
                 </SwipeableItem>
@@ -644,29 +665,29 @@ function MilkView({ filterDate, setFilterDate, settings }) {
       >
         <div className="space-y-4">
           <div>
-            <label className="text-xs text-neutral-400 uppercase font-semibold pl-1">Date</label>
-            <input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="w-full bg-black/50 border border-white/10 rounded-xl p-4 text-white mt-1 focus:border-blue-500 outline-none" />
+            <label className="text-xs font-semibold uppercase tracking-wider pl-1" style={{color:'#6750A4'}}>Date</label>
+            <input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="m3-input mt-1 text-sm" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="min-w-0">
-              <label className="text-xs text-neutral-400 uppercase font-semibold pl-1">Quantity (L)</label>
-              <input type="number" step="0.5" value={formData.qty} onChange={e => setFormData({...formData, qty: e.target.value})} className="w-full bg-black/50 border border-white/10 rounded-xl p-4 text-white mt-1 text-xl font-bold focus:border-blue-500 outline-none" />
+              <label className="text-xs font-semibold uppercase tracking-wider pl-1" style={{color:'#6750A4'}}>Quantity (L)</label>
+              <input type="number" step="0.5" value={formData.qty} onChange={e => setFormData({...formData, qty: e.target.value})} className="m3-input mt-1 text-xl font-bold" />
             </div>
             <div className="min-w-0">
-              <label className="text-xs text-neutral-400 uppercase font-semibold pl-1">Price/L</label>
+              <label className="text-xs font-semibold uppercase tracking-wider pl-1" style={{color:'#6750A4'}}>Price/L</label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-sm">{settings.currency}</span>
-                <input type="number" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="w-full bg-black/50 border border-white/10 rounded-xl p-4 pl-7 text-white mt-1 text-xl font-bold focus:border-blue-500 outline-none" />
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{color:'var(--m3-on-surface-muted)'}}>{settings.currency}</span>
+                <input type="number" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="m3-input mt-1 pl-7 text-xl font-bold" />
               </div>
             </div>
           </div>
           <div className="pt-4 flex gap-3">
              {editingEntry && (
-                <button onClick={() => handleDelete(editingEntry.id)} className="flex-1 bg-red-500/10 text-red-500 font-bold py-4 rounded-xl">Delete</button>
+                <motion.button whileTap={{scale:0.97}} onClick={() => handleDelete(editingEntry.id)} className="flex-1 font-bold py-4 rounded-2xl" style={{background:'#FFEBEB', color:'#C0392B'}}>Delete</motion.button>
              )}
-            <button onClick={handleSave} className="flex-[2] bg-blue-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-500/20">
+            <motion.button whileTap={{scale:0.97}} onClick={handleSave} className="flex-[2] font-bold py-4 rounded-2xl" style={{background:'linear-gradient(135deg,#6750A4,#4A90D9)', color:'#fff', boxShadow:'0 4px 16px rgba(103,80,164,0.3)'}}>
               Save Entry
-            </button>
+            </motion.button>
           </div>
         </div>
       </BottomSheet>
@@ -775,32 +796,32 @@ function GasView({ filterDate, setFilterDate, settings }) {
       <StickyHeader title="Gas Tracker" date={filterDate} setDate={setFilterDate} />
 
       {/* Summary Card */}
-      <GlassCard className="p-5 mb-6 bg-gradient-to-br from-orange-500/20 to-red-500/10">
+      <GlassCard className="p-5 mb-6" style={{background:'linear-gradient(135deg,#FFE0C8 0%,#FFECD8 100%)'}}>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-neutral-400 text-xs font-medium uppercase tracking-wider mb-1">New Cylinders</p>
-            <p className="text-3xl font-bold text-white">{stats.cylindersUsed}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color:'#49454F'}}>New Cylinders</p>
+            <p className="text-3xl font-bold" style={{color:'#1C1B1F'}}>{stats.cylindersUsed}</p>
           </div>
           <div>
-            <p className="text-neutral-400 text-xs font-medium uppercase tracking-wider mb-1">Total Spend</p>
-            <p className="text-3xl font-bold text-white">{settings.currency}{stats.totalSpend}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color:'#49454F'}}>Total Spend</p>
+            <p className="text-3xl font-bold" style={{color:'#1C1B1F'}}>{settings.currency}{stats.totalSpend}</p>
           </div>
-          <div className="col-span-2 pt-3 border-t border-white/10">
-            <p className="text-neutral-400 text-xs font-medium uppercase tracking-wider mb-1">Usage Days This Month</p>
-            <p className="text-xl font-semibold text-orange-400">{stats.activeDaysThisMonth} Days</p>
+          <div className="col-span-2 pt-3" style={{borderTop:'1px solid rgba(230,126,34,0.15)'}}>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color:'#49454F'}}>Usage Days This Month</p>
+            <p className="text-xl font-bold" style={{color:'#E67E22'}}>{stats.activeDaysThisMonth} Days</p>
           </div>
         </div>
       </GlassCard>
 
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold text-white">Cylinder History</h3>
-        <button onClick={openAdd} className="text-sm font-medium bg-orange-500 text-white px-4 py-1.5 rounded-full flex items-center gap-1 shadow-lg shadow-orange-500/20">
+        <h3 className="text-base font-bold" style={{color:'var(--m3-on-surface)'}}>Cylinder History</h3>
+        <motion.button whileTap={{scale:0.95}} onClick={openAdd} className="text-sm font-semibold px-4 py-1.5 rounded-full flex items-center gap-1" style={{background:'linear-gradient(135deg,#FF9A5C,#E67E22)', color:'#fff', boxShadow:'0 2px 10px rgba(230,126,34,0.25)'}}>
           <Plus size={16}/> Add New
-        </button>
+        </motion.button>
       </div>
 
       <div className="space-y-4">
-        {entries.length === 0 && <p className="text-neutral-500 text-center py-4 text-sm">No gas records found.</p>}
+        {entries.length === 0 && <p className="text-center py-4 text-sm" style={{color:'var(--m3-on-surface-muted)'}}>No gas records found.</p>}
         {entries.map((entry, idx) => {
            const daysUsed = calculateDays(entry.installDate, entry.uninstallDate);
            const isActive = !entry.uninstallDate;
@@ -808,27 +829,23 @@ function GasView({ filterDate, setFilterDate, settings }) {
             <SwipeableItem key={entry.id} onDelete={() => handleDelete(entry.id)} onEdit={() => openEdit(entry)}>
               <div className="flex justify-between items-start">
                 <div className="flex items-start gap-4">
-                  <div className={`w-12 h-12 mt-1 rounded-2xl flex items-center justify-center border ${isActive ? 'bg-orange-500/20 border-orange-500 text-orange-500' : 'bg-neutral-800 border-white/5 text-neutral-500'}`}>
+                  <div className={`w-12 h-12 mt-1 rounded-2xl flex items-center justify-center`} style={{background: isActive ? '#FFE0C8' : '#F5F5F5', border: isActive ? '1.5px solid #E67E22' : '1px solid #EDE7F6', color: isActive ? '#E67E22' : '#79747E'}}>
                     <Flame size={24} />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="text-white font-bold text-lg">Cylinder #{entries.length - idx}</p>
-                      {isActive && <span className="bg-orange-500 text-white text-[9px] uppercase px-2 py-0.5 rounded-full font-bold">Active</span>}
+                      <p className="font-bold text-lg" style={{color:'var(--m3-on-surface)'}}>Cylinder #{entries.length - idx}</p>
+                      {isActive && <span className="text-[9px] uppercase px-2 py-0.5 rounded-full font-bold" style={{background:'#FF9A5C', color:'#fff'}}>Active</span>}
                     </div>
-                    <p className="text-xs text-neutral-400 mt-1">
-                      Installed: {new Date(entry.installDate).toLocaleDateString()}
-                    </p>
+                    <p className="text-xs mt-1" style={{color:'#79747E'}}>Installed: {new Date(entry.installDate).toLocaleDateString()}</p>
                     {entry.uninstallDate && (
-                       <p className="text-xs text-neutral-500 mt-0.5">
-                         Ended: {new Date(entry.uninstallDate).toLocaleDateString()}
-                       </p>
+                       <p className="text-xs mt-0.5" style={{color:'#79747E'}}>Ended: {new Date(entry.uninstallDate).toLocaleDateString()}</p>
                     )}
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-xl font-bold text-white">{settings.currency}{entry.amount}</p>
-                  <p className={`text-sm font-semibold mt-1 ${isActive ? 'text-orange-400' : 'text-neutral-500'}`}>{daysUsed} Days</p>
+                  <p className="text-xl font-bold" style={{color:'var(--m3-on-surface)'}}>{settings.currency}{entry.amount}</p>
+                  <p className="text-sm font-semibold mt-1" style={{color: isActive ? '#E67E22' : '#79747E'}}>{daysUsed} Days</p>
                 </div>
               </div>
             </SwipeableItem>
@@ -840,34 +857,34 @@ function GasView({ filterDate, setFilterDate, settings }) {
          <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-xs text-neutral-400 uppercase font-semibold pl-1">Install Date</label>
-              <input type="date" value={formData.installDate} onChange={e => setFormData({...formData, installDate: e.target.value})} className="w-full bg-black/50 border border-white/10 rounded-xl p-4 text-white mt-1 outline-none focus:border-orange-500" />
+              <label className="text-xs font-semibold uppercase tracking-wider pl-1" style={{color:'#6750A4'}}>Install Date</label>
+              <input type="date" value={formData.installDate} onChange={e => setFormData({...formData, installDate: e.target.value})} className="m3-input mt-1" />
             </div>
             <div>
-              <label className="text-xs text-neutral-400 uppercase font-semibold pl-1">End Date (Optional)</label>
-              <input type="date" value={formData.uninstallDate} onChange={e => setFormData({...formData, uninstallDate: e.target.value})} className="w-full bg-black/50 border border-white/10 rounded-xl p-4 text-white mt-1 outline-none focus:border-orange-500 text-sm" />
+              <label className="text-xs font-semibold uppercase tracking-wider pl-1" style={{color:'#6750A4'}}>End Date (Optional)</label>
+              <input type="date" value={formData.uninstallDate} onChange={e => setFormData({...formData, uninstallDate: e.target.value})} className="m3-input mt-1 text-sm" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-xs text-neutral-400 uppercase font-semibold pl-1">Amount</label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400">{settings.currency}</span>
-                <input type="number" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="w-full bg-black/50 border border-white/10 rounded-xl p-4 pl-8 text-white mt-1 text-xl font-bold outline-none focus:border-orange-500" placeholder="0.00" />
+              <label className="text-xs font-semibold uppercase tracking-wider pl-1" style={{color:'#6750A4'}}>Amount</label>
+               <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2" style={{color:'var(--m3-on-surface-muted)'}}>{settings.currency}</span>
+                <input type="number" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="m3-input pl-8 mt-1 text-xl font-bold" placeholder="0.00" />
               </div>
             </div>
             <div>
-              <label className="text-xs text-neutral-400 uppercase font-semibold pl-1">Weight (KG)</label>
-              <input type="number" step="0.1" value={formData.weight} onChange={e => setFormData({...formData, weight: e.target.value})} className="w-full bg-black/50 border border-white/10 rounded-xl p-4 text-white mt-1 text-xl font-bold outline-none focus:border-orange-500" />
+              <label className="text-xs font-semibold uppercase tracking-wider pl-1" style={{color:'#6750A4'}}>Weight (KG)</label>
+              <input type="number" step="0.1" value={formData.weight} onChange={e => setFormData({...formData, weight: e.target.value})} className="m3-input mt-1 text-xl font-bold" />
             </div>
           </div>
           <div className="pt-4 flex gap-3">
              {editingEntry && (
-                <button onClick={() => handleDelete(editingEntry.id)} className="flex-1 bg-red-500/10 text-red-500 font-bold py-4 rounded-xl">Delete</button>
+                <motion.button whileTap={{scale:0.97}} onClick={() => handleDelete(editingEntry.id)} className="flex-1 font-bold py-4 rounded-2xl" style={{background:'#FFEBEB', color:'#C0392B'}}>Delete</motion.button>
              )}
-            <button onClick={handleSave} className="flex-[2] bg-orange-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-orange-500/20">
+            <motion.button whileTap={{scale:0.97}} onClick={handleSave} className="flex-[2] font-bold py-4 rounded-2xl" style={{background:'linear-gradient(135deg,#FF9A5C,#E67E22)', color:'#fff', boxShadow:'0 4px 16px rgba(230,126,34,0.3)'}}>
               Save Cylinder
-            </button>
+            </motion.button>
           </div>
         </div>
       </BottomSheet>
@@ -938,42 +955,42 @@ function CustomCategoryView({ categoryId, categories, settings, filterDate, setF
     <div>
       <StickyHeader title={category.name} date={filterDate} setDate={setFilterDate} />
 
-      <GlassCard className="p-5 mb-6" style={{ background: `linear-gradient(135deg, ${category.color}33, transparent)` }}>
+      <GlassCard className="p-5 mb-6" style={{ background: `linear-gradient(135deg, ${category.color}25, ${category.color}10)` }}>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-neutral-400 text-xs font-medium uppercase tracking-wider mb-1">Total {category.unit || 'Units'}</p>
-            <p className="text-3xl font-bold text-white">{stats.qty}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color:'#49454F'}}>Total {category.unit || 'Units'}</p>
+            <p className="text-3xl font-bold" style={{color:'#1C1B1F'}}>{stats.qty}</p>
           </div>
           <div>
-            <p className="text-neutral-400 text-xs font-medium uppercase tracking-wider mb-1">Total Spend</p>
-            <p className="text-3xl font-bold text-white">{settings.currency}{stats.amount}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color:'#49454F'}}>Total Spend</p>
+            <p className="text-3xl font-bold" style={{color:'#1C1B1F'}}>{settings.currency}{stats.amount}</p>
           </div>
         </div>
       </GlassCard>
 
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold text-white">Records</h3>
-        <button onClick={openAdd} className="text-sm font-medium text-white px-4 py-1.5 rounded-full flex items-center gap-1 shadow-lg" style={{ backgroundColor: category.color }}>
+        <h3 className="text-base font-bold" style={{color:'#1C1B1F'}}>Records</h3>
+        <motion.button whileTap={{scale:0.95}} onClick={openAdd} className="text-sm font-semibold text-white px-4 py-1.5 rounded-full flex items-center gap-1 shadow-lg" style={{ backgroundColor: category.color }}>
           <Plus size={16}/> Add Entry
-        </button>
+        </motion.button>
       </div>
 
       <div className="space-y-4">
-        {entries.length === 0 && <p className="text-neutral-500 text-center py-4 text-sm">No entries yet.</p>}
+        {entries.length === 0 && <p className="text-center py-4 text-sm" style={{color:'#79747E'}}>No entries yet.</p>}
         {entries.map(entry => (
           <SwipeableItem key={entry.id} onDelete={() => handleDelete(entry.id)} onEdit={() => { setEditingEntry(entry); setFormData(entry); setIsModalOpen(true); }}>
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white/5 border border-white/10" style={{ color: category.color }}>
+                <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{background:'#F3EEFF', border:'1px solid #EDE7F6', color: category.color}}>
                   <CatIcon size={20}/>
                 </div>
                 <div>
-                  <p className="text-white font-semibold">{new Date(entry.date).toLocaleDateString('en-US', {day: 'numeric', month: 'short'})}</p>
-                  <p className="text-xs text-neutral-400">{entry.qty} {category.unit}</p>
+                  <p className="font-semibold" style={{color:'var(--m3-on-surface)'}}>{new Date(entry.date).toLocaleDateString('en-US', {day: 'numeric', month: 'short'})}</p>
+                  <p className="text-xs" style={{color:'var(--m3-on-surface-muted)'}}>{entry.qty} {category.unit}</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="font-bold text-white">{settings.currency}{entry.amount}</p>
+                <p className="font-bold" style={{color:'var(--m3-on-surface)'}}>{settings.currency}{entry.amount}</p>
               </div>
             </div>
           </SwipeableItem>
@@ -1072,30 +1089,33 @@ function SettingsView({ settings, updateSettings, db }) {
   };
 
   const SettingBlock = ({ label, children }) => (
-    <div className="flex justify-between items-center py-4 border-b border-white/5 last:border-0">
-      <span className="text-white font-medium">{label}</span>
+    <div className="flex justify-between items-center py-4 last:border-0" style={{borderBottom:'1px solid var(--m3-divider)'}}>
+      <span className="font-medium" style={{color:'var(--m3-on-surface)'}}>{label}</span>
       <div className="w-1/2 text-right">{children}</div>
     </div>
   );
 
   return (
     <div className="pb-8">
-      <div className="sticky top-0 pt-12 pb-4 px-2 z-30 bg-black/80 backdrop-blur-xl mb-6">
-        <h1 className="text-3xl font-bold tracking-tight text-white">Settings</h1>
+      <div className="sticky top-0 pt-12 pb-4 px-2 z-30 mb-6" style={{background:'var(--m3-header-bg)', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', borderBottom:'1px solid var(--m3-header-border)'}}>
+        <h1 className="text-2xl font-bold tracking-tight" style={{color:'var(--m3-on-surface)'}}>Settings</h1>
       </div>
 
       <div className="space-y-6">
         {/* General Settings */}
         <section>
-          <h3 className="text-xs font-bold text-neutral-500 uppercase tracking-widest pl-4 mb-2">General</h3>
+          <h3 className="text-xs font-bold uppercase tracking-widest pl-4 mb-2" style={{color:'#79747E'}}>General</h3>
           <GlassCard className="px-5">
             <SettingBlock label="Currency Symbol">
-              <input type="text" value={settings.currency} onChange={e => updateSettings({ currency: e.target.value })} className="w-full bg-black/40 text-white border border-white/10 rounded-lg p-2 text-right focus:border-blue-500 outline-none" />
+              <div className="flex items-center justify-end gap-2">
+                <input type="text" value={settings.currency} onChange={e => updateSettings({ currency: e.target.value })} className="m3-input text-right w-12" style={{padding:'8px', borderRadius:'12px'}} />
+                <span className="text-sm font-medium" style={{color:'var(--m3-on-surface-muted)'}}>Rupee</span>
+              </div>
             </SettingBlock>
             <SettingBlock label="Theme">
-              <select value={settings.theme} onChange={e => updateSettings({ theme: e.target.value })} className="w-full bg-black/40 text-white border border-white/10 rounded-lg p-2 text-right outline-none appearance-none">
+              <select value={settings.theme} onChange={e => updateSettings({ theme: e.target.value })} className="m3-select text-right">
+                <option value="light">Light Mode</option>
                 <option value="dark">Dark Mode</option>
-                <option value="light">Light Mode (Beta)</option>
               </select>
             </SettingBlock>
           </GlassCard>
@@ -1103,71 +1123,73 @@ function SettingsView({ settings, updateSettings, db }) {
 
         {/* Water Settings */}
         <section>
-          <h3 className="text-xs font-bold text-neutral-500 uppercase tracking-widest pl-4 mb-2">Water Goals</h3>
+          <h3 className="text-xs font-bold uppercase tracking-widest pl-4 mb-2" style={{color:'#79747E'}}>Water Goals</h3>
           <GlassCard className="px-5">
             <SettingBlock label="Daily Target (L)">
-              <input type="number" step="0.1" value={settings.waterTarget} onChange={e => updateSettings({ waterTarget: Number(e.target.value) })} className="w-full bg-black/40 text-white border border-white/10 rounded-lg p-2 text-right outline-none" />
+              <input type="number" step="0.1" value={settings.waterTarget} onChange={e => updateSettings({ waterTarget: Number(e.target.value) })} className="m3-input text-right" style={{padding:'8px', borderRadius:'12px'}} />
             </SettingBlock>
           </GlassCard>
         </section>
 
         {/* Milk Settings */}
         <section>
-          <h3 className="text-xs font-bold text-neutral-500 uppercase tracking-widest pl-4 mb-2">Milk Defaults</h3>
+          <h3 className="text-xs font-bold uppercase tracking-widest pl-4 mb-2" style={{color:'#79747E'}}>Milk Defaults</h3>
           <GlassCard className="px-5">
             <SettingBlock label={`Default Price (${settings.currency}/L)`}>
-              <input type="number" value={settings.milkPrice} onChange={e => updateSettings({ milkPrice: Number(e.target.value) })} className="w-full bg-black/40 text-white border border-white/10 rounded-lg p-2 text-right outline-none" />
+              <input type="number" value={settings.milkPrice} onChange={e => updateSettings({ milkPrice: Number(e.target.value) })} className="m3-input text-right" style={{padding:'8px', borderRadius:'12px'}} />
             </SettingBlock>
             <SettingBlock label="Default Quantity (L)">
-              <input type="number" step="0.5" value={settings.milkQty} onChange={e => updateSettings({ milkQty: Number(e.target.value) })} className="w-full bg-black/40 text-white border border-white/10 rounded-lg p-2 text-right outline-none" />
+              <input type="number" step="0.5" value={settings.milkQty} onChange={e => updateSettings({ milkQty: Number(e.target.value) })} className="m3-input text-right" style={{padding:'8px', borderRadius:'12px'}} />
             </SettingBlock>
           </GlassCard>
         </section>
 
         {/* Gas Settings */}
         <section>
-          <h3 className="text-xs font-bold text-neutral-500 uppercase tracking-widest pl-4 mb-2">Gas Defaults</h3>
+          <h3 className="text-xs font-bold uppercase tracking-widest pl-4 mb-2" style={{color:'#79747E'}}>Gas Defaults</h3>
           <GlassCard className="px-5">
             <SettingBlock label="Cylinder Weight (KG)">
-              <input type="number" step="0.1" value={settings.gasWeight} onChange={e => updateSettings({ gasWeight: Number(e.target.value) })} className="w-full bg-black/40 text-white border border-white/10 rounded-lg p-2 text-right outline-none" />
+              <input type="number" step="0.1" value={settings.gasWeight} onChange={e => updateSettings({ gasWeight: Number(e.target.value) })} className="m3-input text-right" style={{padding:'8px', borderRadius:'12px'}} />
             </SettingBlock>
           </GlassCard>
         </section>
 
         {/* Data Management */}
         <section>
-          <h3 className="text-xs font-bold text-neutral-500 uppercase tracking-widest pl-4 mb-2">Data & Storage</h3>
+          <h3 className="text-xs font-bold uppercase tracking-widest pl-4 mb-2" style={{color:'var(--m3-section-label)'}}>Data &amp; Storage</h3>
           <GlassCard className="p-2">
-            <button onClick={handleExport} className="w-full flex items-center justify-between p-4 text-white hover:bg-white/5 rounded-xl transition-colors">
-              <span className="flex items-center gap-3"><Download size={20} className="text-blue-400"/> Backup Data (JSON)</span>
-              <ChevronRight size={16} className="text-neutral-500"/>
+            <button onClick={handleExport} className="w-full flex items-center justify-between p-4 rounded-xl transition-colors" style={{color:'var(--m3-on-surface)'}}>
+              <span className="flex items-center gap-3"><Download size={20} style={{color:'#4A90D9'}}/> Backup Data (JSON)</span>
+              <ChevronRight size={16} style={{color:'var(--m3-on-surface-muted)'}}/>
             </button>
             <div className="relative w-full">
               <input type="file" accept=".json" onChange={handleImport} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
-              <div className="w-full flex items-center justify-between p-4 text-white hover:bg-white/5 rounded-xl transition-colors">
-                <span className="flex items-center gap-3"><Upload size={20} className="text-orange-400"/> Restore Backup</span>
-                <ChevronRight size={16} className="text-neutral-500"/>
+              <div className="w-full flex items-center justify-between p-4 rounded-xl transition-colors" style={{color:'var(--m3-on-surface)'}}>
+                <span className="flex items-center gap-3"><Upload size={20} style={{color:'#E67E22'}}/> Restore Backup</span>
+                <ChevronRight size={16} style={{color:'var(--m3-on-surface-muted)'}}/>
               </div>
             </div>
             <button onClick={async () => {
               if(window.confirm('Are you sure you want to delete ALL data? This cannot be undone.')) {
                 await db.clearAll(); window.location.reload();
               }
-            }} className="w-full flex items-center justify-between p-4 text-red-500 hover:bg-red-500/10 rounded-xl transition-colors">
+            }} className="w-full flex items-center justify-between p-4 rounded-xl transition-colors" style={{color:'#C0392B'}}>
               <span className="flex items-center gap-3"><Trash2 size={20}/> Delete All Data</span>
             </button>
           </GlassCard>
         </section>
 
         {/* Footer */}
-        <div className="pt-8 pb-12 flex flex-col items-center justify-center text-center opacity-50">
-          <Info size={24} className="text-neutral-400 mb-3" />
-          <p className="text-sm text-neutral-300 font-bold tracking-widest uppercase mb-1">Trackit Pro</p>
-          <p className="text-[10px] text-neutral-500 mb-4">Version 1.1.0 • Local Offline DB</p>
-          <div className="flex gap-2 text-[10px] text-neutral-500 bg-white/5 px-3 py-1 rounded-full border border-white/5">
+        <div className="pt-8 pb-12 flex flex-col items-center justify-center text-center">
+          <div className="w-12 h-12 rounded-full mb-3 flex items-center justify-center" style={{background:'linear-gradient(135deg,#EADDFF,#C8E6FF)'}}>
+            <Info size={20} style={{color:'#6750A4'}} />
+          </div>
+          <p className="text-sm font-bold tracking-widest uppercase mb-1" style={{color:'#1C1B1F'}}>Trackit Pro</p>
+          <p className="text-[10px] mb-4" style={{color:'#79747E'}}>Version 1.1.0 • Local Offline DB</p>
+          <div className="flex gap-2 text-[10px] px-3 py-1 rounded-full" style={{background:'#F3EEFF', color:'#79747E', border:'1px solid #EDE7F6'}}>
             <span>React</span>•<span>Tailwind</span>•<span>IndexedDB</span>•<span>PWA</span>
           </div>
-          <p className="text-xs text-neutral-400 mt-6 font-medium">Made by Vikram Mistry</p>
+          <p className="text-xs mt-6 font-semibold" style={{color:'#6750A4'}}>Made by Vikram Mistry</p>
         </div>
       </div>
     </div>
@@ -1216,20 +1238,21 @@ function WaterView({ filterDate, setFilterDate, settings }) {
       <StickyHeader title="Water Intake" date={filterDate} setDate={setFilterDate} />
       
       {/* Glass Animation */}
-      <GlassCard className="p-8 mb-8 flex flex-col items-center relative overflow-hidden bg-neutral-900/40">
-        <div className="relative w-32 h-48 border-[3px] border-white/20 rounded-b-[40px] rounded-t-lg overflow-hidden bg-black/20 shadow-inner">
+      <GlassCard className="p-6 mb-8 flex flex-col items-center relative overflow-hidden" style={{background:'linear-gradient(135deg,#DBEAFE 0%,#EFF6FF 100%)'}}>
+        <div className="relative rounded-b-[32px] rounded-t-lg overflow-hidden shadow-inner" style={{width:'76px', height:'116px', border:'3px solid rgba(37,99,235,0.3)', background:'rgba(239,246,255,0.6)'}}>
            {/* Water Filling */}
            <motion.div 
              initial={{ height: 0 }}
              animate={{ height: `${percentage}%` }}
-             className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-blue-600 via-blue-500 to-blue-400"
+             className="absolute bottom-0 left-0 right-0"
+             style={{background:'linear-gradient(to top, #1565C0, #1976D2, #42A5F5)'}}
              transition={{ type: 'spring', damping: 25, stiffness: 60 }}
            >
              {/* Wave Animation SVG */}
-             <svg className="absolute -top-4 left-0 w-[200%] h-6 fill-blue-400/80 animate-wave" viewBox="0 0 100 20" preserveAspectRatio="none">
+             <svg className="absolute -top-4 left-0 w-[200%] h-6 animate-wave" viewBox="0 0 100 20" preserveAspectRatio="none" style={{fill:'rgba(66,165,245,0.8)'}}>
                <path d="M0 10 Q 25 20 50 10 T 100 10 V 20 H 0 Z" />
              </svg>
-             <svg className="absolute -top-3 left-[-100%] w-[200%] h-6 fill-blue-300/40 animate-wave-slow" viewBox="0 0 100 20" preserveAspectRatio="none">
+             <svg className="absolute -top-3 left-[-100%] w-[200%] h-6 animate-wave-slow" viewBox="0 0 100 20" preserveAspectRatio="none" style={{fill:'rgba(144,202,249,0.4)'}}>
                <path d="M0 10 Q 25 20 50 10 T 100 10 V 20 H 0 Z" />
              </svg>
 
@@ -1247,12 +1270,12 @@ function WaterView({ filterDate, setFilterDate, settings }) {
            </motion.div>
            
            {/* Glass Shine */}
-           <div className="absolute top-0 left-2 w-2 h-full bg-white/5 skew-x-[-10deg] blur-sm" />
+           <div className="absolute top-0 left-2 w-1.5 h-full bg-white/20 skew-x-[-10deg] blur-sm" />
         </div>
         
-        <div className="mt-8 text-center">
-          <p className="text-5xl font-black text-white tracking-tighter">{totalForSelectedDay}<span className="text-xl text-blue-400 ml-1">L</span></p>
-          <p className="text-neutral-500 text-xs font-bold uppercase tracking-widest mt-1">
+        <div className="mt-5 text-center">
+          <p className="text-4xl font-black tracking-tighter" style={{color:'#1A1C1E'}}>{totalForSelectedDay}<span className="text-lg ml-1" style={{color:'#1565C0'}}>L</span></p>
+          <p className="text-xs font-bold uppercase tracking-widest mt-1" style={{color:'#1E3A5F'}}>
             {selectedDate === new Date().toISOString().split('T')[0] ? 'Today' : new Date(selectedDate).toLocaleDateString('en-US', {day: 'numeric', month: 'short'})} Goal: {target}L • {Math.round(percentage)}%
           </p>
         </div>
@@ -1264,7 +1287,8 @@ function WaterView({ filterDate, setFilterDate, settings }) {
             key={qty}
             whileTap={{ scale: 0.9 }}
             onClick={() => addWater(qty)}
-            className="bg-blue-500/10 border border-white/5 text-blue-400 font-bold py-4 rounded-3xl flex flex-col items-center gap-1 hover:bg-blue-500/20 transition-colors"
+            className="font-bold py-4 rounded-3xl flex flex-col items-center gap-1 transition-all"
+            style={{background:'#DBEAFE', border:'1px solid rgba(37,99,235,0.2)', color:'#1565C0'}}
           >
             <Droplet size={18} />
             <span className="text-xs">{qty}L</span>
@@ -1273,10 +1297,10 @@ function WaterView({ filterDate, setFilterDate, settings }) {
       </div>
 
       {/* Water Calendar Grid */}
-      <h3 className="text-lg font-bold text-white mb-4">Monthly View</h3>
+      <h3 className="text-base font-bold mb-4" style={{color:'#1C1B1F'}}>Monthly View</h3>
       <div className="grid grid-cols-7 gap-2 mb-8">
         {['S','M','T','W','T','F','S'].map((d, i) => (
-          <div key={i} className="text-center text-[10px] text-neutral-500 font-black">{d}</div>
+          <div key={i} className="text-center text-[10px] font-black" style={{color:'#79747E'}}>{d}</div>
         ))}
         {Array.from({length: new Date(filterDate.getFullYear(), filterDate.getMonth(), 1).getDay()}).map((_, i) => (
           <div key={`empty-${i}`} />
@@ -1300,14 +1324,15 @@ function WaterView({ filterDate, setFilterDate, settings }) {
                   setSelectedDate(dateStr);
                 }
               }}
-              className={`aspect-square rounded-xl flex flex-col items-center justify-center border transition-all
-                ${isSelected ? 'border-blue-500 bg-blue-500/20 ring-2 ring-blue-500/20' : 'border-transparent bg-white/5'}
-                ${isToday && !isSelected ? 'border-white/20' : ''}
-                ${dTotal > 0 && !isSelected ? 'border-blue-500/30' : ''}
+              className={`aspect-square rounded-2xl flex flex-col items-center justify-center border transition-all
+                ${isSelected ? 'border-[#27AE90]' : 'border-transparent'}
+                ${isToday && !isSelected ? 'border-[#79747E]/40' : ''}
+                ${dTotal > 0 && !isSelected ? 'border-[#27AE90]/30' : ''}
               `}
+              style={{background: isSelected ? '#C2F0D8' : dTotal > 0 ? 'rgba(194,240,216,0.4)' : 'rgba(103,80,164,0.06)'}}
             >
-              <span className={`text-xs font-bold ${dTotal > 0 || isSelected ? 'text-white' : 'text-neutral-500'}`}>{dayNum}</span>
-              {dTotal > 0 && <span className="text-[8px] text-blue-400 font-black leading-none mt-0.5">{dTotal}L</span>}
+              <span className="text-xs font-bold" style={{color: dTotal > 0 || isSelected ? '#1C1B1F' : '#79747E'}}>{dayNum}</span>
+              {dTotal > 0 && <span className="text-[8px] font-black leading-none mt-0.5" style={{color:'#27AE90'}}>{dTotal}L</span>}
             </motion.button>
           );
         })}
@@ -1317,24 +1342,24 @@ function WaterView({ filterDate, setFilterDate, settings }) {
         <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
           {dayEntries.length === 0 && (
             <div className="text-center py-8">
-               <p className="text-neutral-500 mb-4">No intake logged for this day.</p>
-               <button onClick={() => setIsModalOpen(false)} className="bg-blue-500/20 text-blue-400 px-6 py-2 rounded-full text-xs font-bold">Add Now</button>
+               <p className="mb-4" style={{color:'#79747E'}}>No intake logged for this day.</p>
+               <motion.button whileTap={{scale:0.95}} onClick={() => setIsModalOpen(false)} className="px-6 py-2 rounded-full text-xs font-bold" style={{background:'#C2F0D8', color:'#1A6B4A'}}>Add Now</motion.button>
             </div>
           )}
           {[...dayEntries].reverse().map(e => (
-            <div key={e.id} className="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/5">
+            <div key={e.id} className="flex justify-between items-center p-4 rounded-2xl" style={{background:'var(--m3-swipe-inner)', border:'1px solid var(--m3-swipe-inner-border)'}}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{background:'#DBEAFE', color:'#1565C0'}}>
                   <Droplet size={18} />
                 </div>
                 <div>
-                  <p className="text-white font-bold">{e.qty}L</p>
-                  <p className="text-[10px] text-neutral-500 font-bold uppercase">{new Date(Number(e.id)).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                  <p className="font-bold" style={{color:'var(--m3-on-surface)'}}>{e.qty}L</p>
+                  <p className="text-[10px] font-bold uppercase" style={{color:'var(--m3-on-surface-muted)'}}>{new Date(Number(e.id)).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
                 </div>
               </div>
-              <button onClick={async () => { await db.delete('water', e.id); loadEntries(); }} className="p-2 text-red-500/40 hover:text-red-500 hover:bg-red-500/10 rounded-full transition-colors">
+              <motion.button whileTap={{scale:0.9}} onClick={async () => { await db.delete('water', e.id); loadEntries(); }} className="p-2 rounded-full transition-colors" style={{color:'#C0392B'}}>
                 <Trash2 size={18}/>
-              </button>
+              </motion.button>
             </div>
           ))}
         </div>
@@ -1391,39 +1416,39 @@ function ExpenseView({ type, title, icon: Icon, filterDate, setFilterDate, setti
     <div>
       <StickyHeader title={title} date={filterDate} setDate={setFilterDate} />
       
-      <GlassCard className="p-6 mb-6 bg-gradient-to-br from-neutral-800 to-neutral-900/50 border-white/5">
-        <p className="text-neutral-400 text-xs font-bold uppercase tracking-widest mb-1">Monthly Spending</p>
-        <p className="text-4xl font-black text-white">{settings.currency}{totalAmount}</p>
+      <GlassCard className="p-6 mb-6" style={{background:'linear-gradient(135deg,#F8F4FF 0%,#EEF6FF 100%)', border:'1px solid #EDE7F6'}}>
+        <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{color:'#79747E'}}>Monthly Spending</p>
+        <p className="text-4xl font-black" style={{color:'#1C1B1F'}}>{settings.currency}{totalAmount}</p>
       </GlassCard>
 
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold text-white">Record History</h3>
-        <button onClick={openAdd} className="bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2">
+        <h3 className="text-base font-bold" style={{color:'#1C1B1F'}}>Record History</h3>
+        <motion.button whileTap={{scale:0.95}} onClick={openAdd} className="px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2" style={{background:'linear-gradient(135deg,#6750A4,#4A90D9)', color:'#fff', boxShadow:'0 2px 10px rgba(103,80,164,0.25)'}}>
           <Plus size={16}/> Add Record
-        </button>
+        </motion.button>
       </div>
 
       <div className="space-y-3">
-        {entries.length === 0 && <p className="text-neutral-500 text-center py-8">No records found for this month.</p>}
+        {entries.length === 0 && <p className="text-center py-8" style={{color:'var(--m3-on-surface-muted)'}}>No records found for this month.</p>}
         {entries.map(e => (
           <SwipeableItem key={e.id} onDelete={() => handleDelete(e.id)} onEdit={() => { setEditingEntry(e); setFormData(e); setIsModalOpen(true); }}>
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-blue-400">
+                <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{background:'#F3EEFF', color:'#6750A4'}}>
                   <Icon size={20} />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-white font-bold truncate">
+                  <p className="font-bold truncate" style={{color:'var(--m3-on-surface)'}}>
                     {e.itemName || e.purchasedFrom || title}
                   </p>
-                  <p className="text-[10px] text-neutral-500 uppercase font-bold">
+                  <p className="text-[10px] uppercase font-bold" style={{color:'var(--m3-on-surface-muted)'}}>
                     {new Date(e.date || e.paymentDate).toLocaleDateString('en-US', {day: 'numeric', month: 'short'})}
                     {e.accountName && ` • ${e.accountName}`}
                   </p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-white font-black">{settings.currency}{e.amount}</p>
+                <p className="font-black" style={{color:'var(--m3-on-surface)'}}>{settings.currency}{e.amount}</p>
               </div>
             </div>
           </SwipeableItem>
@@ -1436,21 +1461,21 @@ function ExpenseView({ type, title, icon: Icon, filterDate, setFilterDate, setti
             <>
               <div>
                 <label className="text-[10px] text-neutral-500 uppercase font-black mb-1 block ml-1">Purchased From</label>
-                <input type="text" value={formData.purchasedFrom} onChange={e => setFormData({...formData, purchasedFrom: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-blue-500" placeholder="Store Name" />
+                <input type="text" value={formData.purchasedFrom} onChange={e => setFormData({...formData, purchasedFrom: e.target.value})} className="w-full rounded-2xl p-4 outline-none" style={{background:'#F3EEFF', border:'1.5px solid #D0B8FF', color:'#1C1B1F'}} placeholder="Store Name" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="min-w-0">
-                  <label className="text-[10px] text-neutral-500 uppercase font-black mb-1 block ml-1">Date</label>
-                  <input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white text-xs outline-none focus:border-blue-500" />
+                  <label className="text-[10px] font-black mb-1 block ml-1" style={{color:'#6750A4'}}>Date</label>
+                  <input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="w-full rounded-2xl p-4 text-xs outline-none" style={{background:'#F3EEFF', border:'1.5px solid #D0B8FF', color:'#1C1B1F'}} />
                 </div>
                 <div className="min-w-0">
-                  <label className="text-[10px] text-neutral-500 uppercase font-black mb-1 block ml-1">Amount</label>
-                  <input type="number" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-blue-500" placeholder="0.00" />
+                  <label className="text-[10px] font-black mb-1 block ml-1" style={{color:'#6750A4'}}>Amount</label>
+                  <input type="number" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="w-full rounded-2xl p-4 outline-none" style={{background:'#F3EEFF', border:'1.5px solid #D0B8FF', color:'#1C1B1F'}} placeholder="0.00" />
                 </div>
               </div>
               <div>
-                <label className="text-[10px] text-neutral-500 uppercase font-black mb-1 block ml-1">Account Name</label>
-                <input type="text" value={formData.accountName} onChange={e => setFormData({...formData, accountName: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-blue-500" placeholder="Payment Method" />
+                <label className="text-[10px] font-black mb-1 block ml-1" style={{color:'#6750A4'}}>Account Name</label>
+                <input type="text" value={formData.accountName} onChange={e => setFormData({...formData, accountName: e.target.value})} className="w-full rounded-2xl p-4 outline-none" style={{background:'#F3EEFF', border:'1.5px solid #D0B8FF', color:'#1C1B1F'}} placeholder="Payment Method" />
               </div>
             </>
           )}
@@ -1459,16 +1484,16 @@ function ExpenseView({ type, title, icon: Icon, filterDate, setFilterDate, setti
             <>
               <div>
                 <label className="text-[10px] text-neutral-500 uppercase font-black mb-1 block ml-1">Amount</label>
-                <input type="number" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-blue-500" placeholder="0.00" />
+                <input type="number" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="w-full rounded-2xl p-4 outline-none" style={{background:'#F3EEFF', border:'1.5px solid #D0B8FF', color:'#1C1B1F'}} placeholder="0.00" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="min-w-0">
-                  <label className="text-[10px] text-neutral-500 uppercase font-black mb-1 block ml-1">Due Date</label>
-                  <input type="date" value={formData.dueDate} onChange={e => setFormData({...formData, dueDate: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white text-xs outline-none focus:border-blue-500" />
+                  <label className="text-[10px] font-black mb-1 block ml-1" style={{color:'#6750A4'}}>Due Date</label>
+                  <input type="date" value={formData.dueDate} onChange={e => setFormData({...formData, dueDate: e.target.value})} className="w-full rounded-2xl p-4 text-xs outline-none" style={{background:'#F3EEFF', border:'1.5px solid #D0B8FF', color:'#1C1B1F'}} />
                 </div>
                 <div className="min-w-0">
-                  <label className="text-[10px] text-neutral-500 uppercase font-black mb-1 block ml-1">Payment Date</label>
-                  <input type="date" value={formData.paymentDate} onChange={e => setFormData({...formData, paymentDate: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white text-xs outline-none focus:border-blue-500" />
+                  <label className="text-[10px] font-black mb-1 block ml-1" style={{color:'#6750A4'}}>Payment Date</label>
+                  <input type="date" value={formData.paymentDate} onChange={e => setFormData({...formData, paymentDate: e.target.value})} className="w-full rounded-2xl p-4 text-xs outline-none" style={{background:'#F3EEFF', border:'1.5px solid #D0B8FF', color:'#1C1B1F'}} />
                 </div>
               </div>
             </>
@@ -1478,16 +1503,16 @@ function ExpenseView({ type, title, icon: Icon, filterDate, setFilterDate, setti
             <>
               <div>
                 <label className="text-[10px] text-neutral-500 uppercase font-black mb-1 block ml-1">Item Name</label>
-                <input type="text" value={formData.itemName} onChange={e => setFormData({...formData, itemName: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-blue-500" placeholder="Describe expense" />
+                <input type="text" value={formData.itemName} onChange={e => setFormData({...formData, itemName: e.target.value})} className="w-full rounded-2xl p-4 outline-none" style={{background:'#F3EEFF', border:'1.5px solid #D0B8FF', color:'#1C1B1F'}} placeholder="Describe expense" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="min-w-0">
-                  <label className="text-[10px] text-neutral-500 uppercase font-black mb-1 block ml-1">Amount</label>
-                  <input type="number" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-blue-500" placeholder="0.00" />
+                  <label className="text-[10px] font-black mb-1 block ml-1" style={{color:'#6750A4'}}>Amount</label>
+                  <input type="number" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="w-full rounded-2xl p-4 outline-none" style={{background:'#F3EEFF', border:'1.5px solid #D0B8FF', color:'#1C1B1F'}} placeholder="0.00" />
                 </div>
                 <div className="min-w-0">
-                  <label className="text-[10px] text-neutral-500 uppercase font-black mb-1 block ml-1">Payment Date</label>
-                  <input type="date" value={formData.paymentDate} onChange={e => setFormData({...formData, paymentDate: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white text-xs outline-none focus:border-blue-500" />
+                  <label className="text-[10px] font-black mb-1 block ml-1" style={{color:'#6750A4'}}>Payment Date</label>
+                  <input type="date" value={formData.paymentDate} onChange={e => setFormData({...formData, paymentDate: e.target.value})} className="w-full rounded-2xl p-4 text-xs outline-none" style={{background:'#F3EEFF', border:'1.5px solid #D0B8FF', color:'#1C1B1F'}} />
                 </div>
               </div>
             </>
@@ -1495,16 +1520,16 @@ function ExpenseView({ type, title, icon: Icon, filterDate, setFilterDate, setti
 
           <div>
             <label className="text-[10px] text-neutral-500 uppercase font-black mb-1 block ml-1">Note</label>
-            <textarea value={formData.note} onChange={e => setFormData({...formData, note: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-blue-500 min-h-[100px]" placeholder="Add details..." />
+            <textarea value={formData.note} onChange={e => setFormData({...formData, note: e.target.value})} className="w-full rounded-2xl p-4 outline-none min-h-[80px]" style={{background:'#F3EEFF', border:'1.5px solid #D0B8FF', color:'#1C1B1F'}} placeholder="Add details..." />
           </div>
 
           <div className="pt-4 flex gap-3">
             {editingEntry && (
-              <button onClick={() => handleDelete(editingEntry.id)} className="flex-1 bg-red-500/10 text-red-500 font-bold py-4 rounded-2xl">Delete</button>
+              <motion.button whileTap={{scale:0.97}} onClick={() => handleDelete(editingEntry.id)} className="flex-1 font-bold py-4 rounded-2xl" style={{background:'#FFEBEB', color:'#C0392B'}}>Delete</motion.button>
             )}
-            <button onClick={handleSave} className="flex-[2] bg-blue-500 text-white font-bold py-4 rounded-2xl shadow-xl">
+            <motion.button whileTap={{scale:0.97}} onClick={handleSave} className="flex-[2] font-bold py-4 rounded-2xl" style={{background:'linear-gradient(135deg,#6750A4,#4A90D9)', color:'#fff', boxShadow:'0 4px 16px rgba(103,80,164,0.3)'}}>
               {editingEntry ? 'Update' : 'Submit'}
-            </button>
+            </motion.button>
           </div>
         </div>
       </BottomSheet>

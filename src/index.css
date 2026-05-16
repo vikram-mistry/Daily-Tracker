@@ -1,27 +1,167 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Display:wght@400;500;700&display=swap');
 
-:root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+/* ==========================================
+   MATERIAL YOU — LIGHT THEME (DEFAULT)
+   ========================================== */
+:root,
+[data-theme="light"] {
+  /* Surfaces */
+  --m3-bg: linear-gradient(160deg, #F0EBFF 0%, #E8F4FF 40%, #E8FFF4 100%);
+  --m3-bg-app: linear-gradient(160deg, #F8F4FF 0%, #EEF6FF 50%, #F0FFF8 100%);
+  --m3-card: rgba(255, 255, 255, 0.85);
+  --m3-card-inner: #FFFFFF;
+  --m3-card-border: rgba(255, 255, 255, 0.6);
+  --m3-card-shadow: 0 2px 16px rgba(103, 80, 164, 0.10);
+  --m3-sheet-bg: #FFFFFF;
+  --m3-sheet-border: #EDE7F6;
+  --m3-swipe-outer: #F0EBFF;
+  --m3-swipe-inner: #FFFFFF;
+  --m3-swipe-inner-border: #EDE7F6;
+  --m3-swipe-inner-shadow: 0 1px 6px rgba(103, 80, 164, 0.08);
+  --m3-nav-gradient: linear-gradient(to top, rgba(248,244,255,1) 60%, rgba(248,244,255,0) 100%);
+  --m3-nav-bg: rgba(255, 255, 255, 0.85);
+  --m3-nav-border: rgba(237, 231, 246, 0.8);
+  --m3-nav-shadow: 0 4px 24px rgba(103, 80, 164, 0.12);
+  --m3-header-bg: rgba(248, 244, 255, 0.92);
+  --m3-header-border: rgba(103, 80, 164, 0.08);
+  --m3-fab-border: rgba(248, 244, 255, 1);
+  --m3-input-bg: #F3EEFF;
+  --m3-input-border: #D0B8FF;
+  --m3-select-bg: #F3EEFF;
+  --m3-select-border: #D0B8FF;
+
+  /* Material You Containers */
+  --m3-primary-container: #EADDFF;
+  --m3-on-primary-container: #21005D;
+  --m3-error-container: #F9DEDC;
+  --m3-on-error-container: #410E0B;
+
+  /* Text */
+  --m3-on-surface: #1C1B1F;
+  --m3-on-surface-variant: #49454F;
+  --m3-on-surface-muted: #79747E;
+
+  /* Dividers */
+  --m3-divider: rgba(103, 80, 164, 0.08);
+  --m3-card-divider: rgba(103, 80, 164, 0.12);
+
+  /* Nav icon */
+  --m3-nav-icon-active-bg: #EADDFF;
+  --m3-nav-icon-active-color: #6750A4;
+  --m3-nav-icon-color: #79747E;
+
+  /* Icon button */
+  --m3-icon-btn-active-bg: #EADDFF;
+  --m3-icon-btn-active-color: #6750A4;
+  --m3-icon-btn-bg: #F3EEFF;
+  --m3-icon-btn-color: #79747E;
+  --m3-icon-btn-hover: #EDE7F6;
+
+  /* Close button */
+  --m3-close-btn-bg: #F3EEFF;
+  --m3-close-btn-color: #6750A4;
+
+  /* Section label */
+  --m3-section-label: #79747E;
+
+  /* Scrollbar */
+  --m3-scrollbar: rgba(103, 80, 164, 0.2);
+
+  font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #000000;
-
+  color-scheme: light;
+  color: var(--m3-on-surface);
+  background: var(--m3-bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ==========================================
+   MATERIAL YOU — DARK THEME
+   ========================================== */
+[data-theme="dark"] {
+  /* Surfaces */
+  --m3-bg: linear-gradient(160deg, #12101A 0%, #0E1520 40%, #0F1A14 100%);
+  --m3-bg-app: linear-gradient(160deg, #1A1825 0%, #131C2A 50%, #131A18 100%);
+  --m3-card: rgba(35, 32, 48, 0.90);
+  --m3-card-inner: #211E2E;
+  --m3-card-border: rgba(103, 80, 164, 0.25);
+  --m3-card-shadow: 0 2px 20px rgba(0, 0, 0, 0.4);
+  --m3-sheet-bg: #211E2E;
+  --m3-sheet-border: rgba(103, 80, 164, 0.3);
+  --m3-swipe-outer: #2D2840;
+  --m3-swipe-inner: #2A2740;
+  --m3-swipe-inner-border: rgba(103, 80, 164, 0.2);
+  --m3-swipe-inner-shadow: 0 1px 8px rgba(0,0,0,0.3);
+  --m3-nav-gradient: linear-gradient(to top, rgba(18,16,26,1) 60%, rgba(18,16,26,0) 100%);
+  --m3-nav-bg: rgba(30, 27, 44, 0.92);
+  --m3-nav-border: rgba(103, 80, 164, 0.35);
+  --m3-nav-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --m3-header-bg: rgba(18, 16, 26, 0.95);
+  --m3-header-border: rgba(103, 80, 164, 0.15);
+  --m3-fab-border: rgba(18, 16, 26, 1);
+  --m3-input-bg: #2D2840;
+  --m3-input-border: #4A4565;
+  --m3-select-bg: #2D2840;
+  --m3-select-border: #4A4565;
+
+  /* Material You Containers */
+  --m3-primary-container: #4F378B;
+  --m3-on-primary-container: #EADDFF;
+  --m3-error-container: #8C1D18;
+  --m3-on-error-container: #F9DEDC;
+
+  /* Text */
+  --m3-on-surface: #E8E0FF;
+  --m3-on-surface-variant: #C4BCDB;
+  --m3-on-surface-muted: #9D97B4;
+
+  /* Dividers */
+  --m3-divider: rgba(103, 80, 164, 0.15);
+  --m3-card-divider: rgba(103, 80, 164, 0.2);
+
+  /* Nav icon */
+  --m3-nav-icon-active-bg: rgba(103, 80, 164, 0.3);
+  --m3-nav-icon-active-color: #D0BCFF;
+  --m3-nav-icon-color: #9D97B4;
+
+  /* Icon button */
+  --m3-icon-btn-active-bg: rgba(103, 80, 164, 0.3);
+  --m3-icon-btn-active-color: #D0BCFF;
+  --m3-icon-btn-bg: rgba(103, 80, 164, 0.15);
+  --m3-icon-btn-color: #9D97B4;
+  --m3-icon-btn-hover: rgba(103, 80, 164, 0.25);
+
+  /* Close button */
+  --m3-close-btn-bg: rgba(103, 80, 164, 0.25);
+  --m3-close-btn-color: #D0BCFF;
+
+  /* Section label */
+  --m3-section-label: #9D97B4;
+
+  /* Scrollbar */
+  --m3-scrollbar: rgba(103, 80, 164, 0.3);
+
+  color-scheme: dark;
+  color: var(--m3-on-surface);
+  background: var(--m3-bg);
+}
+
+/* ==========================================
+   BASE LAYOUT
+   ========================================== */
 body {
   margin: 0;
   display: flex;
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
-  background-color: black;
+  background: var(--m3-bg);
+  transition: background 0.3s ease;
 }
 
 #root {
@@ -48,13 +188,12 @@ html, body {
   overflow: hidden;
 }
 
+/* ==========================================
+   WAVE ANIMATIONS
+   ========================================== */
 @layer utilities {
-  .animate-wave {
-    animation: wave 3s linear infinite;
-  }
-  .animate-wave-slow {
-    animation: wave 6s linear infinite;
-  }
+  .animate-wave { animation: wave 3s linear infinite; }
+  .animate-wave-slow { animation: wave 6s linear infinite; }
 }
 
 @keyframes wave {
@@ -67,13 +206,135 @@ html, body {
   100% { transform: translateX(0); }
 }
 
-.custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
+/* ==========================================
+   CUSTOM SCROLLBAR
+   ========================================== */
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--m3-scrollbar);
   border-radius: 10px;
+}
+
+/* ==========================================
+   MATERIAL YOU — STRUCTURAL COMPONENTS
+   ========================================== */
+
+/* M3 Card */
+.m3-card {
+  background: var(--m3-card);
+  border: 1px solid var(--m3-card-border);
+  box-shadow: var(--m3-card-shadow);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 24px;
+  overflow: hidden;
+}
+
+/* M3 Input */
+.m3-input {
+  background: var(--m3-input-bg);
+  border: 1.5px solid var(--m3-input-border);
+  color: var(--m3-on-surface);
+  border-radius: 16px;
+  padding: 16px;
+  width: 100%;
+  outline: none;
+  font-family: inherit;
+  font-size: 14px;
+  transition: border-color 0.2s ease;
+}
+
+.m3-input:focus {
+  border-color: #6750A4;
+}
+
+/* M3 Select */
+.m3-select {
+  background: var(--m3-select-bg);
+  border: 1.5px solid var(--m3-select-border);
+  color: var(--m3-on-surface);
+  border-radius: 12px;
+  padding: 8px;
+  width: 100%;
+  outline: none;
+  font-family: inherit;
+  appearance: none;
+}
+
+/* M3 Swipe Item */
+.m3-swipe-outer {
+  background: var(--m3-swipe-outer);
+}
+
+.m3-swipe-inner {
+  background: var(--m3-swipe-inner) !important;
+  border: 1px solid var(--m3-swipe-inner-border) !important;
+  box-shadow: var(--m3-swipe-inner-shadow) !important;
+}
+
+/* M3 Bottom Sheet */
+.m3-sheet {
+  background: var(--m3-sheet-bg);
+  border: 1px solid var(--m3-sheet-border);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.25);
+}
+
+/* M3 text utilities */
+.m3-text-primary { color: var(--m3-on-surface); }
+.m3-text-secondary { color: var(--m3-on-surface-variant); }
+.m3-text-muted { color: var(--m3-on-surface-muted); }
+.m3-divider { border-color: var(--m3-divider); }
+
+/* ==========================================
+   INPUT DATE/NUMBER COLOR SCHEME
+   ========================================== */
+[data-theme="light"] input[type="date"],
+[data-theme="light"] input[type="number"],
+[data-theme="light"] input[type="text"],
+[data-theme="light"] select,
+[data-theme="light"] textarea {
+  color-scheme: light;
+}
+
+[data-theme="dark"] input[type="date"],
+[data-theme="dark"] input[type="number"],
+[data-theme="dark"] input[type="text"],
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  color-scheme: dark;
+}
+
+[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(30%) sepia(20%) saturate(400%) hue-rotate(245deg);
+  opacity: 0.6;
+  cursor: pointer;
+}
+
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(80%) sepia(10%) saturate(300%) hue-rotate(245deg);
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+/* ==========================================
+   LOADING PULSE ANIMATION
+   ========================================== */
+@keyframes m3-pulse-soft {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(103,80,164,0.2); }
+  50% { transform: scale(1.02); box-shadow: 0 0 0 8px rgba(103,80,164,0); }
+}
+
+.m3-pulse { animation: m3-pulse-soft 2.5s ease-in-out infinite; }
+
+/* ==========================================
+   SMOOTH THEME TRANSITION
+   ========================================== */
+* {
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}
+
+/* Exclude animations from blanket transition */
+.animate-wave, .animate-wave-slow, .m3-pulse {
+  transition: none;
 }

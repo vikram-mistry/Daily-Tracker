@@ -360,13 +360,13 @@ const BottomSheet = ({ isOpen, onClose, title, children, isCentered = false }) =
             className="absolute inset-0 z-50"
             style={{background:'rgba(0,0,0,0.5)', backdropFilter:'blur(4px)'}}
           />
-          <div className={`absolute inset-0 z-50 flex ${isCentered ? 'items-center justify-center p-4' : 'items-end'}`}>
+          <div className={`fixed inset-0 z-50 flex ${isCentered ? 'items-center justify-center p-4' : 'items-end'}`}>
             <motion.div
               initial={isCentered ? { scale: 0.9, opacity: 0 } : { y: '100%' }}
               animate={isCentered ? { scale: 1, opacity: 1 } : { y: 0 }}
               exit={isCentered ? { scale: 0.9, opacity: 0 } : { y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className={`w-full max-h-[85vh] overflow-y-auto m3-sheet
+              className={`w-full max-w-lg max-h-[85vh] overflow-y-auto m3-sheet
                 ${isCentered ? 'relative' : ''}`}
               style={{borderRadius: isCentered ? '28px' : '28px 28px 0 0', paddingBottom: isCentered ? 0 : 48}}
             >
@@ -853,7 +853,7 @@ function GasView({ filterDate, setFilterDate, settings }) {
         })}
       </div>
 
-      <BottomSheet isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingEntry ? "Edit Cylinder" : "Add Cylinder"}>
+      <BottomSheet isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingEntry ? "Edit Cylinder" : "Add Cylinder"} isCentered={true}>
          <div className="space-y-4">
           <div className="flex flex-col gap-4">
             <div className="min-w-0">
@@ -997,7 +997,7 @@ function CustomCategoryView({ categoryId, categories, settings, filterDate, setF
         ))}
       </div>
 
-      <BottomSheet isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingEntry ? `Edit ${category.name}` : `Add ${category.name}`}>
+      <BottomSheet isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingEntry ? `Edit ${category.name}` : `Add ${category.name}`} isCentered={true}>
          <div className="space-y-4">
           <div>
             <label className="text-xs font-semibold uppercase tracking-wider pl-1" style={{color:'var(--m3-on-surface-muted)'}}>Date</label>

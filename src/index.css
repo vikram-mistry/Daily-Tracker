@@ -239,12 +239,18 @@ html, body {
     border: 1.5px solid var(--m3-input-border);
     color: var(--m3-on-surface);
     border-radius: 16px;
-    padding: 16px;
+    padding: 12px 14px;
     width: 100%;
     outline: none;
     font-family: inherit;
     font-size: 14px;
     transition: border-color 0.2s ease;
+  }
+
+  /* Specific handling for date inputs which can be bulky on iOS */
+  input[type="date"].m3-input {
+    padding-right: 8px;
+    min-height: 48px;
   }
 
   .m3-input:focus {

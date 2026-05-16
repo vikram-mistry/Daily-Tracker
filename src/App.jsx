@@ -668,7 +668,7 @@ function MilkView({ filterDate, setFilterDate, settings }) {
             <label className="text-xs font-semibold uppercase tracking-wider pl-1" style={{color:'#6750A4'}}>Date</label>
             <input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="m3-input mt-1 text-sm" />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-4">
             <div className="min-w-0">
               <label className="text-xs font-semibold uppercase tracking-wider pl-1" style={{color:'#6750A4'}}>Quantity (L)</label>
               <input type="number" step="0.5" value={formData.qty} onChange={e => setFormData({...formData, qty: e.target.value})} className="m3-input mt-1 text-xl font-bold" />
@@ -855,17 +855,17 @@ function GasView({ filterDate, setFilterDate, settings }) {
 
       <BottomSheet isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingEntry ? "Edit Cylinder" : "Add Cylinder"}>
          <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-4">
             <div className="min-w-0">
               <label className="text-xs font-semibold uppercase tracking-wider pl-1 block truncate" style={{color:'#6750A4'}}>Install Date</label>
               <input type="date" value={formData.installDate} onChange={e => setFormData({...formData, installDate: e.target.value})} className="m3-input mt-1" />
             </div>
             <div className="min-w-0">
               <label className="text-xs font-semibold uppercase tracking-wider pl-1 block truncate" style={{color:'#6750A4'}}>End Date (Optional)</label>
-              <input type="date" value={formData.uninstallDate} onChange={e => setFormData({...formData, uninstallDate: e.target.value})} className="m3-input mt-1 text-sm" />
+              <input type="date" value={formData.uninstallDate} onChange={e => setFormData({...formData, uninstallDate: e.target.value})} className="m3-input mt-1" />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-4">
             <div className="min-w-0">
               <label className="text-xs font-semibold uppercase tracking-wider pl-1" style={{color:'#6750A4'}}>Amount</label>
                <div className="relative">
@@ -1460,22 +1460,25 @@ function ExpenseView({ type, title, icon: Icon, filterDate, setFilterDate, setti
           {type === 'grocery' && (
             <>
               <div>
-                <label className="text-[10px] text-neutral-500 uppercase font-black mb-1 block ml-1">Purchased From</label>
-                <input type="text" value={formData.purchasedFrom} onChange={e => setFormData({...formData, purchasedFrom: e.target.value})} className="w-full rounded-2xl p-4 outline-none" style={{background:'#F3EEFF', border:'1.5px solid #D0B8FF', color:'#1C1B1F'}} placeholder="Store Name" />
+                <label className="text-xs font-semibold uppercase tracking-wider pl-1 mb-1 block" style={{color:'#6750A4'}}>Purchased From</label>
+                <input type="text" value={formData.purchasedFrom} onChange={e => setFormData({...formData, purchasedFrom: e.target.value})} className="m3-input" placeholder="Store Name" />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-4">
                 <div className="min-w-0">
-                  <label className="text-[10px] font-black mb-1 block ml-1" style={{color:'#6750A4'}}>Date</label>
-                  <input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="w-full rounded-2xl p-4 text-xs outline-none" style={{background:'#F3EEFF', border:'1.5px solid #D0B8FF', color:'#1C1B1F'}} />
+                  <label className="text-xs font-semibold uppercase tracking-wider pl-1 mb-1 block" style={{color:'#6750A4'}}>Date</label>
+                  <input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="m3-input" />
                 </div>
                 <div className="min-w-0">
-                  <label className="text-[10px] font-black mb-1 block ml-1" style={{color:'#6750A4'}}>Amount</label>
-                  <input type="number" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="w-full rounded-2xl p-4 outline-none" style={{background:'#F3EEFF', border:'1.5px solid #D0B8FF', color:'#1C1B1F'}} placeholder="0.00" />
+                  <label className="text-xs font-semibold uppercase tracking-wider pl-1 mb-1 block" style={{color:'#6750A4'}}>Amount</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2" style={{color:'var(--m3-on-surface-muted)'}}>{settings.currency}</span>
+                    <input type="number" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="m3-input pl-8" placeholder="0.00" />
+                  </div>
                 </div>
               </div>
               <div>
-                <label className="text-[10px] font-black mb-1 block ml-1" style={{color:'#6750A4'}}>Account Name</label>
-                <input type="text" value={formData.accountName} onChange={e => setFormData({...formData, accountName: e.target.value})} className="w-full rounded-2xl p-4 outline-none" style={{background:'#F3EEFF', border:'1.5px solid #D0B8FF', color:'#1C1B1F'}} placeholder="Payment Method" />
+                <label className="text-xs font-semibold uppercase tracking-wider pl-1 mb-1 block" style={{color:'#6750A4'}}>Account Name</label>
+                <input type="text" value={formData.accountName} onChange={e => setFormData({...formData, accountName: e.target.value})} className="m3-input" placeholder="Payment Method" />
               </div>
             </>
           )}
@@ -1483,17 +1486,20 @@ function ExpenseView({ type, title, icon: Icon, filterDate, setFilterDate, setti
           {(type.startsWith('electricity') || type === 'water_bill') && (
             <>
               <div>
-                <label className="text-[10px] text-neutral-500 uppercase font-black mb-1 block ml-1">Amount</label>
-                <input type="number" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="w-full rounded-2xl p-4 outline-none" style={{background:'#F3EEFF', border:'1.5px solid #D0B8FF', color:'#1C1B1F'}} placeholder="0.00" />
+                <label className="text-xs font-semibold uppercase tracking-wider pl-1 mb-1 block" style={{color:'#6750A4'}}>Amount</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2" style={{color:'var(--m3-on-surface-muted)'}}>{settings.currency}</span>
+                  <input type="number" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="m3-input pl-8" placeholder="0.00" />
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-4">
                 <div className="min-w-0">
-                  <label className="text-[10px] font-black mb-1 block ml-1" style={{color:'#6750A4'}}>Due Date</label>
-                  <input type="date" value={formData.dueDate} onChange={e => setFormData({...formData, dueDate: e.target.value})} className="w-full rounded-2xl p-4 text-xs outline-none" style={{background:'#F3EEFF', border:'1.5px solid #D0B8FF', color:'#1C1B1F'}} />
+                  <label className="text-xs font-semibold uppercase tracking-wider pl-1 mb-1 block" style={{color:'#6750A4'}}>Due Date</label>
+                  <input type="date" value={formData.dueDate} onChange={e => setFormData({...formData, dueDate: e.target.value})} className="m3-input" />
                 </div>
                 <div className="min-w-0">
-                  <label className="text-[10px] font-black mb-1 block ml-1" style={{color:'#6750A4'}}>Payment Date</label>
-                  <input type="date" value={formData.paymentDate} onChange={e => setFormData({...formData, paymentDate: e.target.value})} className="w-full rounded-2xl p-4 text-xs outline-none" style={{background:'#F3EEFF', border:'1.5px solid #D0B8FF', color:'#1C1B1F'}} />
+                  <label className="text-xs font-semibold uppercase tracking-wider pl-1 mb-1 block" style={{color:'#6750A4'}}>Payment Date</label>
+                  <input type="date" value={formData.paymentDate} onChange={e => setFormData({...formData, paymentDate: e.target.value})} className="m3-input" />
                 </div>
               </div>
             </>
@@ -1502,25 +1508,28 @@ function ExpenseView({ type, title, icon: Icon, filterDate, setFilterDate, setti
           {type === 'other_expenses' && (
             <>
               <div>
-                <label className="text-[10px] text-neutral-500 uppercase font-black mb-1 block ml-1">Item Name</label>
-                <input type="text" value={formData.itemName} onChange={e => setFormData({...formData, itemName: e.target.value})} className="w-full rounded-2xl p-4 outline-none" style={{background:'#F3EEFF', border:'1.5px solid #D0B8FF', color:'#1C1B1F'}} placeholder="Describe expense" />
+                <label className="text-xs font-semibold uppercase tracking-wider pl-1 mb-1 block" style={{color:'#6750A4'}}>Item Name</label>
+                <input type="text" value={formData.itemName} onChange={e => setFormData({...formData, itemName: e.target.value})} className="m3-input" placeholder="Describe expense" />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-4">
                 <div className="min-w-0">
-                  <label className="text-[10px] font-black mb-1 block ml-1" style={{color:'#6750A4'}}>Amount</label>
-                  <input type="number" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="w-full rounded-2xl p-4 outline-none" style={{background:'#F3EEFF', border:'1.5px solid #D0B8FF', color:'#1C1B1F'}} placeholder="0.00" />
+                  <label className="text-xs font-semibold uppercase tracking-wider pl-1 mb-1 block" style={{color:'#6750A4'}}>Amount</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2" style={{color:'var(--m3-on-surface-muted)'}}>{settings.currency}</span>
+                    <input type="number" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="m3-input pl-8" placeholder="0.00" />
+                  </div>
                 </div>
                 <div className="min-w-0">
-                  <label className="text-[10px] font-black mb-1 block ml-1" style={{color:'#6750A4'}}>Payment Date</label>
-                  <input type="date" value={formData.paymentDate} onChange={e => setFormData({...formData, paymentDate: e.target.value})} className="w-full rounded-2xl p-4 text-xs outline-none" style={{background:'#F3EEFF', border:'1.5px solid #D0B8FF', color:'#1C1B1F'}} />
+                  <label className="text-xs font-semibold uppercase tracking-wider pl-1 mb-1 block" style={{color:'#6750A4'}}>Payment Date</label>
+                  <input type="date" value={formData.paymentDate} onChange={e => setFormData({...formData, paymentDate: e.target.value})} className="m3-input" />
                 </div>
               </div>
             </>
           )}
 
           <div>
-            <label className="text-[10px] text-neutral-500 uppercase font-black mb-1 block ml-1">Note</label>
-            <textarea value={formData.note} onChange={e => setFormData({...formData, note: e.target.value})} className="w-full rounded-2xl p-4 outline-none min-h-[80px]" style={{background:'#F3EEFF', border:'1.5px solid #D0B8FF', color:'#1C1B1F'}} placeholder="Add details..." />
+            <label className="text-xs font-semibold uppercase tracking-wider pl-1 mb-1 block" style={{color:'#6750A4'}}>Note</label>
+            <textarea value={formData.note} onChange={e => setFormData({...formData, note: e.target.value})} className="m3-input min-h-[80px]" placeholder="Add details..." />
           </div>
 
           <div className="pt-4 flex gap-3">

@@ -233,24 +233,33 @@ html, body {
 
   /* M3 Input */
   .m3-input {
+    display: block;
     box-sizing: border-box;
     min-width: 0;
     background: var(--m3-input-bg);
     border: 1.5px solid var(--m3-input-border);
     color: var(--m3-on-surface);
     border-radius: 16px;
-    padding: 12px 14px;
+    padding: 12px 16px;
     width: 100%;
     outline: none;
     font-family: inherit;
-    font-size: 14px;
+    font-size: 16px; /* 16px prevents iOS zoom on focus */
     transition: border-color 0.2s ease;
   }
 
-  /* Specific handling for date inputs which can be bulky on iOS */
+  /* Specific handling for date inputs to ensure they match width of text inputs */
+  input[type="date"].m3-input,
+  input[type="number"].m3-input,
+  input[type="text"].m3-input {
+    width: 100% !important;
+    max-width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
   input[type="date"].m3-input {
-    padding-right: 8px;
-    min-height: 48px;
+    min-height: 52px;
   }
 
   .m3-input:focus {

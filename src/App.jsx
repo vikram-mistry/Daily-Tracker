@@ -360,13 +360,13 @@ const BottomSheet = ({ isOpen, onClose, title, children, isCentered = false }) =
             className="absolute inset-0 z-50"
             style={{background:'rgba(0,0,0,0.5)', backdropFilter:'blur(4px)'}}
           />
-          <div className={`fixed inset-0 z-50 flex ${isCentered ? 'items-center justify-center p-4' : 'items-end'}`}>
+          <div className={`fixed inset-0 z-50 flex ${isCentered ? 'items-center justify-center p-4' : 'items-end'}`} style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
             <motion.div
               initial={isCentered ? { scale: 0.9, opacity: 0 } : { y: '100%' }}
               animate={isCentered ? { scale: 1, opacity: 1 } : { y: 0 }}
               exit={isCentered ? { scale: 0.9, opacity: 0 } : { y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className={`w-full max-w-lg max-h-[85vh] overflow-y-auto m3-sheet
+              className={`w-full max-w-lg max-h-[80svh] overflow-y-auto m3-sheet
                 ${isCentered ? 'relative' : ''}`}
               style={{borderRadius: isCentered ? '28px' : '28px 28px 0 0', paddingBottom: isCentered ? 0 : 48}}
             >

@@ -856,24 +856,24 @@ function GasView({ filterDate, setFilterDate, settings }) {
       <BottomSheet isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingEntry ? "Edit Cylinder" : "Add Cylinder"}>
          <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-semibold uppercase tracking-wider pl-1" style={{color:'#6750A4'}}>Install Date</label>
+            <div className="min-w-0">
+              <label className="text-xs font-semibold uppercase tracking-wider pl-1 block truncate" style={{color:'#6750A4'}}>Install Date</label>
               <input type="date" value={formData.installDate} onChange={e => setFormData({...formData, installDate: e.target.value})} className="m3-input mt-1" />
             </div>
-            <div>
-              <label className="text-xs font-semibold uppercase tracking-wider pl-1" style={{color:'#6750A4'}}>End Date (Optional)</label>
+            <div className="min-w-0">
+              <label className="text-xs font-semibold uppercase tracking-wider pl-1 block truncate" style={{color:'#6750A4'}}>End Date (Optional)</label>
               <input type="date" value={formData.uninstallDate} onChange={e => setFormData({...formData, uninstallDate: e.target.value})} className="m3-input mt-1 text-sm" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div>
+            <div className="min-w-0">
               <label className="text-xs font-semibold uppercase tracking-wider pl-1" style={{color:'#6750A4'}}>Amount</label>
                <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2" style={{color:'var(--m3-on-surface-muted)'}}>{settings.currency}</span>
                 <input type="number" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="m3-input pl-8 mt-1 text-xl font-bold" placeholder="0.00" />
               </div>
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="text-xs font-semibold uppercase tracking-wider pl-1" style={{color:'#6750A4'}}>Weight (KG)</label>
               <input type="number" step="0.1" value={formData.weight} onChange={e => setFormData({...formData, weight: e.target.value})} className="m3-input mt-1 text-xl font-bold" />
             </div>
@@ -1000,19 +1000,19 @@ function CustomCategoryView({ categoryId, categories, settings, filterDate, setF
       <BottomSheet isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingEntry ? `Edit ${category.name}` : `Add ${category.name}`}>
          <div className="space-y-4">
           <div>
-            <label className="text-xs text-neutral-400 uppercase font-semibold pl-1">Date</label>
-            <input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="w-full bg-black/50 border border-white/10 rounded-xl p-4 text-white mt-1 outline-none" />
+            <label className="text-xs font-semibold uppercase tracking-wider pl-1" style={{color:'var(--m3-on-surface-muted)'}}>Date</label>
+            <input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="m3-input mt-1" />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs text-neutral-400 uppercase font-semibold pl-1">Quantity</label>
-              <input type="number" value={formData.qty} onChange={e => setFormData({...formData, qty: e.target.value})} className="w-full bg-black/50 border border-white/10 rounded-xl p-4 text-white mt-1 text-xl font-bold outline-none" />
+            <div className="min-w-0">
+              <label className="text-xs font-semibold uppercase tracking-wider pl-1" style={{color:'var(--m3-on-surface-muted)'}}>Quantity</label>
+              <input type="number" value={formData.qty} onChange={e => setFormData({...formData, qty: e.target.value})} className="m3-input mt-1 text-xl font-bold" />
             </div>
-            <div>
-              <label className="text-xs text-neutral-400 uppercase font-semibold pl-1">Total Amount</label>
+            <div className="min-w-0">
+              <label className="text-xs font-semibold uppercase tracking-wider pl-1" style={{color:'var(--m3-on-surface-muted)'}}>Total Amount</label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400">{settings.currency}</span>
-                <input type="number" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="w-full bg-black/50 border border-white/10 rounded-xl p-4 pl-8 text-white mt-1 text-xl font-bold outline-none" />
+                <span className="absolute left-4 top-1/2 -translate-y-1/2" style={{color:'var(--m3-on-surface-muted)'}}>{settings.currency}</span>
+                <input type="number" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="m3-input pl-8 mt-1 text-xl font-bold" placeholder="0.00" />
               </div>
             </div>
           </div>

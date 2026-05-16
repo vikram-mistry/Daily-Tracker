@@ -219,72 +219,77 @@ html, body {
 /* ==========================================
    MATERIAL YOU — STRUCTURAL COMPONENTS
    ========================================== */
+@layer components {
+  /* M3 Card */
+  .m3-card {
+    background: var(--m3-card);
+    border: 1px solid var(--m3-card-border);
+    box-shadow: var(--m3-card-shadow);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 24px;
+    overflow: hidden;
+  }
 
-/* M3 Card */
-.m3-card {
-  background: var(--m3-card);
-  border: 1px solid var(--m3-card-border);
-  box-shadow: var(--m3-card-shadow);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-radius: 24px;
-  overflow: hidden;
+  /* M3 Input */
+  .m3-input {
+    box-sizing: border-box;
+    min-width: 0;
+    background: var(--m3-input-bg);
+    border: 1.5px solid var(--m3-input-border);
+    color: var(--m3-on-surface);
+    border-radius: 16px;
+    padding: 16px;
+    width: 100%;
+    outline: none;
+    font-family: inherit;
+    font-size: 14px;
+    transition: border-color 0.2s ease;
+  }
+
+  .m3-input:focus {
+    border-color: #6750A4;
+  }
+
+  /* M3 Select */
+  .m3-select {
+    box-sizing: border-box;
+    min-width: 0;
+    background: var(--m3-select-bg);
+    border: 1.5px solid var(--m3-select-border);
+    color: var(--m3-on-surface);
+    border-radius: 12px;
+    padding: 8px;
+    width: 100%;
+    outline: none;
+    font-family: inherit;
+    appearance: none;
+  }
+
+  /* M3 Swipe Item */
+  .m3-swipe-outer {
+    background: var(--m3-swipe-outer);
+  }
+
+  .m3-swipe-inner {
+    background: var(--m3-swipe-inner) !important;
+    border: 1px solid var(--m3-swipe-inner-border) !important;
+    box-shadow: var(--m3-swipe-inner-shadow) !important;
+  }
+
+  /* M3 Bottom Sheet */
+  .m3-sheet {
+    background: var(--m3-sheet-bg);
+    border: 1px solid var(--m3-sheet-border);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.25);
+  }
+
+  /* M3 text utilities */
+  .m3-text-primary { color: var(--m3-on-surface); }
+  .m3-text-secondary { color: var(--m3-on-surface-variant); }
+  .m3-text-muted { color: var(--m3-on-surface-muted); }
+  .m3-divider { border-color: var(--m3-divider); }
 }
-
-/* M3 Input */
-.m3-input {
-  background: var(--m3-input-bg);
-  border: 1.5px solid var(--m3-input-border);
-  color: var(--m3-on-surface);
-  border-radius: 16px;
-  padding: 16px;
-  width: 100%;
-  outline: none;
-  font-family: inherit;
-  font-size: 14px;
-  transition: border-color 0.2s ease;
-}
-
-.m3-input:focus {
-  border-color: #6750A4;
-}
-
-/* M3 Select */
-.m3-select {
-  background: var(--m3-select-bg);
-  border: 1.5px solid var(--m3-select-border);
-  color: var(--m3-on-surface);
-  border-radius: 12px;
-  padding: 8px;
-  width: 100%;
-  outline: none;
-  font-family: inherit;
-  appearance: none;
-}
-
-/* M3 Swipe Item */
-.m3-swipe-outer {
-  background: var(--m3-swipe-outer);
-}
-
-.m3-swipe-inner {
-  background: var(--m3-swipe-inner) !important;
-  border: 1px solid var(--m3-swipe-inner-border) !important;
-  box-shadow: var(--m3-swipe-inner-shadow) !important;
-}
-
-/* M3 Bottom Sheet */
-.m3-sheet {
-  background: var(--m3-sheet-bg);
-  border: 1px solid var(--m3-sheet-border);
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.25);
-}
-
-/* M3 text utilities */
-.m3-text-primary { color: var(--m3-on-surface); }
-.m3-text-secondary { color: var(--m3-on-surface-variant); }
-.m3-text-muted { color: var(--m3-on-surface-muted); }
-.m3-divider { border-color: var(--m3-divider); }
 
 /* ==========================================
    INPUT DATE/NUMBER COLOR SCHEME

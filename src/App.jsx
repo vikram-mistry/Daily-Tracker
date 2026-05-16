@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { 
   Milk, Flame, Plus, Settings, Calendar, ChevronLeft, ChevronRight, 
@@ -350,14 +351,14 @@ const NavIcon = ({ icon: Icon, label, isActive, onClick }) => (
 // 4. UI COMPONENTS (SHEET, HEADER)
 // ==========================================
 const BottomSheet = ({ isOpen, onClose, title, children, isCentered = false }) => {
-  return (
+  const content = (
     <AnimatePresence>
       {isOpen && (
         <>
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 z-50"
+            className="fixed inset-0 z-50"
             style={{background:'rgba(0,0,0,0.5)', backdropFilter:'blur(4px)'}}
           />
           <div className={`fixed inset-0 z-50 flex ${isCentered ? 'items-center justify-center p-4' : 'items-end'}`} style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
@@ -384,6 +385,9 @@ const BottomSheet = ({ isOpen, onClose, title, children, isCentered = false }) =
       )}
     </AnimatePresence>
   );
+
+  if (typeof document === 'undefined') return null;
+  return createPortal(content, document.body);
 };
 
 const StickyHeader = ({ title, date, setDate }) => {

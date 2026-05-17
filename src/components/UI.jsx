@@ -105,7 +105,7 @@ const StickyHeader = ({ title, date, setDate, hideMonthFilter = false }) => {
   const handleNext = () => setDate(new Date(date.getFullYear(), date.getMonth() + 1, 1));
   return (
     <div className="sticky top-0 pt-12 pb-4 px-2 z-30 flex justify-between items-end mb-6" style={{background:'var(--m3-header-bg)', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', borderBottom:'1px solid var(--m3-header-border)'}}>
-      <h1 className="text-2xl font-bold tracking-tight" style={{color:'var(--m3-on-surface)'}}>{title}</h1>
+      <h1 className="text-2xl font-bold tracking-tight pl-12" style={{color:'var(--m3-on-surface)'}}>{title}</h1>
       {!hideMonthFilter && (
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{background:'var(--m3-input-bg)', border:'1px solid var(--m3-input-border)'}}>
           <motion.button whileTap={{scale:0.85}} onClick={handlePrev} style={{color:'#6750A4'}}><ChevronLeft size={16}/></motion.button>

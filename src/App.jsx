@@ -14,6 +14,8 @@ import CustomCategoryView from './views/CustomCategoryView';
 import SettingsView from './views/SettingsView';
 import WaterView from './views/WaterView';
 import ExpenseView from './views/ExpenseView';
+import { auth, provider, signInWithPopup, signOut } from './firebase';
+import { LogIn, LogOut, RefreshCw, User } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('milk'); // milk, gas, settings, custom-{id}
@@ -21,11 +23,61 @@ export default function App() {
   const [categories, setCategories] = useState([]);
   const [isReady, setIsReady] = useState(false);
   
+  // Firebase Auth and Sync State
+  const [user, setUser] = useState(auth.currentUser);
+  const [syncing, setSyncing] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+
   // Modals state
   const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
   
   // Global Month/Year filter
   const [filterDate, setFilterDate] = useState(new Date());
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((u) => {
+      setUser(u);
+      if (u) {
+        db.syncUpAndDown();
+      }
+    });
+    return unsubscribe;
+  }, []);
+
+  const handleGoogleLogin = async () => {
+    try {
+      await signInWithPopup(auth, provider);
+      alert('Logged in successfully! Syncing your data...');
+      setIsProfileOpen(false);
+    } catch (e) {
+      alert('Login failed: ' + e.message);
+    }
+  };
+
+  const handleSignOut = async () => {
+    if (window.confirm('Are you sure you want to sign out? Your offline data remains safe.')) {
+      try {
+        await signOut(auth);
+        setUser(null);
+        alert('Logged out successfully.');
+        setIsProfileOpen(false);
+      } catch (e) {
+        alert('Sign out failed.');
+      }
+    }
+  };
+
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      await db.syncUpAndDown();
+      alert('Sync Complete!');
+    } catch (e) {
+      alert('Sync failed: ' + e.message);
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   // Load Initial Data
   useEffect(() => {
@@ -66,6 +118,31 @@ export default function App() {
       {/* Mobile Wrapper */}
       <div className="max-w-md mx-auto h-screen flex flex-col relative overflow-hidden" style={{background:'var(--m3-bg-app)'}}>
         
+        {/* Profile/Google Account Button in Top Left Corner */}
+        <div className="absolute top-12 left-4 z-40">
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setIsProfileOpen(true)}
+            className="w-9 h-9 rounded-full flex items-center justify-center border shadow-sm overflow-hidden"
+            style={{
+              background: 'var(--m3-input-bg)',
+              borderColor: 'var(--m3-input-border)',
+            }}
+          >
+            {user ? (
+              user.photoURL ? (
+                <img src={user.photoURL} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <span className="font-bold text-sm text-purple-600">
+                  {user.displayName ? user.displayName[0] : 'U'}
+                </span>
+              )
+            ) : (
+              <User size={18} style={{ color: 'var(--m3-on-surface-muted)' }} />
+            )}
+          </motion.button>
+        </div>
+
         {/* Main Content Area - Scrollable */}
         <div className="flex-1 overflow-y-auto pb-24 scroll-smooth">
           <AnimatePresence mode="wait">
@@ -130,6 +207,67 @@ export default function App() {
              <ExpenseMenuItem icon={Droplet} label="Water Bill" onClick={() => { setActiveTab('water-bill'); setIsAddSheetOpen(false); }} color="#3b82f6" />
              <ExpenseMenuItem icon={Train} label="Travel" onClick={() => { setActiveTab('other'); setIsAddSheetOpen(false); }} color="#8b5cf6" />
           </div>
+        </BottomSheet>
+
+        {/* Google Cloud Sync / Profile Modal */}
+        <BottomSheet isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} title="Account & Sync" isCentered={true}>
+          {user ? (
+            <div className="space-y-6 text-center py-2" style={{color:'var(--m3-on-surface)'}}>
+              <div className="flex flex-col items-center gap-2">
+                {user.photoURL ? (
+                  <img src={user.photoURL} alt="Avatar" className="w-16 h-16 rounded-full border shadow-sm" />
+                ) : (
+                  <div className="w-16 h-16 rounded-full flex items-center justify-center bg-purple-100 text-purple-600 font-bold text-2xl">
+                    {user.displayName ? user.displayName[0] : 'U'}
+                  </div>
+                )}
+                <div>
+                  <h3 className="font-bold text-lg">{user.displayName || 'Google User'}</h3>
+                  <p className="text-sm text-gray-500">{user.email}</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={handleSync}
+                  disabled={syncing}
+                  className="w-full flex items-center justify-center gap-2 font-bold py-3.5 rounded-2xl text-sm text-white"
+                  style={{background:'linear-gradient(135deg,#7C3AED,#6750A4)', opacity: syncing ? 0.7 : 1}}
+                >
+                  <RefreshCw size={18} className={syncing ? 'animate-spin' : ''} />
+                  {syncing ? 'Syncing Cloud...' : 'Sync Data Now'}
+                </motion.button>
+
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={handleSignOut}
+                  className="w-full flex items-center justify-center gap-2 font-bold py-3.5 rounded-2xl text-sm border text-red-500 border-red-200"
+                >
+                  <LogOut size={18} />
+                  Sign Out
+                </motion.button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-4" style={{color:'var(--m3-on-surface)'}}>
+              <div className="w-16 h-16 mx-auto rounded-full bg-purple-50 flex items-center justify-center mb-4 text-purple-600 border border-purple-100">
+                <User size={32} />
+              </div>
+              <h3 className="font-bold text-lg mb-2">Cloud Backup & Sync</h3>
+              <p className="text-sm text-gray-500 mb-6 px-4">Sync your expenses securely to your private cloud storage and access them across all your devices.</p>
+              
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={handleGoogleLogin}
+                className="w-full flex items-center justify-center gap-3 font-bold py-4 rounded-2xl text-sm text-white shadow-md"
+                style={{background:'linear-gradient(135deg,#6750A4,#4A90D9)'}}
+              >
+                <LogIn size={20} />
+                Sign in with Google
+              </motion.button>
+            </div>
+          )}
         </BottomSheet>
       </div>
     </div>

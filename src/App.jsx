@@ -578,7 +578,7 @@ function MilkView({ filterDate, setFilterDate, settings }) {
       
       {/* Summary Card */}
       <GlassCard className="p-5 mb-6 relative overflow-hidden" style={{background:'linear-gradient(135deg,#C8E6FF 0%,#EDE7F6 100%)'}}>
-        <img src="./cow-icon.png" alt="Happy Cow" className="absolute pointer-events-none" style={{width:'100px', height:'100px', right:'0px', top:'45%', transform:'translateY(-50%)', objectFit:'contain', opacity:0.85}} />
+        <img src="./cow-icon.png" alt="Happy Cow" className="absolute pointer-events-none" style={{width:'100px', height:'100px', right:'0px', top:'50%', transform:'translateY(-50%)', objectFit:'contain', opacity:0.85}} />
         <div className="grid grid-cols-2 gap-4 relative z-10">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color:'#49454F'}}>Total Amount</p>
@@ -600,13 +600,12 @@ function MilkView({ filterDate, setFilterDate, settings }) {
 
         {/* Share Report Button */}
         <motion.button
-          whileTap={{ scale: 0.97 }}
+          whileTap={{ scale: 0.9 }}
           onClick={handleShareReport}
-          className="relative z-10 mt-5 w-full flex items-center justify-center gap-2 font-bold py-3 rounded-2xl"
-          style={{background:'linear-gradient(135deg,#6750A4,#4A90D9)', color:'#fff', boxShadow:'0 4px 16px rgba(103,80,164,0.3)'}}
+          className="relative z-10 mt-4 flex items-center justify-center w-10 h-10 rounded-full"
+          style={{background:'linear-gradient(135deg,#6750A4,#4A90D9)', color:'#fff', boxShadow:'0 4px 12px rgba(103,80,164,0.3)'}}
         >
           <Share2 size={18} />
-          Share Monthly Report
         </motion.button>
       </GlassCard>
 
@@ -1607,21 +1606,22 @@ function ExpenseView({ type, title, icon: Icon, filterDate, setFilterDate, setti
       <StickyHeader title={title} date={filterDate} setDate={setFilterDate} hideMonthFilter={isBill} />
       
       <GlassCard className="p-6 mb-6 relative overflow-hidden" style={{background:'linear-gradient(135deg,#F8F4FF 0%,#EEF6FF 100%)', border:'1px solid #EDE7F6'}}>
-        {cardIcon && <img src={cardIcon} alt="Icon" className="absolute pointer-events-none" style={{width:'100px', height:'100px', right:'0px', top:'45%', transform:'translateY(-50%)', objectFit:'contain', opacity:0.85}} />}
-        <div className="relative z-10">
-          <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{color:'#79747E'}}>{isBill ? 'Total Spending' : 'Monthly Spending'}</p>
-          <p className="text-4xl font-black" style={{color:'#1C1B1F'}}>{settings.currency}{totalAmount}</p>
+        {cardIcon && <img src={cardIcon} alt="Icon" className="absolute pointer-events-none" style={{width:'100px', height:'100px', right:'0px', top:'50%', transform:'translateY(-50%)', objectFit:'contain', opacity:0.85}} />}
+        <div className="relative z-10 flex flex-col">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{color:'#79747E'}}>{isBill ? 'Total Spending' : 'Monthly Spending'}</p>
+            <p className="text-4xl font-black" style={{color:'#1C1B1F'}}>{settings.currency}{totalAmount}</p>
+          </div>
+          
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={handleShareReport}
+            className="mt-4 flex items-center justify-center w-10 h-10 rounded-full"
+            style={{background:'linear-gradient(135deg,#6750A4,#4A90D9)', color:'#fff', boxShadow:'0 4px 12px rgba(103,80,164,0.3)'}}
+          >
+            <Share2 size={18} />
+          </motion.button>
         </div>
-        
-        <motion.button
-          whileTap={{ scale: 0.97 }}
-          onClick={handleShareReport}
-          className="relative z-10 mt-5 w-full flex items-center justify-center gap-2 font-bold py-3 rounded-2xl"
-          style={{background:'linear-gradient(135deg,#6750A4,#4A90D9)', color:'#fff', boxShadow:'0 4px 16px rgba(103,80,164,0.3)'}}
-        >
-          <Share2 size={18} />
-          Share Report
-        </motion.button>
       </GlassCard>
 
       <div className="flex justify-between items-center mb-4">

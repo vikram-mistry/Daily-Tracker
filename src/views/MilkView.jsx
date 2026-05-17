@@ -219,8 +219,18 @@ function MilkView({ filterDate, setFilterDate, settings }) {
         <motion.button
           whileTap={{scale:0.95}}
           onClick={() => { setIsSelectMode(!isSelectMode); setSelectedDates([]); }}
-          className="text-sm font-semibold px-4 py-1.5 rounded-full"
-          style={isSelectMode ? {background:'#FFCAA5', color:'#7C3010'} : {background:'#EDE7F6', color:'#6750A4'}}
+          className="text-sm font-semibold px-4 py-1.5 rounded-full transition-colors"
+          style={isSelectMode 
+            ? {
+                background: settings.theme === 'dark' ? '#047857' : '#A7F3D0', 
+                color: settings.theme === 'dark' ? '#FFFFFF' : '#064E3B'
+              } 
+            : {
+                background: 'var(--m3-input-bg)', 
+                color: 'var(--m3-on-surface)',
+                border: '1px solid var(--m3-input-border)'
+              }
+          }
         >
           {isSelectMode ? 'Cancel' : 'Bulk Pause'}
         </motion.button>
@@ -258,18 +268,32 @@ function MilkView({ filterDate, setFilterDate, settings }) {
               onContextMenu={(e) => { e.preventDefault(); togglePauseStatus(dateStr); }} // Quick pause on long press/right click
               className={`
                 aspect-square rounded-2xl flex flex-col items-center justify-center relative transition-all border
-                ${isToday ? 'border-[#6750A4]' : 'border-transparent'}
-                ${isSelected ? 'border-[#E67E22]' : 
-                  entry?.isPaused ? 'border-dashed border-[#E67E22] opacity-60' : 
-                  entry ? 'border-[#4A90D9]/40' : 'border-transparent'}
+                ${isToday ? (settings.theme === 'dark' ? 'border-[#34D399]' : 'border-[#27AE90]') : 'border-transparent'}
+                ${isSelected ? (settings.theme === 'dark' ? 'border-[#34D399]' : 'border-[#047857]') : 
+                  entry?.isPaused ? (settings.theme === 'dark' ? 'border-dashed border-[#FBBF24]' : 'border-dashed border-[#F59E0B]') : 
+                  entry ? (settings.theme === 'dark' ? 'border-[#34D399]/30' : 'border-[#27AE90]/30') : 'border-transparent'}
               `}
               style={{
-                background: isSelected ? '#FFCAA5' : entry?.isPaused ? '#FFF3E0' : entry ? '#C8E6FF' : 'rgba(103,80,164,0.06)'
+                background: isSelected 
+                  ? (settings.theme === 'dark' ? '#047857' : '#A7F3D0') 
+                  : entry?.isPaused 
+                    ? (settings.theme === 'dark' ? 'rgba(245,158,11,0.2)' : '#FEF3C7') 
+                    : entry 
+                      ? (settings.theme === 'dark' ? 'rgba(167,243,208,0.2)' : 'rgba(194,240,216,0.4)') 
+                      : 'rgba(103,80,164,0.06)'
               }}
             >
-              <span className="text-sm font-semibold" style={{color: entry ? '#1C1B1F' : '#79747E'}}>{dayNum}</span>
-              {entry && !entry.isPaused && <span className="text-[9px] font-bold" style={{color:'#4A90D9'}}>{entry.qty}L</span>}
-              {entry?.isPaused && <PauseCircle size={12} className="mt-1 absolute bottom-1" style={{color:'#E67E22'}} />}
+              <span className="text-sm font-semibold" style={{
+                color: isSelected 
+                  ? (settings.theme === 'dark' ? '#FFFFFF' : '#064E3B') 
+                  : entry?.isPaused
+                    ? (settings.theme === 'dark' ? '#FDE047' : '#78350F')
+                    : entry 
+                      ? 'var(--m3-on-surface)' 
+                      : 'var(--m3-on-surface-muted)'
+              }}>{dayNum}</span>
+              {entry && !entry.isPaused && <span className="text-[9px] font-bold" style={{color: settings.theme === 'dark' ? '#34D399' : '#27AE90'}}>{entry.qty}L</span>}
+              {entry?.isPaused && <PauseCircle size={12} className="mt-1 absolute bottom-1" style={{color: settings.theme === 'dark' ? '#FBBF24' : '#D97706'}} />}
             </motion.button>
           );
         })}
@@ -294,7 +318,11 @@ function MilkView({ filterDate, setFilterDate, settings }) {
             whileTap={{scale:0.95}}
             onClick={() => setIsListExpanded(!isListExpanded)}
             className="text-sm font-semibold px-4 py-1.5 rounded-full"
-            style={{background:'#C8E6FF', color:'#1A5276'}}
+            style={{
+              background: 'var(--m3-input-bg)', 
+              color: 'var(--m3-on-surface)',
+              border: '1px solid var(--m3-input-border)'
+            }}
           >
             {isListExpanded ? 'Collapse' : 'Expand'}
           </motion.button>

@@ -41,7 +41,14 @@ export default function App() {
         db.syncUpAndDown();
       }
     });
-    return unsubscribe;
+
+    const handleOpenProfile = () => setIsProfileOpen(true);
+    window.addEventListener('open-profile', handleOpenProfile);
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener('open-profile', handleOpenProfile);
+    };
   }, []);
 
   const handleGoogleLogin = async () => {
@@ -118,31 +125,6 @@ export default function App() {
       {/* Mobile Wrapper */}
       <div className="max-w-md mx-auto h-screen flex flex-col relative overflow-hidden" style={{background:'var(--m3-bg-app)'}}>
         
-        {/* Profile/Google Account Button in Top Left Corner */}
-        <div className="absolute top-[53px] left-4" style={{ zIndex: 100, transform: 'translate3d(0,0,0)', WebkitTransform: 'translate3d(0,0,0)' }}>
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setIsProfileOpen(true)}
-            className="w-10 h-10 rounded-full flex items-center justify-center border shadow-sm overflow-hidden"
-            style={{
-              background: 'var(--m3-input-bg)',
-              borderColor: 'var(--m3-input-border)',
-            }}
-          >
-            {user ? (
-              user.photoURL ? (
-                <img src={user.photoURL} alt="Avatar" className="w-full h-full object-cover" />
-              ) : (
-                <span className="font-bold text-sm text-purple-600">
-                  {user.displayName ? user.displayName[0] : 'U'}
-                </span>
-              )
-            ) : (
-              <User size={20} style={{ color: 'var(--m3-on-surface-muted)' }} />
-            )}
-          </motion.button>
-        </div>
-
         {/* Main Content Area - Scrollable */}
         <div className="flex-1 overflow-y-auto pb-24 scroll-smooth">
           <AnimatePresence mode="wait">

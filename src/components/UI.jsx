@@ -4,9 +4,11 @@ import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { 
   Milk, Flame, Plus, Settings, Calendar, ChevronLeft, ChevronRight, 
   Trash2, Edit3, X, Check, Droplet, Zap, Wifi, ShoppingCart, 
-  Wrench, Package, PauseCircle, PlayCircle, Download, Upload, Info, Share2, LayoutGrid, Train
+  Wrench, Package, PauseCircle, PlayCircle, Download, Upload, Info, Share2, LayoutGrid, Train,
+  User
 } from 'lucide-react';
 import { db } from '../db';
+import { auth } from '../firebase';
 
 const GlassCard = ({ children, className = '', onClick, style = {} }) => (
   <motion.div 
@@ -100,12 +102,64 @@ const BottomSheet = ({ isOpen, onClose, title, children, isCentered = false }) =
 };
 
 const StickyHeader = ({ title, date, setDate, hideMonthFilter = false }) => {
+  const [user, setUser] = useState(auth.currentUser);
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((u) => {
+      setUser(u);
+    });
+    return unsubscribe;
+  }, []);
+
   const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const handlePrev = () => setDate(new Date(date.getFullYear(), date.getMonth() - 1, 1));
   const handleNext = () => setDate(new Date(date.getFullYear(), date.getMonth() + 1, 1));
+
+  const handleProfileClick = () => {
+    window.dispatchEvent(new Event('open-profile'));
+  };
+
   return (
-    <div className="sticky top-0 pt-12 pb-4 px-2 z-30 flex justify-between items-end mb-6" style={{background:'var(--m3-header-bg)', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', borderBottom:'1px solid var(--m3-header-border)'}}>
-      <h1 className="text-2xl font-bold tracking-tight pl-16" style={{color:'var(--m3-on-surface)'}}>{title}</h1>
+    <div className="sticky top-0 pt-12 pb-4 px-3 z-30 flex justify-between items-end mb-6" style={{background:'var(--m3-header-bg)', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', borderBottom:'1px solid var(--m3-header-border)'}}>
+      <div className="flex items-center gap-2 pb-0.5">
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          onClick={handleProfileClick}
+          className="w-10 h-10 rounded-full flex items-center justify-center border shadow-sm overflow-hidden flex-shrink-0"
+          style={{
+            background: 'var(--m3-input-bg)',
+            borderColor: 'var(--m3-input-border)',
+          }}
+        >
+          {user ? (
+            user.photoURL ? (
+              <>
+                <img 
+                  src={user.photoURL} 
+                  alt="Avatar" 
+                  className="w-full h-full object-cover" 
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+                <span className="font-bold text-sm text-purple-600 w-full h-full flex items-center justify-center bg-purple-100 hidden">
+                  {user.displayName ? user.displayName[0] : 'U'}
+                </span>
+              </>
+            ) : (
+              <span className="font-bold text-sm text-purple-600 w-full h-full flex items-center justify-center bg-purple-100">
+                {user.displayName ? user.displayName[0] : 'U'}
+              </span>
+            )
+          ) : (
+            <User size={20} style={{ color: 'var(--m3-on-surface-muted)' }} />
+          )}
+        </motion.button>
+        <h1 className="text-2xl font-bold tracking-tight" style={{color:'var(--m3-on-surface)'}}>{title}</h1>
+      </div>
+
       {!hideMonthFilter && (
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{background:'var(--m3-input-bg)', border:'1px solid var(--m3-input-border)'}}>
           <motion.button whileTap={{scale:0.85}} onClick={handlePrev} style={{color:'#6750A4'}}><ChevronLeft size={16}/></motion.button>

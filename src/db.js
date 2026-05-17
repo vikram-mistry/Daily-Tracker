@@ -6,6 +6,8 @@ import {
   Trash2, Edit3, X, Check, Droplet, Zap, Wifi, ShoppingCart, 
   Wrench, Package, PauseCircle, PlayCircle, Download, Upload, Info, Share2, LayoutGrid, Train
 } from 'lucide-react';
+import { firestore, auth } from './firebase';
+import { collection, doc, setDoc, getDocs, deleteDoc } from 'firebase/firestore';
 
 const DB_NAME = 'TrackitProDB';
 const DB_VERSION = 1;
@@ -63,7 +65,7 @@ class LocalDB {
     });
   }
 
-  async get(storeName, key) {
+  async _localGet(storeName, key) {
     await this.init();
     if (this.isFallback) return this.memoryStore[storeName].find(item => item.id === key);
     return new Promise((resolve, reject) => {
@@ -74,7 +76,7 @@ class LocalDB {
     });
   }
 
-  async getAll(storeName) {
+  async _localGetAll(storeName) {
     await this.init();
     if (this.isFallback) return [...this.memoryStore[storeName]];
     return new Promise((resolve, reject) => {
@@ -85,7 +87,7 @@ class LocalDB {
     });
   }
 
-  async put(storeName, item) {
+  async _localPut(storeName, item) {
     await this.init();
     if (this.isFallback) {
       const index = this.memoryStore[storeName].findIndex(i => i.id === item.id);
@@ -101,7 +103,7 @@ class LocalDB {
     });
   }
 
-  async delete(storeName, key) {
+  async _localDelete(storeName, key) {
     await this.init();
     if (this.isFallback) {
       this.memoryStore[storeName] = this.memoryStore[storeName].filter(item => item.id !== key);
@@ -113,6 +115,67 @@ class LocalDB {
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
+  }
+
+  // ==== SYNC WRAPPERS ====
+  async get(storeName, key) {
+    return this._localGet(storeName, key);
+  }
+
+  async getAll(storeName) {
+    return this._localGetAll(storeName);
+  }
+
+  async put(storeName, item) {
+    await this._localPut(storeName, item);
+    const user = auth.currentUser;
+    if (user) {
+      try {
+        await setDoc(doc(firestore, `users/${user.uid}/${storeName}`, String(item.id)), item);
+      } catch (e) { console.error("Firebase sync error on put", e); }
+    }
+    return item;
+  }
+
+  async delete(storeName, key) {
+    await this._localDelete(storeName, key);
+    const user = auth.currentUser;
+    if (user) {
+      try {
+        await deleteDoc(doc(firestore, `users/${user.uid}/${storeName}`, String(key)));
+      } catch (e) { console.error("Firebase sync error on delete", e); }
+    }
+  }
+
+  async syncUpAndDown() {
+    const user = auth.currentUser;
+    if (!user) return;
+    const stores = [
+      'settings', 'milk', 'gas', 'water', 
+      'grocery', 'electricity_lotus', 'electricity_sadri', 
+      'water_bill', 'other_expenses', 'categories', 'custom'
+    ];
+    
+    // 1. Sync Down from Cloud
+    for (let store of stores) {
+      try {
+        const snap = await getDocs(collection(firestore, `users/${user.uid}/${store}`));
+        const cloudDocs = snap.docs.map(d => d.data());
+        for (let item of cloudDocs) {
+          await this._localPut(store, item);
+        }
+      } catch(e) { console.error("Sync down error", e); }
+    }
+
+    // 2. Sync Up to Cloud
+    for (let store of stores) {
+      try {
+        const allLocal = await this._localGetAll(store);
+        for (let item of allLocal) {
+          await setDoc(doc(firestore, `users/${user.uid}/${store}`, String(item.id)), item);
+        }
+      } catch(e) { console.error("Sync up error", e); }
+    }
   }
 
   async clearAll() {
@@ -141,12 +204,9 @@ class LocalDB {
 }
 
 export const db = new LocalDB();
-export { DEFAULT_SETTINGS };
 
-// Default Settings
-const DEFAULT_SETTINGS = {
+export const DEFAULT_SETTINGS = {
   id: 'main', theme: 'light', currency: '₹', 
   milkPrice: 84, milkQty: 1, gasWeight: 14.2,
   waterTarget: 4
 };
-

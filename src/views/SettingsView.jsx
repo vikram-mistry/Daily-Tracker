@@ -8,8 +8,56 @@ import {
 } from 'lucide-react';
 import { db } from '../db';
 import { GlassCard, SwipeableItem, BottomSheet, StickyHeader } from '../components/UI';
+import { auth, provider, signInWithPopup, signOut } from '../firebase';
+import { LogIn, LogOut, RefreshCw } from 'lucide-react';
 
 function SettingsView({ settings, updateSettings, db }) {
+  const [user, setUser] = useState(auth.currentUser);
+  const [syncing, setSyncing] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((u) => {
+      setUser(u);
+      if (u) {
+        db.syncUpAndDown();
+      }
+    });
+    return unsubscribe;
+  }, []);
+
+  const handleGoogleLogin = async () => {
+    try {
+      await signInWithPopup(auth, provider);
+      alert('Logged in successfully! Syncing your data...');
+    } catch (e) {
+      alert('Login failed: ' + e.message);
+    }
+  };
+
+  const handleSignOut = async () => {
+    if (window.confirm('Are you sure you want to sign out? Your offline data remains safe.')) {
+      try {
+        await signOut(auth);
+        setUser(null);
+        alert('Logged out successfully.');
+      } catch (e) {
+        alert('Sign out failed.');
+      }
+    }
+  };
+
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      await db.syncUpAndDown();
+      alert('Sync Complete!');
+    } catch (e) {
+      alert('Sync failed: ' + e.message);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const handleExport = async () => {
     try {
       const data = {
@@ -130,6 +178,64 @@ function SettingsView({ settings, updateSettings, db }) {
             <SettingBlock label="Cylinder Weight (KG)">
               <input type="number" step="0.1" value={settings.gasWeight} onChange={e => updateSettings({ gasWeight: Number(e.target.value) })} className="m3-input text-right" style={{padding:'8px', borderRadius:'12px'}} />
             </SettingBlock>
+          </GlassCard>
+        </section>
+
+        {/* Cloud Sync & Backup */}
+        <section>
+          <h3 className="text-xs font-bold uppercase tracking-widest pl-4 mb-2" style={{color:'#79747E'}}>Cloud Sync & Backup</h3>
+          <GlassCard className="p-4">
+            {user ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  {user.photoURL ? (
+                    <img src={user.photoURL} alt="Avatar" className="w-10 h-10 rounded-full border" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-purple-100 text-purple-600 font-bold">
+                      {user.displayName ? user.displayName[0] : 'U'}
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-semibold text-sm" style={{color:'var(--m3-on-surface)'}}>{user.displayName || 'Google User'}</p>
+                    <p className="text-xs text-gray-500">{user.email}</p>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2">
+                  <motion.button
+                    whileTap={{ scale: 0.97 }}
+                    onClick={handleSync}
+                    disabled={syncing}
+                    className="flex-1 flex items-center justify-center gap-2 font-bold py-2.5 rounded-xl text-sm text-white"
+                    style={{background:'linear-gradient(135deg,#7C3AED,#6750A4)', opacity: syncing ? 0.7 : 1}}
+                  >
+                    <RefreshCw size={16} className={syncing ? 'animate-spin' : ''} />
+                    {syncing ? 'Syncing...' : 'Sync Now'}
+                  </motion.button>
+                  
+                  <motion.button
+                    whileTap={{ scale: 0.97 }}
+                    onClick={handleSignOut}
+                    className="flex items-center justify-center p-2.5 rounded-xl border border-red-200 text-red-500"
+                  >
+                    <LogOut size={16} />
+                  </motion.button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-2">
+                <p className="text-xs text-gray-500 mb-4 px-2">Sync your expenses securely to the cloud to access them across all your devices.</p>
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={handleGoogleLogin}
+                  className="w-full flex items-center justify-center gap-2 font-bold py-3 rounded-xl text-sm text-white"
+                  style={{background:'linear-gradient(135deg,#6750A4,#4A90D9)'}}
+                >
+                  <LogIn size={18} />
+                  Sign in with Google
+                </motion.button>
+              </div>
+            )}
           </GlassCard>
         </section>
 

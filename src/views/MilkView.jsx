@@ -177,12 +177,12 @@ function MilkView({ filterDate, setFilterDate, settings }) {
         className="p-5 mb-6 relative overflow-hidden" 
         style={{
           background: settings.theme === 'dark' 
-            ? 'linear-gradient(135deg, #1E2E4A 0%, #2D234A 100%)' 
+            ? 'linear-gradient(135deg, #2A3C5C 0%, #3A2E5C 100%)' 
             : 'linear-gradient(135deg, #C8E6FF 0%, #EDE7F6 100%)',
-          borderColor: settings.theme === 'dark' ? 'rgba(103, 80, 164, 0.3)' : 'rgba(255, 255, 255, 0.6)'
+          borderColor: settings.theme === 'dark' ? 'rgba(103, 80, 164, 0.4)' : 'rgba(255, 255, 255, 0.6)'
         }}
       >
-        <img src="./cow-icon.png" alt="Happy Cow" className="absolute pointer-events-none" style={{width:'100px', height:'100px', right:'0px', bottom:'20px', objectFit:'contain', opacity: settings.theme === 'dark' ? 0.45 : 0.85}} />
+        <img src="./cow-icon.png" alt="Happy Cow" className="absolute pointer-events-none" style={{width:'100px', height:'100px', right:'0px', bottom:'20px', objectFit:'contain', opacity: settings.theme === 'dark' ? 0.7 : 0.85}} />
         <div className="grid grid-cols-2 gap-4 relative z-10">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color: settings.theme === 'dark' ? 'var(--m3-on-surface-variant)' : '#49454F'}}>Total Amount</p>

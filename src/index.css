@@ -20,10 +20,10 @@
   --m3-swipe-inner-border: #EDE7F6;
   --m3-swipe-inner-shadow: 0 1px 6px rgba(103, 80, 164, 0.08);
   --m3-nav-gradient: linear-gradient(to top, rgba(248,244,255,1) 60%, rgba(248,244,255,0) 100%);
-  --m3-nav-bg: rgba(255, 255, 255, 0.85);
+  --m3-nav-bg: rgba(255, 255, 255, 0.72);
   --m3-nav-border: rgba(237, 231, 246, 0.8);
   --m3-nav-shadow: 0 4px 24px rgba(103, 80, 164, 0.12);
-  --m3-header-bg: rgba(248, 244, 255, 0.92);
+  --m3-header-bg: rgba(248, 244, 255, 0.72);
   --m3-header-border: rgba(103, 80, 164, 0.08);
   --m3-fab-border: rgba(248, 244, 255, 1);
   --m3-input-bg: #F3EEFF;
@@ -98,10 +98,10 @@
   --m3-swipe-inner-border: rgba(103, 80, 164, 0.2);
   --m3-swipe-inner-shadow: 0 1px 8px rgba(0,0,0,0.3);
   --m3-nav-gradient: linear-gradient(to top, rgba(18,16,26,1) 60%, rgba(18,16,26,0) 100%);
-  --m3-nav-bg: rgba(30, 27, 44, 0.92);
+  --m3-nav-bg: rgba(30, 27, 44, 0.65);
   --m3-nav-border: rgba(103, 80, 164, 0.35);
   --m3-nav-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
-  --m3-header-bg: rgba(18, 16, 26, 0.95);
+  --m3-header-bg: rgba(26, 24, 37, 0.65);
   --m3-header-border: rgba(103, 80, 164, 0.15);
   --m3-fab-border: rgba(18, 16, 26, 1);
   --m3-input-bg: #2D2840;

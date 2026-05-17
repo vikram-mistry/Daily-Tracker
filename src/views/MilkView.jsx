@@ -173,24 +173,32 @@ function MilkView({ filterDate, setFilterDate, settings }) {
       <StickyHeader title="Milk Tracker" date={filterDate} setDate={setFilterDate} />
       
       {/* Summary Card */}
-      <GlassCard className="p-5 mb-6 relative overflow-hidden" style={{background:'linear-gradient(135deg,#C8E6FF 0%,#EDE7F6 100%)'}}>
-        <img src="./cow-icon.png" alt="Happy Cow" className="absolute pointer-events-none" style={{width:'100px', height:'100px', right:'0px', bottom:'20px', objectFit:'contain', opacity:0.85}} />
+      <GlassCard 
+        className="p-5 mb-6 relative overflow-hidden" 
+        style={{
+          background: settings.theme === 'dark' 
+            ? 'linear-gradient(135deg, #1E2E4A 0%, #2D234A 100%)' 
+            : 'linear-gradient(135deg, #C8E6FF 0%, #EDE7F6 100%)',
+          borderColor: settings.theme === 'dark' ? 'rgba(103, 80, 164, 0.3)' : 'rgba(255, 255, 255, 0.6)'
+        }}
+      >
+        <img src="./cow-icon.png" alt="Happy Cow" className="absolute pointer-events-none" style={{width:'100px', height:'100px', right:'0px', bottom:'20px', objectFit:'contain', opacity: settings.theme === 'dark' ? 0.45 : 0.85}} />
         <div className="grid grid-cols-2 gap-4 relative z-10">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color:'#49454F'}}>Total Amount</p>
-            <p className="text-3xl font-bold" style={{color:'#1A1C1E'}}>{settings.currency}{stats.amount}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color: settings.theme === 'dark' ? 'var(--m3-on-surface-variant)' : '#49454F'}}>Total Amount</p>
+            <p className="text-3xl font-bold" style={{color: settings.theme === 'dark' ? '#FFFFFF' : '#1A1C1E'}}>{settings.currency}{stats.amount}</p>
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color:'#49454F'}}>Total Quantity</p>
-            <p className="text-3xl font-bold" style={{color:'#1A1C1E'}}>{stats.qty} L</p>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color: settings.theme === 'dark' ? 'var(--m3-on-surface-variant)' : '#49454F'}}>Total Quantity</p>
+            <p className="text-3xl font-bold" style={{color: settings.theme === 'dark' ? '#FFFFFF' : '#1A1C1E'}}>{stats.qty} L</p>
           </div>
-          <div className="pt-3" style={{borderTop:'1px solid rgba(103,80,164,0.15)'}}>
-            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color:'#49454F'}}>Active Days</p>
-            <p className="text-xl font-bold" style={{color:'#1B6E3A'}}>{stats.active}</p>
+          <div className="pt-3" style={{borderTop: settings.theme === 'dark' ? '1px solid rgba(255,255,255,0.15)' : '1px solid rgba(103,80,164,0.15)'}}>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color: settings.theme === 'dark' ? 'var(--m3-on-surface-variant)' : '#49454F'}}>Active Days</p>
+            <p className="text-xl font-bold" style={{color: settings.theme === 'dark' ? '#81C784' : '#1B6E3A'}}>{stats.active}</p>
           </div>
-          <div className="pt-3" style={{borderTop:'1px solid rgba(103,80,164,0.15)'}}>
-            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color:'#49454F'}}>Pause Days</p>
-            <p className="text-xl font-bold" style={{color:'#B85C00'}}>{stats.pause}</p>
+          <div className="pt-3" style={{borderTop: settings.theme === 'dark' ? '1px solid rgba(255,255,255,0.15)' : '1px solid rgba(103,80,164,0.15)'}}>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color: settings.theme === 'dark' ? 'var(--m3-on-surface-variant)' : '#49454F'}}>Pause Days</p>
+            <p className="text-xl font-bold" style={{color: settings.theme === 'dark' ? '#FFB74D' : '#B85C00'}}>{stats.pause}</p>
           </div>
         </div>
 

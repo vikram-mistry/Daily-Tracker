@@ -110,20 +110,28 @@ function GasView({ filterDate, setFilterDate, settings }) {
       <StickyHeader title="Gas Tracker" date={filterDate} setDate={setFilterDate} />
 
       {/* Summary Card */}
-      <GlassCard className="p-5 mb-6 relative overflow-hidden" style={{background:'linear-gradient(135deg,#FFE0C8 0%,#FFECD8 100%)'}}>
-        <img src="./gas-icon.png" alt="Gas" className="absolute pointer-events-none" style={{width:'100px', height:'100px', right:'0px', top:'45%', transform:'translateY(-50%)', objectFit:'contain', opacity:0.85}} />
+      <GlassCard 
+        className="p-5 mb-6 relative overflow-hidden" 
+        style={{
+          background: settings.theme === 'dark' 
+            ? 'linear-gradient(135deg, #3D2515 0%, #2B1A10 100%)' 
+            : 'linear-gradient(135deg, #FFE0C8 0%, #FFECD8 100%)',
+          borderColor: settings.theme === 'dark' ? 'rgba(230, 126, 34, 0.3)' : 'rgba(255, 255, 255, 0.6)'
+        }}
+      >
+        <img src="./gas-icon.png" alt="Gas" className="absolute pointer-events-none" style={{width:'100px', height:'100px', right:'0px', top:'45%', transform:'translateY(-50%)', objectFit:'contain', opacity: settings.theme === 'dark' ? 0.45 : 0.85}} />
         <div className="grid grid-cols-2 gap-4 relative z-10">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color:'#49454F'}}>New Cylinders</p>
-            <p className="text-3xl font-bold" style={{color:'#1C1B1F'}}>{stats.cylindersUsed}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color: settings.theme === 'dark' ? 'var(--m3-on-surface-variant)' : '#49454F'}}>New Cylinders</p>
+            <p className="text-3xl font-bold" style={{color: settings.theme === 'dark' ? '#FFFFFF' : '#1C1B1F'}}>{stats.cylindersUsed}</p>
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color:'#49454F'}}>Total Spend</p>
-            <p className="text-3xl font-bold" style={{color:'#1C1B1F'}}>{settings.currency}{stats.totalSpend}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color: settings.theme === 'dark' ? 'var(--m3-on-surface-variant)' : '#49454F'}}>Total Spend</p>
+            <p className="text-3xl font-bold" style={{color: settings.theme === 'dark' ? '#FFFFFF' : '#1C1B1F'}}>{settings.currency}{stats.totalSpend}</p>
           </div>
-          <div className="col-span-2 pt-3" style={{borderTop:'1px solid rgba(230,126,34,0.15)'}}>
-            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color:'#49454F'}}>Usage Days This Month</p>
-            <p className="text-xl font-bold" style={{color:'#E67E22'}}>{stats.activeDaysThisMonth} Days</p>
+          <div className="col-span-2 pt-3" style={{borderTop: settings.theme === 'dark' ? '1px solid rgba(255,255,255,0.15)' : '1px solid rgba(230,126,34,0.15)'}}>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color: settings.theme === 'dark' ? 'var(--m3-on-surface-variant)' : '#49454F'}}>Usage Days This Month</p>
+            <p className="text-xl font-bold" style={{color: settings.theme === 'dark' ? '#FFB74D' : '#E67E22'}}>{stats.activeDaysThisMonth} Days</p>
           </div>
         </div>
       </GlassCard>

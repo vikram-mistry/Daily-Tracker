@@ -257,11 +257,11 @@ export default function App() {
 }
 
 const ExpenseMenuItem = ({ icon: Icon, label, onClick, color }) => (
-  <motion.button whileTap={{scale:0.96}} onClick={onClick} className="flex items-center gap-3 p-4 rounded-2xl transition-all" style={{background:'#FFFFFF', border:'1px solid #EDE7F6', boxShadow:'0 1px 8px rgba(103,80,164,0.07)'}}>
-    <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ backgroundColor: `${color}20`, color }}>
+  <motion.button whileTap={{scale:0.96}} onClick={onClick} className="flex items-center gap-3 p-4 rounded-2xl transition-all" style={{background:'var(--m3-swipe-inner)', border:'1px solid var(--m3-swipe-inner-border)', boxShadow:'var(--m3-swipe-inner-shadow)'}}>
+    <div className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${color}20`, color }}>
       <Icon size={20} />
     </div>
-    <span className="font-semibold text-sm" style={{color:'#1C1B1F'}}>{label}</span>
+    <span className="font-semibold text-sm" style={{color:'var(--m3-on-surface)'}}>{label}</span>
   </motion.button>
 );
 

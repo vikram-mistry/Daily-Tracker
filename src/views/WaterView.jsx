@@ -48,8 +48,17 @@ function WaterView({ filterDate, setFilterDate, settings }) {
       <StickyHeader title="Water Intake" date={filterDate} setDate={setFilterDate} />
       
       {/* Glass Animation */}
-      <GlassCard className="p-6 mb-8 flex flex-col items-center relative overflow-hidden" style={{background:'linear-gradient(135deg,#DBEAFE 0%,#EFF6FF 100%)'}}>
-        <div className="relative rounded-b-[32px] rounded-t-lg overflow-hidden shadow-inner" style={{width:'76px', height:'116px', border:'3px solid rgba(37,99,235,0.3)', background:'rgba(239,246,255,0.6)'}}>
+      {/* Glass Animation */}
+      <GlassCard 
+        className="p-6 mb-8 flex flex-col items-center relative overflow-hidden" 
+        style={{
+          background: settings.theme === 'dark' 
+            ? 'linear-gradient(135deg, #0F2C59 0%, #132B4F 100%)' 
+            : 'linear-gradient(135deg,#DBEAFE 0%,#EFF6FF 100%)',
+          borderColor: settings.theme === 'dark' ? 'rgba(37, 99, 235, 0.3)' : 'rgba(255, 255, 255, 0.6)'
+        }}
+      >
+        <div className="relative rounded-b-[32px] rounded-t-lg overflow-hidden shadow-inner" style={{width:'76px', height:'116px', border:'3px solid rgba(37,99,235,0.3)', background: settings.theme === 'dark' ? 'rgba(15,44,89,0.6)' : 'rgba(239,246,255,0.6)'}}>
            {/* Water Filling */}
            <motion.div 
              initial={{ height: 0 }}
@@ -84,8 +93,8 @@ function WaterView({ filterDate, setFilterDate, settings }) {
         </div>
         
         <div className="mt-5 text-center">
-          <p className="text-4xl font-black tracking-tighter" style={{color:'#1A1C1E'}}>{totalForSelectedDay}<span className="text-lg ml-1" style={{color:'#1565C0'}}>L</span></p>
-          <p className="text-xs font-bold uppercase tracking-widest mt-1" style={{color:'#1E3A5F'}}>
+          <p className="text-4xl font-black tracking-tighter" style={{color: settings.theme === 'dark' ? '#FFFFFF' : '#1A1C1E'}}>{totalForSelectedDay}<span className="text-lg ml-1" style={{color: settings.theme === 'dark' ? '#90CAF9' : '#1565C0'}}>L</span></p>
+          <p className="text-xs font-bold uppercase tracking-widest mt-1" style={{color: settings.theme === 'dark' ? '#90CAF9' : '#1E3A5F'}}>
             {selectedDate === new Date().toISOString().split('T')[0] ? 'Today' : new Date(selectedDate).toLocaleDateString('en-US', {day: 'numeric', month: 'short'})} Goal: {target}L • {Math.round(percentage)}%
           </p>
         </div>
@@ -98,7 +107,11 @@ function WaterView({ filterDate, setFilterDate, settings }) {
             whileTap={{ scale: 0.9 }}
             onClick={() => addWater(qty)}
             className="font-bold py-4 rounded-3xl flex flex-col items-center gap-1 transition-all"
-            style={{background:'#DBEAFE', border:'1px solid rgba(37,99,235,0.2)', color:'#1565C0'}}
+            style={{
+              background: settings.theme === 'dark' ? '#1E3C72' : '#DBEAFE', 
+              border: settings.theme === 'dark' ? '1px solid rgba(144,202,249,0.2)' : '1px solid rgba(37,99,235,0.2)', 
+              color: settings.theme === 'dark' ? '#90CAF9' : '#1565C0'
+            }}
           >
             <Droplet size={18} />
             <span className="text-xs">{qty}L</span>
@@ -107,7 +120,7 @@ function WaterView({ filterDate, setFilterDate, settings }) {
       </div>
 
       {/* Water Calendar Grid */}
-      <h3 className="text-base font-bold mb-4" style={{color:'#1C1B1F'}}>Monthly View</h3>
+      <h3 className="text-base font-bold mb-4" style={{color: 'var(--m3-on-surface)'}}>Monthly View</h3>
       <div className="grid grid-cols-7 gap-2 mb-8">
         {['S','M','T','W','T','F','S'].map((d, i) => (
           <div key={i} className="text-center text-[10px] font-black" style={{color:'#79747E'}}>{d}</div>
@@ -139,10 +152,16 @@ function WaterView({ filterDate, setFilterDate, settings }) {
                 ${isToday && !isSelected ? 'border-[#79747E]/40' : ''}
                 ${dTotal > 0 && !isSelected ? 'border-[#27AE90]/30' : ''}
               `}
-              style={{background: isSelected ? '#C2F0D8' : dTotal > 0 ? 'rgba(194,240,216,0.4)' : 'rgba(103,80,164,0.06)'}}
+              style={{
+                background: isSelected 
+                  ? (settings.theme === 'dark' ? '#A7F3D0' : '#C2F0D8') 
+                  : dTotal > 0 
+                    ? (settings.theme === 'dark' ? 'rgba(167,243,208,0.2)' : 'rgba(194,240,216,0.4)') 
+                    : 'rgba(103,80,164,0.06)'
+              }}
             >
-              <span className="text-xs font-bold" style={{color: dTotal > 0 || isSelected ? '#1C1B1F' : '#79747E'}}>{dayNum}</span>
-              {dTotal > 0 && <span className="text-[8px] font-black leading-none mt-0.5" style={{color:'#27AE90'}}>{dTotal}L</span>}
+              <span className="text-xs font-bold" style={{color: isSelected ? '#064E3B' : (dTotal > 0 ? 'var(--m3-on-surface)' : 'var(--m3-on-surface-muted)')}}>{dayNum}</span>
+              {dTotal > 0 && <span className="text-[8px] font-black leading-none mt-0.5" style={{color: settings.theme === 'dark' ? '#34D399' : '#27AE90'}}>{dTotal}L</span>}
             </motion.button>
           );
         })}
@@ -152,14 +171,14 @@ function WaterView({ filterDate, setFilterDate, settings }) {
         <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
           {dayEntries.length === 0 && (
             <div className="text-center py-8">
-               <p className="mb-4" style={{color:'#79747E'}}>No intake logged for this day.</p>
-               <motion.button whileTap={{scale:0.95}} onClick={() => setIsModalOpen(false)} className="px-6 py-2 rounded-full text-xs font-bold" style={{background:'#C2F0D8', color:'#1A6B4A'}}>Add Now</motion.button>
+               <p className="mb-4" style={{color:'var(--m3-on-surface-muted)'}}>No intake logged for this day.</p>
+               <motion.button whileTap={{scale:0.95}} onClick={() => setIsModalOpen(false)} className="px-6 py-2 rounded-full text-xs font-bold" style={{background:'var(--m3-nav-icon-active-bg)', color:'var(--m3-nav-icon-active-color)'}}>Add Now</motion.button>
             </div>
           )}
           {[...dayEntries].reverse().map(e => (
             <div key={e.id} className="flex justify-between items-center p-4 rounded-2xl" style={{background:'var(--m3-swipe-inner)', border:'1px solid var(--m3-swipe-inner-border)'}}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{background:'#DBEAFE', color:'#1565C0'}}>
+                <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{background: settings.theme === 'dark' ? '#1E3C72' : '#DBEAFE', color: settings.theme === 'dark' ? '#90CAF9' : '#1565C0'}}>
                   <Droplet size={18} />
                 </div>
                 <div>

@@ -72,33 +72,41 @@ function CustomCategoryView({ categoryId, categories, settings, filterDate, setF
     <div>
       <StickyHeader title={category.name} date={filterDate} setDate={setFilterDate} />
 
-      <GlassCard className="p-5 mb-6" style={{ background: `linear-gradient(135deg, ${category.color}25, ${category.color}10)` }}>
+      <GlassCard 
+        className="p-5 mb-6" 
+        style={{ 
+          background: settings.theme === 'dark'
+            ? `linear-gradient(135deg, ${category.color}35, rgba(20,20,30,0.6))`
+            : `linear-gradient(135deg, ${category.color}25, ${category.color}10)`,
+          borderColor: settings.theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.6)'
+        }}
+      >
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color:'#49454F'}}>Total {category.unit || 'Units'}</p>
-            <p className="text-3xl font-bold" style={{color:'#1C1B1F'}}>{stats.qty}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color: settings.theme === 'dark' ? 'var(--m3-on-surface-variant)' : '#49454F'}}>Total {category.unit || 'Units'}</p>
+            <p className="text-3xl font-bold" style={{color: 'var(--m3-on-surface)'}}>{stats.qty}</p>
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color:'#49454F'}}>Total Spend</p>
-            <p className="text-3xl font-bold" style={{color:'#1C1B1F'}}>{settings.currency}{stats.amount}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color: settings.theme === 'dark' ? 'var(--m3-on-surface-variant)' : '#49454F'}}>Total Spend</p>
+            <p className="text-3xl font-bold" style={{color: 'var(--m3-on-surface)'}}>{settings.currency}{stats.amount}</p>
           </div>
         </div>
       </GlassCard>
 
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-base font-bold" style={{color:'#1C1B1F'}}>Records</h3>
+        <h3 className="text-base font-bold" style={{color: 'var(--m3-on-surface)'}}>Records</h3>
         <motion.button whileTap={{scale:0.95}} onClick={openAdd} className="text-sm font-semibold text-white px-4 py-1.5 rounded-full flex items-center gap-1 shadow-lg" style={{ backgroundColor: category.color }}>
           <Plus size={16}/> Add Entry
         </motion.button>
       </div>
 
       <div className="space-y-4">
-        {entries.length === 0 && <p className="text-center py-4 text-sm" style={{color:'#79747E'}}>No entries yet.</p>}
+        {entries.length === 0 && <p className="text-center py-4 text-sm" style={{color:'var(--m3-on-surface-muted)'}}>No entries yet.</p>}
         {entries.map(entry => (
           <SwipeableItem key={entry.id} onDelete={() => handleDelete(entry.id)} onEdit={() => { setEditingEntry(entry); setFormData(entry); setIsModalOpen(true); }}>
             <div className="flex justify-between items-center" onClick={() => { setViewingEntry(entry); setIsViewModalOpen(true); }}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{background:'#F3EEFF', border:'1px solid #EDE7F6', color: category.color}}>
+                <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{background:'var(--m3-icon-btn-bg)', border:'1px solid var(--m3-nav-border)', color: category.color}}>
                   <CatIcon size={20}/>
                 </div>
                 <div>
@@ -149,7 +157,7 @@ function CustomCategoryView({ categoryId, categories, settings, filterDate, setF
             <div className="flex justify-between border-b pb-2" style={{borderColor:'var(--m3-input-border)'}}><span className="font-semibold text-gray-500">Amount:</span> <span className="font-bold">{settings.currency}{viewingEntry.amount}</span></div>
             <div className="pt-2">
               <span className="font-semibold text-gray-500 block mb-1">Notes:</span>
-              <p className="bg-gray-50 p-3 rounded-xl border" style={{borderColor:'var(--m3-input-border)'}}>{viewingEntry.notes || 'No notes available'}</p>
+              <p className="p-3 rounded-xl border" style={{background:'var(--m3-input-bg)', borderColor:'var(--m3-input-border)'}}>{viewingEntry.notes || 'No notes available'}</p>
             </div>
             
             <div className="pt-4 flex gap-3">

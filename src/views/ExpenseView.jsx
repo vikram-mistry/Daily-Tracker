@@ -121,12 +121,20 @@ function ExpenseView({ type, title, icon: Icon, filterDate, setFilterDate, setti
     <div>
       <StickyHeader title={title} date={filterDate} setDate={setFilterDate} hideMonthFilter={isBill} />
       
-      <GlassCard className="p-6 mb-6 relative overflow-hidden" style={{background:'linear-gradient(135deg,#F8F4FF 0%,#EEF6FF 100%)', border:'1px solid #EDE7F6'}}>
-        {cardIcon && <img src={cardIcon} alt="Icon" className="absolute pointer-events-none" style={{width:'100px', height:'100px', right:'0px', top:'50%', transform:'translateY(-50%)', objectFit:'contain', opacity:0.85}} />}
+      <GlassCard 
+        className="p-6 mb-6 relative overflow-hidden" 
+        style={{
+          background: settings.theme === 'dark' 
+            ? 'linear-gradient(135deg, #231E3D 0%, #192336 100%)' 
+            : 'linear-gradient(135deg,#F8F4FF 0%,#EEF6FF 100%)',
+          borderColor: settings.theme === 'dark' ? 'rgba(103, 80, 164, 0.3)' : 'rgba(255, 255, 255, 0.6)'
+        }}
+      >
+        {cardIcon && <img src={cardIcon} alt="Icon" className="absolute pointer-events-none" style={{width:'100px', height:'100px', right:'0px', top:'50%', transform:'translateY(-50%)', objectFit:'contain', opacity: settings.theme === 'dark' ? 0.45 : 0.85}} />}
         <div className="relative z-10 flex flex-col">
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{color:'#79747E'}}>{isBill ? 'Total Spending' : 'Monthly Spending'}</p>
-            <p className="text-4xl font-black" style={{color:'#1C1B1F'}}>{settings.currency}{totalAmount}</p>
+            <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{color: settings.theme === 'dark' ? 'var(--m3-on-surface-variant)' : '#79747E'}}>{isBill ? 'Total Spending' : 'Monthly Spending'}</p>
+            <p className="text-4xl font-black" style={{color: settings.theme === 'dark' ? '#FFFFFF' : '#1C1B1F'}}>{settings.currency}{totalAmount}</p>
           </div>
           
           <motion.button
@@ -141,7 +149,7 @@ function ExpenseView({ type, title, icon: Icon, filterDate, setFilterDate, setti
       </GlassCard>
 
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-base font-bold" style={{color:'#1C1B1F'}}>Record History</h3>
+        <h3 className="text-base font-bold" style={{color: 'var(--m3-on-surface)'}}>Record History</h3>
         <motion.button whileTap={{scale:0.95}} onClick={openAdd} className="px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2" style={{background:'linear-gradient(135deg,#6750A4,#4A90D9)', color:'#fff', boxShadow:'0 2px 10px rgba(103,80,164,0.25)'}}>
           <Plus size={16}/> Add Record
         </motion.button>
@@ -153,7 +161,7 @@ function ExpenseView({ type, title, icon: Icon, filterDate, setFilterDate, setti
           <SwipeableItem key={e.id} onDelete={() => handleDelete(e.id)} onEdit={() => { setEditingEntry(e); setFormData(e); setIsModalOpen(true); }}>
             <div className="flex justify-between items-center" onClick={() => { setViewingEntry(e); setIsViewModalOpen(true); }}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{background:'#F3EEFF', color:'#6750A4'}}>
+                <div className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0" style={{background:'var(--m3-icon-btn-bg)', color:'var(--m3-icon-btn-color)'}}>
                   <Icon size={20} />
                 </div>
                 <div className="min-w-0">

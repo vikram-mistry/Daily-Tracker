@@ -575,7 +575,7 @@ function MilkView({ filterDate, setFilterDate, settings }) {
       
       {/* Summary Card */}
       <GlassCard className="p-5 mb-6 relative overflow-hidden" style={{background:'linear-gradient(135deg,#C8E6FF 0%,#EDE7F6 100%)'}}>
-        <img src="./milk-icon.png" alt="Milk" className="absolute -right-4 -top-4 w-24 h-24 opacity-50 rotate-12 pointer-events-none drop-shadow-lg" />
+        <img src="./cow-icon.png" alt="Happy Cow" className="absolute -right-2 -top-3 w-28 h-28 opacity-90 pointer-events-none drop-shadow-xl" style={{filter:'drop-shadow(0 4px 12px rgba(0,0,0,0.18))'}} />
         <div className="grid grid-cols-2 gap-4 relative z-10">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color:'#49454F'}}>Total Amount</p>

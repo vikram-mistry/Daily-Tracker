@@ -4,7 +4,7 @@ import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { 
   Milk, Flame, Plus, Settings, Calendar, ChevronLeft, ChevronRight, 
   Trash2, Edit3, X, Check, Droplet, Zap, Wifi, ShoppingCart, 
-  Wrench, Package, PauseCircle, PlayCircle, Download, Upload, Info
+  Wrench, Package, PauseCircle, PlayCircle, Download, Upload, Info, Share2
 } from 'lucide-react';
 
 // ==========================================
@@ -499,6 +499,63 @@ function MilkView({ filterDate, setFilterDate, settings }) {
     setIsModalOpen(true);
   };
 
+  // Generate a text report and share via native share sheet
+  const handleShareReport = async () => {
+    const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    const monthYear = `${monthNames[filterDate.getMonth()]} ${filterDate.getFullYear()}`;
+    
+    // Sort entries ascending by date for the report
+    const sorted = [...entries].filter(e => !e.isPaused).sort((a, b) => new Date(a.date) - new Date(b.date));
+    const pausedDays = entries.filter(e => e.isPaused);
+
+    const lines = [
+      `🥛 *Milk Report — ${monthYear}*`,
+      `━━━━━━━━━━━━━━━━━━━━━━━━`,
+      `📦 Total Quantity : *${stats.qty} L*`,
+      `💰 Total Amount   : *${settings.currency}${stats.amount.toFixed(2)}*`,
+      `✅ Active Days    : ${stats.active}`,
+      `⏸️ Paused Days   : ${stats.pause}`,
+      `━━━━━━━━━━━━━━━━━━━━━━━━`,
+      `📋 *Daily Breakdown:*`,
+      ``,
+      ...sorted.map(e => {
+        const d = new Date(e.date);
+        const day = String(d.getDate()).padStart(2, '0');
+        const mon = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()];
+        return `  ${day} ${mon}  —  ${e.qty}L  ×  ${settings.currency}${e.price}  =  ${settings.currency}${Number(e.total).toFixed(2)}`;
+      }),
+      ...(pausedDays.length > 0 ? [
+        ``,
+        `⏸️ *Paused Dates:*`,
+        ...pausedDays.map(e => {
+          const d = new Date(e.date);
+          const day = String(d.getDate()).padStart(2, '0');
+          const mon = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()];
+          return `  ${day} ${mon}  —  No Delivery`;
+        })
+      ] : []),
+      ``,
+      `━━━━━━━━━━━━━━━━━━━━━━━━`,
+      `💳 *Please pay: ${settings.currency}${stats.amount.toFixed(2)}*`,
+      ``,
+      `Shared via Trackit App 📱`,
+    ];
+
+    const reportText = lines.join('\n');
+
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: `Milk Report – ${monthYear}`, text: reportText });
+      } else {
+        // Fallback: copy to clipboard
+        await navigator.clipboard.writeText(reportText);
+        alert('Report copied to clipboard!');
+      }
+    } catch (err) {
+      // User cancelled share — ignore
+    }
+  };
+
   // Generate Calendar Days
   const daysInMonth = new Date(filterDate.getFullYear(), filterDate.getMonth() + 1, 0).getDate();
   const calendarDays = Array.from({length: daysInMonth}, (_, i) => {
@@ -537,6 +594,17 @@ function MilkView({ filterDate, setFilterDate, settings }) {
             <p className="text-xl font-bold" style={{color:'#B85C00'}}>{stats.pause}</p>
           </div>
         </div>
+
+        {/* Share Report Button */}
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={handleShareReport}
+          className="relative z-10 mt-5 w-full flex items-center justify-center gap-2 font-bold py-3 rounded-2xl"
+          style={{background:'linear-gradient(135deg,#6750A4,#4A90D9)', color:'#fff', boxShadow:'0 4px 16px rgba(103,80,164,0.3)'}}
+        >
+          <Share2 size={18} />
+          Share Monthly Report
+        </motion.button>
       </GlassCard>
 
       {/* Calendar Grid */}

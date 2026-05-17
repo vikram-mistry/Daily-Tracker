@@ -119,7 +119,7 @@ export default function App() {
       <div className="max-w-md mx-auto h-screen flex flex-col relative overflow-hidden" style={{background:'var(--m3-bg-app)'}}>
         
         {/* Profile/Google Account Button in Top Left Corner */}
-        <div className="absolute top-12 left-4 z-40">
+        <div className="absolute top-12 left-4" style={{ zIndex: 100, transform: 'translate3d(0,0,0)', WebkitTransform: 'translate3d(0,0,0)' }}>
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => setIsProfileOpen(true)}

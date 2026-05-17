@@ -53,9 +53,9 @@ function WaterView({ filterDate, setFilterDate, settings }) {
         className="p-6 mb-8 flex flex-col items-center relative overflow-hidden" 
         style={{
           background: settings.theme === 'dark' 
-            ? 'linear-gradient(135deg, #0F2C59 0%, #132B4F 100%)' 
+            ? 'linear-gradient(135deg, #1A3E7C 0%, #1D3557 100%)' 
             : 'linear-gradient(135deg,#DBEAFE 0%,#EFF6FF 100%)',
-          borderColor: settings.theme === 'dark' ? 'rgba(37, 99, 235, 0.3)' : 'rgba(255, 255, 255, 0.6)'
+          borderColor: settings.theme === 'dark' ? 'rgba(37, 99, 235, 0.4)' : 'rgba(255, 255, 255, 0.6)'
         }}
       >
         <div className="relative rounded-b-[32px] rounded-t-lg overflow-hidden shadow-inner" style={{width:'76px', height:'116px', border:'3px solid rgba(37,99,235,0.3)', background: settings.theme === 'dark' ? 'rgba(15,44,89,0.6)' : 'rgba(239,246,255,0.6)'}}>

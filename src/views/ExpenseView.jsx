@@ -125,12 +125,12 @@ function ExpenseView({ type, title, icon: Icon, filterDate, setFilterDate, setti
         className="p-6 mb-6 relative overflow-hidden" 
         style={{
           background: settings.theme === 'dark' 
-            ? 'linear-gradient(135deg, #231E3D 0%, #192336 100%)' 
+            ? 'linear-gradient(135deg, #372E5C 0%, #222C3E 100%)' 
             : 'linear-gradient(135deg,#F8F4FF 0%,#EEF6FF 100%)',
-          borderColor: settings.theme === 'dark' ? 'rgba(103, 80, 164, 0.3)' : 'rgba(255, 255, 255, 0.6)'
+          borderColor: settings.theme === 'dark' ? 'rgba(103, 80, 164, 0.4)' : 'rgba(255, 255, 255, 0.6)'
         }}
       >
-        {cardIcon && <img src={cardIcon} alt="Icon" className="absolute pointer-events-none" style={{width:'100px', height:'100px', right:'0px', top:'50%', transform:'translateY(-50%)', objectFit:'contain', opacity: settings.theme === 'dark' ? 0.45 : 0.85}} />}
+        {cardIcon && <img src={cardIcon} alt="Icon" className="absolute pointer-events-none" style={{width:'100px', height:'100px', right:'0px', top:'50%', transform:'translateY(-50%)', objectFit:'contain', opacity: settings.theme === 'dark' ? 0.7 : 0.85}} />}
         <div className="relative z-10 flex flex-col">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{color: settings.theme === 'dark' ? 'var(--m3-on-surface-variant)' : '#79747E'}}>{isBill ? 'Total Spending' : 'Monthly Spending'}</p>

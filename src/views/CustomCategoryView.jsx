@@ -76,9 +76,9 @@ function CustomCategoryView({ categoryId, categories, settings, filterDate, setF
         className="p-5 mb-6" 
         style={{ 
           background: settings.theme === 'dark'
-            ? `linear-gradient(135deg, ${category.color}35, rgba(20,20,30,0.6))`
+            ? `linear-gradient(135deg, ${category.color}45, rgba(30,30,45,0.65))`
             : `linear-gradient(135deg, ${category.color}25, ${category.color}10)`,
-          borderColor: settings.theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.6)'
+          borderColor: settings.theme === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.6)'
         }}
       >
         <div className="grid grid-cols-2 gap-4">

@@ -111,6 +111,11 @@ export default function App() {
     await db.put('settings', updated);
   };
 
+  // Sync document body theme attribute for React Portals
+  useEffect(() => {
+    document.body.setAttribute('data-theme', settings.theme);
+  }, [settings.theme]);
+
   if (!isReady) return (
     <div style={{minHeight:'100vh', background:'linear-gradient(160deg,#F0EBFF 0%,#E8F4FF 40%,#E8FFF4 100%)', display:'flex', alignItems:'center', justifyContent:'center'}}>
       <div style={{display:'flex', flexDirection:'column', alignItems:'center', gap:'16px'}}>

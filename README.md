@@ -33,10 +33,15 @@
 *   **Detailed Records**: Track purchase dates, payment accounts, and specific notes.
 *   **Monthly Summaries**: View exactly where your money is going each month.
 
-### 🔒 Privacy & Performance
-*   **100% Local Storage**: All data is stored on your device using IndexedDB. No cloud, no tracking.
-*   **PWA Support**: "Add to Home Screen" for a full-screen, native app experience on iPhone.
-*   **Instant UI**: Powered by Framer Motion for buttery-smooth animations and glassmorphic design.
+### ☁️ Cloud Sync & Account
+*   **Google Authentication**: Secure single-tap sign-in with your Google account.
+*   **Automated Cloud Backups**: Seamlessly sync your data to private Firebase Cloud Firestore storage, enabling reliable cross-device sync and automatic backups.
+*   **Unified Access**: A global profile menu on the top-left of every tab provides quick account status, profile details, and manual sync commands.
+
+### 🌓 Advanced Dark Mode & Glassmorphism
+*   **Glassmorphic Headers & Nav**: Highly sophisticated semi-transparent top header (`rgba(26,24,37,0.65)`) and bottom navigation bar, offering beautiful real-time background blurring as you scroll.
+*   **Dynamic Theme-Aware Cards**: All tracker cards (Milk, Gas, Water, and Custom category cards) dynamically shift between pastel gradients in light mode and deep, rich gradients in dark mode.
+*   **Portal Dark Mode Alignment**: Portals and popup dialogs (BottomSheets) are fully integrated with the dark mode theme and adapt instantly.
 
 ---
 
@@ -46,7 +51,7 @@
 *   **Styling**: Tailwind CSS v4
 *   **Animations**: Framer Motion
 *   **Icons**: Lucide React
-*   **Database**: IndexedDB (Native Browser Storage)
+*   **Database**: IndexedDB (Native Browser Storage) + Firebase Cloud Firestore (Secure Cloud Sync)
 
 ---
 
@@ -73,7 +78,7 @@ npm run deploy
 ```
 
 ### Backup & Restore
-You can export your entire database as a JSON file from the **Settings** menu and restore it on any other device.
+In addition to automated Google Cloud Sync, you can export your entire database as a JSON file from the **Settings** menu and restore it manually on any device.
 
 ---
 

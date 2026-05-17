@@ -4,7 +4,7 @@ import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { 
   Milk, Flame, Plus, Settings, Calendar, ChevronLeft, ChevronRight, 
   Trash2, Edit3, X, Check, Droplet, Zap, Wifi, ShoppingCart, 
-  Wrench, Package, PauseCircle, PlayCircle, Download, Upload, Info, Share2
+  Wrench, Package, PauseCircle, PlayCircle, Download, Upload, Info, Share2, LayoutGrid
 } from 'lucide-react';
 
 // ==========================================
@@ -307,7 +307,7 @@ export default function App() {
               className="-mt-6 z-50 p-4 rounded-full"
               style={{background:'linear-gradient(135deg,#7C3AED,#6750A4)', color:'#fff', boxShadow:'0 4px 20px rgba(103,80,164,0.4)', border:'4px solid var(--m3-fab-border)'}}
             >
-              <Plus size={26} />
+              <LayoutGrid size={24} />
             </motion.button>
 
             <NavIcon icon={Settings} label="Settings" isActive={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />

@@ -293,7 +293,7 @@ function ExpenseView({ type, title, icon: Icon, filterDate, setFilterDate, setti
             )}
             <div className="pt-2">
               <span className="font-semibold text-gray-500 block mb-1">Note:</span>
-              <p className="bg-gray-50 p-3 rounded-xl border" style={{borderColor:'var(--m3-input-border)'}}>{viewingEntry.note || 'No additional notes'}</p>
+              <p className="p-3 rounded-xl border" style={{background:'var(--m3-input-bg)', borderColor:'var(--m3-input-border)'}}>{viewingEntry.note || 'No additional notes'}</p>
             </div>
             
             <div className="pt-4 flex gap-3">

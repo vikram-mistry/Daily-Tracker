@@ -221,7 +221,7 @@ function GasView({ filterDate, setFilterDate, settings }) {
             <div className="flex justify-between border-b pb-2" style={{borderColor:'var(--m3-input-border)'}}><span className="font-semibold text-gray-500">Weight:</span> <span>{viewingEntry.weight} kg</span></div>
             <div className="pt-2">
               <span className="font-semibold text-gray-500 block mb-1">Notes:</span>
-              <p className="bg-gray-50 p-3 rounded-xl border" style={{borderColor:'var(--m3-input-border)'}}>{viewingEntry.notes || 'No notes available'}</p>
+              <p className="p-3 rounded-xl border" style={{background:'var(--m3-input-bg)', borderColor:'var(--m3-input-border)'}}>{viewingEntry.notes || 'No notes available'}</p>
             </div>
             
             <div className="pt-4 flex gap-3">

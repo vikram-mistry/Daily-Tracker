@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, updateProfile } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDTJhhOVT1oLIVCxj9QDJbT1DafnIKoxmc",
@@ -22,4 +22,4 @@ try {
   console.log("Firestore persistence error", err);
 }
 
-export { firestore, auth, provider, signInWithPopup, signOut, onAuthStateChanged };
+export { firestore, auth, provider, signInWithPopup, signOut, onAuthStateChanged, updateProfile };

@@ -14,7 +14,7 @@ import CustomCategoryView from './views/CustomCategoryView';
 import SettingsView from './views/SettingsView';
 import WaterView from './views/WaterView';
 import ExpenseView from './views/ExpenseView';
-import { auth, provider, signInWithPopup, signOut } from './firebase';
+import { auth, provider, signInWithPopup, signOut, updateProfile } from './firebase';
 import { LogIn, LogOut, RefreshCw, User } from 'lucide-react';
 
 export default function App() {
@@ -39,6 +39,14 @@ export default function App() {
       setUser(u);
       if (u) {
         db.syncUpAndDown();
+        const googlePhoto = u.providerData?.[0]?.photoURL;
+        if (googlePhoto && googlePhoto !== u.photoURL) {
+          updateProfile(u, { photoURL: googlePhoto })
+            .then(() => {
+              setUser(prev => prev ? { ...prev, photoURL: googlePhoto } : null);
+            })
+            .catch((e) => console.log("Google photo cache synced", e));
+        }
       }
     });
 

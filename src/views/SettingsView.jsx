@@ -125,7 +125,7 @@ function SettingsView({ settings, updateSettings, db }) {
   return (
     <div className="pb-8">
       <div className="sticky top-0 pt-12 pb-4 px-2 z-30 mb-6" style={{background:'var(--m3-header-bg)', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', borderBottom:'1px solid var(--m3-header-border)'}}>
-        <h1 className="text-2xl font-bold tracking-tight pl-12" style={{color:'var(--m3-on-surface)'}}>Settings</h1>
+        <h1 className="text-2xl font-bold tracking-tight pl-16" style={{color:'var(--m3-on-surface)'}}>Settings</h1>
       </div>
 
       <div className="space-y-6">

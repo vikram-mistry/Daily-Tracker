@@ -4,7 +4,7 @@ import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { 
   Milk, Flame, Plus, Settings, Calendar, ChevronLeft, ChevronRight, 
   Trash2, Edit3, X, Check, Droplet, Zap, Wifi, ShoppingCart, 
-  Wrench, Package, PauseCircle, PlayCircle, Download, Upload, Info, Share2, LayoutGrid
+  Wrench, Package, PauseCircle, PlayCircle, Download, Upload, Info, Share2, LayoutGrid, Train
 } from 'lucide-react';
 
 // ==========================================
@@ -278,7 +278,7 @@ export default function App() {
               {activeTab === 'elec-lotus' && <ExpenseView type="electricity_lotus" title="Electricity (Lotus)" icon={Zap} filterDate={filterDate} setFilterDate={setFilterDate} settings={settings} />}
               {activeTab === 'elec-sadri' && <ExpenseView type="electricity_sadri" title="Electricity (Sadri)" icon={Zap} filterDate={filterDate} setFilterDate={setFilterDate} settings={settings} />}
               {activeTab === 'water-bill' && <ExpenseView type="water_bill" title="Water Bill" icon={Droplet} filterDate={filterDate} setFilterDate={setFilterDate} settings={settings} />}
-              {activeTab === 'other' && <ExpenseView type="other_expenses" title="Other" icon={Package} filterDate={filterDate} setFilterDate={setFilterDate} settings={settings} />}
+              {activeTab === 'other' && <ExpenseView type="other_expenses" title="Travel" icon={Train} filterDate={filterDate} setFilterDate={setFilterDate} settings={settings} />}
               
               {activeTab.startsWith('custom-') && (
                 <CustomCategoryView 
@@ -321,7 +321,7 @@ export default function App() {
              <ExpenseMenuItem icon={Zap} label="Elec (Lotus)" onClick={() => { setActiveTab('elec-lotus'); setIsAddSheetOpen(false); }} color="#f59e0b" />
              <ExpenseMenuItem icon={Zap} label="Elec (Sadri)" onClick={() => { setActiveTab('elec-sadri'); setIsAddSheetOpen(false); }} color="#f59e0b" />
              <ExpenseMenuItem icon={Droplet} label="Water Bill" onClick={() => { setActiveTab('water-bill'); setIsAddSheetOpen(false); }} color="#3b82f6" />
-             <ExpenseMenuItem icon={Package} label="Other" onClick={() => { setActiveTab('other'); setIsAddSheetOpen(false); }} color="#8b5cf6" />
+             <ExpenseMenuItem icon={Train} label="Travel" onClick={() => { setActiveTab('other'); setIsAddSheetOpen(false); }} color="#8b5cf6" />
           </div>
         </BottomSheet>
       </div>
@@ -874,8 +874,9 @@ function GasView({ filterDate, setFilterDate, settings }) {
       <StickyHeader title="Gas Tracker" date={filterDate} setDate={setFilterDate} />
 
       {/* Summary Card */}
-      <GlassCard className="p-5 mb-6" style={{background:'linear-gradient(135deg,#FFE0C8 0%,#FFECD8 100%)'}}>
-        <div className="grid grid-cols-2 gap-4">
+      <GlassCard className="p-5 mb-6 relative overflow-hidden" style={{background:'linear-gradient(135deg,#FFE0C8 0%,#FFECD8 100%)'}}>
+        <img src="./gas-icon.png" alt="Gas" className="absolute pointer-events-none" style={{width:'100px', height:'100px', right:'0px', top:'45%', transform:'translateY(-50%)', objectFit:'contain', opacity:0.85}} />
+        <div className="grid grid-cols-2 gap-4 relative z-10">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color:'#49454F'}}>New Cylinders</p>
             <p className="text-3xl font-bold" style={{color:'#1C1B1F'}}>{stats.cylindersUsed}</p>
@@ -1505,7 +1506,7 @@ function ExpenseView({ type, title, icon: Icon, filterDate, setFilterDate, setti
 
   const loadEntries = useCallback(async () => {
     const all = await db.getAll(type);
-    const isBill = type.startsWith('electricity') || type === 'water_bill';
+    const isBill = type.startsWith('electricity') || type === 'water_bill' || type === 'other_expenses';
     let filtered = all;
     if (!isBill) {
       filtered = all.filter(e => {
@@ -1519,7 +1520,7 @@ function ExpenseView({ type, title, icon: Icon, filterDate, setFilterDate, setti
   useEffect(() => { loadEntries(); }, [loadEntries]);
 
   const totalAmount = entries.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
-  const isBill = type.startsWith('electricity') || type === 'water_bill';
+  const isBill = type.startsWith('electricity') || type === 'water_bill' || type === 'other_expenses';
 
   const handleShareReport = async () => {
     const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -1595,13 +1596,22 @@ function ExpenseView({ type, title, icon: Icon, filterDate, setFilterDate, setti
     loadEntries();
   };
 
+  let cardIcon = null;
+  if (type === 'grocery') cardIcon = './groceries-icon.png';
+  else if (type.startsWith('electricity')) cardIcon = './electricity-icon.png';
+  else if (type === 'water_bill') cardIcon = './water-icon.png';
+  else if (type === 'other_expenses') cardIcon = './travel-icon.png';
+
   return (
     <div>
       <StickyHeader title={title} date={filterDate} setDate={setFilterDate} hideMonthFilter={isBill} />
       
-      <GlassCard className="p-6 mb-6" style={{background:'linear-gradient(135deg,#F8F4FF 0%,#EEF6FF 100%)', border:'1px solid #EDE7F6'}}>
-        <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{color:'#79747E'}}>{isBill ? 'Total Spending' : 'Monthly Spending'}</p>
-        <p className="text-4xl font-black" style={{color:'#1C1B1F'}}>{settings.currency}{totalAmount}</p>
+      <GlassCard className="p-6 mb-6 relative overflow-hidden" style={{background:'linear-gradient(135deg,#F8F4FF 0%,#EEF6FF 100%)', border:'1px solid #EDE7F6'}}>
+        {cardIcon && <img src={cardIcon} alt="Icon" className="absolute pointer-events-none" style={{width:'100px', height:'100px', right:'0px', top:'45%', transform:'translateY(-50%)', objectFit:'contain', opacity:0.85}} />}
+        <div className="relative z-10">
+          <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{color:'#79747E'}}>{isBill ? 'Total Spending' : 'Monthly Spending'}</p>
+          <p className="text-4xl font-black" style={{color:'#1C1B1F'}}>{settings.currency}{totalAmount}</p>
+        </div>
         
         <motion.button
           whileTap={{ scale: 0.97 }}
@@ -1700,10 +1710,6 @@ function ExpenseView({ type, title, icon: Icon, filterDate, setFilterDate, setti
 
           {type === 'other_expenses' && (
             <>
-              <div>
-                <label className="text-xs font-semibold uppercase tracking-wider pl-1 mb-1 block" style={{color:'#6750A4'}}>Item Name</label>
-                <input type="text" value={formData.itemName} onChange={e => setFormData({...formData, itemName: e.target.value})} className="m3-input" placeholder="Describe expense" />
-              </div>
               <div className="flex flex-col gap-4">
                 <div className="min-w-0">
                   <label className="text-xs font-semibold uppercase tracking-wider pl-1 mb-1 block" style={{color:'#6750A4'}}>Amount</label>
@@ -1756,7 +1762,7 @@ function ExpenseView({ type, title, icon: Icon, filterDate, setFilterDate, setti
             )}
             {type === 'other_expenses' && (
               <>
-                <div className="flex justify-between border-b pb-2" style={{borderColor:'var(--m3-input-border)'}}><span className="font-semibold text-gray-500">Item:</span> <span>{viewingEntry.itemName}</span></div>
+                {viewingEntry.itemName && <div className="flex justify-between border-b pb-2" style={{borderColor:'var(--m3-input-border)'}}><span className="font-semibold text-gray-500">Item:</span> <span>{viewingEntry.itemName}</span></div>}
                 <div className="flex justify-between border-b pb-2" style={{borderColor:'var(--m3-input-border)'}}><span className="font-semibold text-gray-500">Amount:</span> <span className="font-bold">{settings.currency}{viewingEntry.amount}</span></div>
                 <div className="flex justify-between border-b pb-2" style={{borderColor:'var(--m3-input-border)'}}><span className="font-semibold text-gray-500">Date:</span> <span>{viewingEntry.paymentDate}</span></div>
               </>

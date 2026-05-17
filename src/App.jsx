@@ -390,20 +390,22 @@ const BottomSheet = ({ isOpen, onClose, title, children, isCentered = false }) =
   return createPortal(content, document.body);
 };
 
-const StickyHeader = ({ title, date, setDate }) => {
+const StickyHeader = ({ title, date, setDate, hideMonthFilter = false }) => {
   const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const handlePrev = () => setDate(new Date(date.getFullYear(), date.getMonth() - 1, 1));
   const handleNext = () => setDate(new Date(date.getFullYear(), date.getMonth() + 1, 1));
   return (
     <div className="sticky top-0 pt-12 pb-4 px-2 z-30 flex justify-between items-end mb-6" style={{background:'var(--m3-header-bg)', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', borderBottom:'1px solid var(--m3-header-border)'}}>
       <h1 className="text-2xl font-bold tracking-tight" style={{color:'var(--m3-on-surface)'}}>{title}</h1>
-      <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{background:'var(--m3-input-bg)', border:'1px solid var(--m3-input-border)'}}>
-        <motion.button whileTap={{scale:0.85}} onClick={handlePrev} style={{color:'#6750A4'}}><ChevronLeft size={16}/></motion.button>
-        <span className="text-sm font-semibold min-w-[68px] text-center" style={{color:'var(--m3-on-surface)'}}>
-          {monthNames[date.getMonth()]} {date.getFullYear()}
-        </span>
-        <motion.button whileTap={{scale:0.85}} onClick={handleNext} style={{color:'#6750A4'}}><ChevronRight size={16}/></motion.button>
-      </div>
+      {!hideMonthFilter && (
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{background:'var(--m3-input-bg)', border:'1px solid var(--m3-input-border)'}}>
+          <motion.button whileTap={{scale:0.85}} onClick={handlePrev} style={{color:'#6750A4'}}><ChevronLeft size={16}/></motion.button>
+          <span className="text-sm font-semibold min-w-[68px] text-center" style={{color:'var(--m3-on-surface)'}}>
+            {monthNames[date.getMonth()]} {date.getFullYear()}
+          </span>
+          <motion.button whileTap={{scale:0.85}} onClick={handleNext} style={{color:'#6750A4'}}><ChevronRight size={16}/></motion.button>
+        </div>
+      )}
     </div>
   );
 };
@@ -466,6 +468,7 @@ function MilkView({ filterDate, setFilterDate, settings }) {
 
   const handleDelete = async (id) => {
     await db.delete('milk', id);
+    setIsModalOpen(false);
     loadEntries();
   };
 
@@ -774,6 +777,8 @@ function GasView({ filterDate, setFilterDate, settings }) {
   const [entries, setEntries] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [viewingEntry, setViewingEntry] = useState(null);
 
   const [formData, setFormData] = useState({ 
     installDate: new Date().toISOString().split('T')[0], 
@@ -845,6 +850,7 @@ function GasView({ filterDate, setFilterDate, settings }) {
 
   const handleDelete = async (id) => {
     await db.delete('gas', id);
+    setIsModalOpen(false);
     loadEntries();
   };
 
@@ -899,7 +905,7 @@ function GasView({ filterDate, setFilterDate, settings }) {
            const isActive = !entry.uninstallDate;
            return (
             <SwipeableItem key={entry.id} onDelete={() => handleDelete(entry.id)} onEdit={() => openEdit(entry)}>
-              <div className="flex justify-between items-start">
+              <div onClick={() => { setViewingEntry(entry); setIsViewModalOpen(true); }} className="flex justify-between items-start">
                 <div className="flex items-start gap-4">
                   <div className={`w-12 h-12 mt-1 rounded-2xl flex items-center justify-center`} style={{background: isActive ? '#FFE0C8' : '#F5F5F5', border: isActive ? '1.5px solid #E67E22' : '1px solid #EDE7F6', color: isActive ? '#E67E22' : '#79747E'}}>
                     <Flame size={24} />
@@ -960,6 +966,27 @@ function GasView({ filterDate, setFilterDate, settings }) {
           </div>
         </div>
       </BottomSheet>
+
+      <BottomSheet isOpen={isViewModalOpen} onClose={() => setIsViewModalOpen(false)} title="Gas Details" isCentered={true}>
+        {viewingEntry && (
+          <div className="space-y-4 text-sm" style={{color:'var(--m3-on-surface)'}}>
+            <div className="flex justify-between border-b pb-2" style={{borderColor:'var(--m3-input-border)'}}><span className="font-semibold text-gray-500">Install Date:</span> <span>{new Date(viewingEntry.installDate).toLocaleDateString()}</span></div>
+            <div className="flex justify-between border-b pb-2" style={{borderColor:'var(--m3-input-border)'}}><span className="font-semibold text-gray-500">End Date:</span> <span>{viewingEntry.uninstallDate ? new Date(viewingEntry.uninstallDate).toLocaleDateString() : 'Active'}</span></div>
+            <div className="flex justify-between border-b pb-2" style={{borderColor:'var(--m3-input-border)'}}><span className="font-semibold text-gray-500">Amount:</span> <span className="font-bold">{settings.currency}{viewingEntry.amount}</span></div>
+            <div className="flex justify-between border-b pb-2" style={{borderColor:'var(--m3-input-border)'}}><span className="font-semibold text-gray-500">Weight:</span> <span>{viewingEntry.weight} kg</span></div>
+            <div className="pt-2">
+              <span className="font-semibold text-gray-500 block mb-1">Notes:</span>
+              <p className="bg-gray-50 p-3 rounded-xl border" style={{borderColor:'var(--m3-input-border)'}}>{viewingEntry.notes || 'No notes available'}</p>
+            </div>
+            
+            <div className="pt-4 flex gap-3">
+              <motion.button whileTap={{scale:0.97}} onClick={() => setIsViewModalOpen(false)} className="w-full font-bold py-3 rounded-2xl" style={{background:'var(--m3-input-bg)', color:'var(--m3-on-surface)'}}>
+                Close
+              </motion.button>
+            </div>
+          </div>
+        )}
+      </BottomSheet>
     </div>
   );
 }
@@ -972,6 +999,8 @@ function CustomCategoryView({ categoryId, categories, settings, filterDate, setF
   const [entries, setEntries] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [viewingEntry, setViewingEntry] = useState(null);
 
   const [formData, setFormData] = useState({ 
     date: new Date().toISOString().split('T')[0], 
@@ -1012,6 +1041,7 @@ function CustomCategoryView({ categoryId, categories, settings, filterDate, setF
 
   const handleDelete = async (id) => {
     await db.delete('custom', id);
+    setIsModalOpen(false);
     loadEntries();
   };
 
@@ -1051,7 +1081,7 @@ function CustomCategoryView({ categoryId, categories, settings, filterDate, setF
         {entries.length === 0 && <p className="text-center py-4 text-sm" style={{color:'#79747E'}}>No entries yet.</p>}
         {entries.map(entry => (
           <SwipeableItem key={entry.id} onDelete={() => handleDelete(entry.id)} onEdit={() => { setEditingEntry(entry); setFormData(entry); setIsModalOpen(true); }}>
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center" onClick={() => { setViewingEntry(entry); setIsViewModalOpen(true); }}>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{background:'#F3EEFF', border:'1px solid #EDE7F6', color: category.color}}>
                   <CatIcon size={20}/>
@@ -1094,6 +1124,26 @@ function CustomCategoryView({ categoryId, categories, settings, filterDate, setF
             </button>
           </div>
         </div>
+      </BottomSheet>
+
+      <BottomSheet isOpen={isViewModalOpen} onClose={() => setIsViewModalOpen(false)} title={`${category.name} Details`} isCentered={true}>
+        {viewingEntry && (
+          <div className="space-y-4 text-sm" style={{color:'var(--m3-on-surface)'}}>
+            <div className="flex justify-between border-b pb-2" style={{borderColor:'var(--m3-input-border)'}}><span className="font-semibold text-gray-500">Date:</span> <span>{new Date(viewingEntry.date).toLocaleDateString()}</span></div>
+            <div className="flex justify-between border-b pb-2" style={{borderColor:'var(--m3-input-border)'}}><span className="font-semibold text-gray-500">Quantity:</span> <span>{viewingEntry.qty} {category.unit}</span></div>
+            <div className="flex justify-between border-b pb-2" style={{borderColor:'var(--m3-input-border)'}}><span className="font-semibold text-gray-500">Amount:</span> <span className="font-bold">{settings.currency}{viewingEntry.amount}</span></div>
+            <div className="pt-2">
+              <span className="font-semibold text-gray-500 block mb-1">Notes:</span>
+              <p className="bg-gray-50 p-3 rounded-xl border" style={{borderColor:'var(--m3-input-border)'}}>{viewingEntry.notes || 'No notes available'}</p>
+            </div>
+            
+            <div className="pt-4 flex gap-3">
+              <motion.button whileTap={{scale:0.97}} onClick={() => setIsViewModalOpen(false)} className="w-full font-bold py-3 rounded-2xl" style={{background:'var(--m3-input-bg)', color:'var(--m3-on-surface)'}}>
+                Close
+              </motion.button>
+            </div>
+          </div>
+        )}
       </BottomSheet>
     </div>
   );
@@ -1447,21 +1497,81 @@ function ExpenseView({ type, title, icon: Icon, filterDate, setFilterDate, setti
   const [entries, setEntries] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null);
+  
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [viewingEntry, setViewingEntry] = useState(null);
 
   const [formData, setFormData] = useState({});
 
   const loadEntries = useCallback(async () => {
     const all = await db.getAll(type);
-    const filtered = all.filter(e => {
-      const d = new Date(e.date || e.paymentDate);
-      return d.getMonth() === filterDate.getMonth() && d.getFullYear() === filterDate.getFullYear();
-    });
+    const isBill = type.startsWith('electricity') || type === 'water_bill';
+    let filtered = all;
+    if (!isBill) {
+      filtered = all.filter(e => {
+        const d = new Date(e.date || e.paymentDate);
+        return d.getMonth() === filterDate.getMonth() && d.getFullYear() === filterDate.getFullYear();
+      });
+    }
     setEntries(filtered.sort((a, b) => new Date(b.date || b.paymentDate) - new Date(a.date || a.paymentDate)));
   }, [type, filterDate]);
 
   useEffect(() => { loadEntries(); }, [loadEntries]);
 
   const totalAmount = entries.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+  const isBill = type.startsWith('electricity') || type === 'water_bill';
+
+  const handleShareReport = async () => {
+    const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    let reportText = '';
+    
+    if (isBill) {
+      reportText += `📄 *${title} Report*\n`;
+      reportText += `━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      reportText += `💰 Total Amount : *${settings.currency}${totalAmount.toFixed(2)}*\n`;
+      reportText += `━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+      
+      const byYear = {};
+      entries.forEach(e => {
+        const d = new Date(e.paymentDate);
+        const y = d.getFullYear();
+        if (!byYear[y]) byYear[y] = { total: 0, entries: [] };
+        byYear[y].total += Number(e.amount);
+        byYear[y].entries.push(e);
+      });
+      
+      Object.keys(byYear).sort((a,b)=>b-a).forEach(y => {
+        reportText += `📅 *Year ${y}* — ${settings.currency}${byYear[y].total.toFixed(2)}\n`;
+        byYear[y].entries.forEach(e => {
+           const d = new Date(e.paymentDate);
+           const mon = monthNames[d.getMonth()];
+           reportText += `  ${mon} — ${settings.currency}${Number(e.amount).toFixed(2)} (Paid: ${d.getDate()} ${mon})\n`;
+        });
+        reportText += `\n`;
+      });
+    } else {
+      const monthYear = `${monthNames[filterDate.getMonth()]} ${filterDate.getFullYear()}`;
+      reportText += `🛒 *${title} Report — ${monthYear}*\n`;
+      reportText += `━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      reportText += `💰 Total Amount : *${settings.currency}${totalAmount.toFixed(2)}*\n`;
+      reportText += `━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+      reportText += `📋 *Transactions:*\n\n`;
+      
+      entries.forEach(e => {
+         const d = new Date(e.date || e.paymentDate);
+         const day = String(d.getDate()).padStart(2, '0');
+         const mon = monthNames[d.getMonth()].substring(0,3);
+         const name = e.itemName || e.purchasedFrom || 'Item';
+         reportText += `  ${day} ${mon} — ${name}: ${settings.currency}${Number(e.amount).toFixed(2)}\n`;
+      });
+    }
+    reportText += `━━━━━━━━━━━━━━━━━━━━━━━━\nShared via Trackit App 📱`;
+
+    try {
+      if (navigator.share) await navigator.share({ title: `${title} Report`, text: reportText });
+      else { await navigator.clipboard.writeText(reportText); alert('Report copied!'); }
+    } catch (e) {}
+  };
 
   const openAdd = () => {
     setEditingEntry(null);
@@ -1481,16 +1591,27 @@ function ExpenseView({ type, title, icon: Icon, filterDate, setFilterDate, setti
 
   const handleDelete = async (id) => {
     await db.delete(type, id);
+    setIsModalOpen(false);
     loadEntries();
   };
 
   return (
     <div>
-      <StickyHeader title={title} date={filterDate} setDate={setFilterDate} />
+      <StickyHeader title={title} date={filterDate} setDate={setFilterDate} hideMonthFilter={isBill} />
       
       <GlassCard className="p-6 mb-6" style={{background:'linear-gradient(135deg,#F8F4FF 0%,#EEF6FF 100%)', border:'1px solid #EDE7F6'}}>
-        <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{color:'#79747E'}}>Monthly Spending</p>
+        <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{color:'#79747E'}}>{isBill ? 'Total Spending' : 'Monthly Spending'}</p>
         <p className="text-4xl font-black" style={{color:'#1C1B1F'}}>{settings.currency}{totalAmount}</p>
+        
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={handleShareReport}
+          className="relative z-10 mt-5 w-full flex items-center justify-center gap-2 font-bold py-3 rounded-2xl"
+          style={{background:'linear-gradient(135deg,#6750A4,#4A90D9)', color:'#fff', boxShadow:'0 4px 16px rgba(103,80,164,0.3)'}}
+        >
+          <Share2 size={18} />
+          Share Report
+        </motion.button>
       </GlassCard>
 
       <div className="flex justify-between items-center mb-4">
@@ -1501,10 +1622,10 @@ function ExpenseView({ type, title, icon: Icon, filterDate, setFilterDate, setti
       </div>
 
       <div className="space-y-3">
-        {entries.length === 0 && <p className="text-center py-8" style={{color:'var(--m3-on-surface-muted)'}}>No records found for this month.</p>}
+        {entries.length === 0 && <p className="text-center py-8" style={{color:'var(--m3-on-surface-muted)'}}>{isBill ? 'No records found.' : 'No records found for this month.'}</p>}
         {entries.map(e => (
           <SwipeableItem key={e.id} onDelete={() => handleDelete(e.id)} onEdit={() => { setEditingEntry(e); setFormData(e); setIsModalOpen(true); }}>
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center" onClick={() => { setViewingEntry(e); setIsViewModalOpen(true); }}>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{background:'#F3EEFF', color:'#6750A4'}}>
                   <Icon size={20} />
@@ -1613,6 +1734,45 @@ function ExpenseView({ type, title, icon: Icon, filterDate, setFilterDate, setti
             </motion.button>
           </div>
         </div>
+      </BottomSheet>
+
+      <BottomSheet isOpen={isViewModalOpen} onClose={() => setIsViewModalOpen(false)} title={`${title} Details`} isCentered={true}>
+        {viewingEntry && (
+          <div className="space-y-4 text-sm" style={{color:'var(--m3-on-surface)'}}>
+            {type === 'grocery' && (
+              <>
+                <div className="flex justify-between border-b pb-2" style={{borderColor:'var(--m3-input-border)'}}><span className="font-semibold text-gray-500">Store:</span> <span>{viewingEntry.purchasedFrom}</span></div>
+                <div className="flex justify-between border-b pb-2" style={{borderColor:'var(--m3-input-border)'}}><span className="font-semibold text-gray-500">Date:</span> <span>{viewingEntry.date}</span></div>
+                <div className="flex justify-between border-b pb-2" style={{borderColor:'var(--m3-input-border)'}}><span className="font-semibold text-gray-500">Amount:</span> <span className="font-bold">{settings.currency}{viewingEntry.amount}</span></div>
+                <div className="flex justify-between border-b pb-2" style={{borderColor:'var(--m3-input-border)'}}><span className="font-semibold text-gray-500">Account:</span> <span>{viewingEntry.accountName || '-'}</span></div>
+              </>
+            )}
+            {(type.startsWith('electricity') || type === 'water_bill') && (
+              <>
+                <div className="flex justify-between border-b pb-2" style={{borderColor:'var(--m3-input-border)'}}><span className="font-semibold text-gray-500">Amount:</span> <span className="font-bold">{settings.currency}{viewingEntry.amount}</span></div>
+                <div className="flex justify-between border-b pb-2" style={{borderColor:'var(--m3-input-border)'}}><span className="font-semibold text-gray-500">Due Date:</span> <span>{viewingEntry.dueDate}</span></div>
+                <div className="flex justify-between border-b pb-2" style={{borderColor:'var(--m3-input-border)'}}><span className="font-semibold text-gray-500">Payment Date:</span> <span>{viewingEntry.paymentDate}</span></div>
+              </>
+            )}
+            {type === 'other_expenses' && (
+              <>
+                <div className="flex justify-between border-b pb-2" style={{borderColor:'var(--m3-input-border)'}}><span className="font-semibold text-gray-500">Item:</span> <span>{viewingEntry.itemName}</span></div>
+                <div className="flex justify-between border-b pb-2" style={{borderColor:'var(--m3-input-border)'}}><span className="font-semibold text-gray-500">Amount:</span> <span className="font-bold">{settings.currency}{viewingEntry.amount}</span></div>
+                <div className="flex justify-between border-b pb-2" style={{borderColor:'var(--m3-input-border)'}}><span className="font-semibold text-gray-500">Date:</span> <span>{viewingEntry.paymentDate}</span></div>
+              </>
+            )}
+            <div className="pt-2">
+              <span className="font-semibold text-gray-500 block mb-1">Note:</span>
+              <p className="bg-gray-50 p-3 rounded-xl border" style={{borderColor:'var(--m3-input-border)'}}>{viewingEntry.note || 'No additional notes'}</p>
+            </div>
+            
+            <div className="pt-4 flex gap-3">
+              <motion.button whileTap={{scale:0.97}} onClick={() => setIsViewModalOpen(false)} className="w-full font-bold py-3 rounded-2xl" style={{background:'var(--m3-input-bg)', color:'var(--m3-on-surface)'}}>
+                Close
+              </motion.button>
+            </div>
+          </div>
+        )}
       </BottomSheet>
     </div>
   );

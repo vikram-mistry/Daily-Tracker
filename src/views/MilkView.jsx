@@ -14,6 +14,7 @@ function MilkView({ filterDate, setFilterDate, settings }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null);
   const [isListExpanded, setIsListExpanded] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   
   // Selection Mode for Pause
   const [isSelectMode, setIsSelectMode] = useState(false);
@@ -338,7 +339,7 @@ function MilkView({ filterDate, setFilterDate, settings }) {
             >
               {entries.length === 0 && <p className="text-center py-4 text-sm" style={{color:'var(--m3-on-surface-muted)'}}>No entries this month.</p>}
               {entries.map(entry => (
-                <SwipeableItem key={entry.id} onDelete={() => handleDelete(entry.id)} onEdit={() => openEdit(entry)}>
+                <SwipeableItem key={entry.id} onDelete={() => setDeleteConfirmId(entry.id)} onEdit={() => openEdit(entry)}>
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-3">
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center`} style={{background: entry.isPaused ? 'var(--m3-error-container)' : 'var(--m3-primary-container)', color: entry.isPaused ? 'var(--m3-on-error-container)' : 'var(--m3-on-primary-container)'}}>
@@ -393,6 +394,38 @@ function MilkView({ filterDate, setFilterDate, settings }) {
              )}
             <motion.button whileTap={{scale:0.97}} onClick={handleSave} className="flex-[2] font-bold py-4 rounded-2xl" style={{background:'linear-gradient(135deg,#6750A4,#4A90D9)', color:'#fff', boxShadow:'0 4px 16px rgba(103,80,164,0.3)'}}>
               Save Entry
+            </motion.button>
+          </div>
+        </div>
+      </BottomSheet>
+
+      {/* Delete Confirmation Modal */}
+      <BottomSheet 
+        isOpen={deleteConfirmId !== null} 
+        onClose={() => setDeleteConfirmId(null)} 
+        title="Delete Record?" 
+        isCentered={true}
+      >
+        <div className="space-y-4">
+          <p style={{ color: 'var(--m3-on-surface-variant)' }}>
+            Are you sure you want to delete this milk entry? This action cannot be undone.
+          </p>
+          <div className="flex gap-3 mt-4">
+            <motion.button 
+              whileTap={{ scale: 0.97 }} 
+              onClick={() => setDeleteConfirmId(null)} 
+              className="flex-1 font-bold py-3.5 rounded-2xl border" 
+              style={{ background: 'var(--m3-input-bg)', borderColor: 'var(--m3-input-border)', color: 'var(--m3-on-surface)' }}
+            >
+              Cancel
+            </motion.button>
+            <motion.button 
+              whileTap={{ scale: 0.97 }} 
+              onClick={() => { handleDelete(deleteConfirmId); setDeleteConfirmId(null); }} 
+              className="flex-1 font-bold py-3.5 rounded-2xl text-white" 
+              style={{ background: '#E05C5C' }}
+            >
+              Delete
             </motion.button>
           </div>
         </div>

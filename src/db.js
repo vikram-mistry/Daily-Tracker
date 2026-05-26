@@ -10,7 +10,7 @@ import { firestore, auth } from './firebase';
 import { collection, doc, setDoc, getDocs, deleteDoc } from 'firebase/firestore';
 
 const DB_NAME = 'TrackitProDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 class LocalDB {
   constructor() {

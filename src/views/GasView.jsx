@@ -15,6 +15,7 @@ function GasView({ filterDate, setFilterDate, settings }) {
   const [editingEntry, setEditingEntry] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [viewingEntry, setViewingEntry] = useState(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
   const [formData, setFormData] = useState({ 
     installDate: new Date().toISOString().split('T')[0], 
@@ -148,32 +149,32 @@ function GasView({ filterDate, setFilterDate, settings }) {
         {entries.map((entry, idx) => {
            const daysUsed = calculateDays(entry.installDate, entry.uninstallDate);
            const isActive = !entry.uninstallDate;
-           return (
-            <SwipeableItem key={entry.id} onDelete={() => handleDelete(entry.id)} onEdit={() => openEdit(entry)}>
-              <div onClick={() => { setViewingEntry(entry); setIsViewModalOpen(true); }} className="flex justify-between items-start">
-                <div className="flex items-start gap-4">
-                  <div className={`w-12 h-12 mt-1 rounded-2xl flex items-center justify-center`} style={{background: isActive ? '#FFE0C8' : '#F5F5F5', border: isActive ? '1.5px solid #E67E22' : '1px solid #EDE7F6', color: isActive ? '#E67E22' : '#79747E'}}>
-                    <Flame size={24} />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-bold text-lg" style={{color:'var(--m3-on-surface)'}}>Cylinder #{entries.length - idx}</p>
-                      {isActive && <span className="text-[9px] uppercase px-2 py-0.5 rounded-full font-bold" style={{background:'#FF9A5C', color:'#fff'}}>Active</span>}
-                    </div>
-                    <p className="text-xs mt-1" style={{color:'#79747E'}}>Installed: {new Date(entry.installDate).toLocaleDateString()}</p>
-                    {entry.uninstallDate && (
-                       <p className="text-xs mt-0.5" style={{color:'#79747E'}}>Ended: {new Date(entry.uninstallDate).toLocaleDateString()}</p>
-                    )}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-xl font-bold" style={{color:'var(--m3-on-surface)'}}>{settings.currency}{entry.amount}</p>
-                  <p className="text-sm font-semibold mt-1" style={{color: isActive ? '#E67E22' : '#79747E'}}>{daysUsed} Days</p>
-                </div>
-              </div>
-            </SwipeableItem>
-           )
-        })}
+            return (
+             <SwipeableItem key={entry.id} onDelete={() => setDeleteConfirmId(entry.id)} onEdit={() => openEdit(entry)}>
+               <div onClick={() => { setViewingEntry(entry); setIsViewModalOpen(true); }} className="flex justify-between items-start">
+                 <div className="flex items-start gap-4">
+                   <div className={`w-12 h-12 mt-1 rounded-2xl flex items-center justify-center`} style={{background: isActive ? '#FFE0C8' : '#F5F5F5', border: isActive ? '1.5px solid #E67E22' : '1px solid #EDE7F6', color: isActive ? '#E67E22' : '#79747E'}}>
+                     <Flame size={24} />
+                   </div>
+                   <div>
+                     <div className="flex items-center gap-2">
+                       <p className="font-bold text-lg" style={{color:'var(--m3-on-surface)'}}>Cylinder #{entries.length - idx}</p>
+                       {isActive && <span className="text-[9px] uppercase px-2 py-0.5 rounded-full font-bold" style={{background:'#FF9A5C', color:'#fff'}}>Active</span>}
+                     </div>
+                     <p className="text-xs mt-1" style={{color:'#79747E'}}>Installed: {new Date(entry.installDate).toLocaleDateString()}</p>
+                     {entry.uninstallDate && (
+                        <p className="text-xs mt-0.5" style={{color:'#79747E'}}>Ended: {new Date(entry.uninstallDate).toLocaleDateString()}</p>
+                     )}
+                   </div>
+                 </div>
+                 <div className="text-right">
+                   <p className="text-xl font-bold" style={{color:'var(--m3-on-surface)'}}>{settings.currency}{entry.amount}</p>
+                   <p className="text-sm font-semibold mt-1" style={{color: isActive ? '#E67E22' : '#79747E'}}>{daysUsed} Days</p>
+                 </div>
+               </div>
+             </SwipeableItem>
+            )
+         })}
       </div>
 
       <BottomSheet isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingEntry ? "Edit Cylinder" : "Add Cylinder"} isCentered={true}>
@@ -231,6 +232,38 @@ function GasView({ filterDate, setFilterDate, settings }) {
             </div>
           </div>
         )}
+      </BottomSheet>
+
+      {/* Delete Confirmation Modal */}
+      <BottomSheet 
+        isOpen={deleteConfirmId !== null} 
+        onClose={() => setDeleteConfirmId(null)} 
+        title="Delete Record?" 
+        isCentered={true}
+      >
+        <div className="space-y-4">
+          <p style={{ color: 'var(--m3-on-surface-variant)' }}>
+            Are you sure you want to delete this gas cylinder record? This action cannot be undone.
+          </p>
+          <div className="flex gap-3 mt-4">
+            <motion.button 
+              whileTap={{ scale: 0.97 }} 
+              onClick={() => setDeleteConfirmId(null)} 
+              className="flex-1 font-bold py-3.5 rounded-2xl border" 
+              style={{ background: 'var(--m3-input-bg)', borderColor: 'var(--m3-input-border)', color: 'var(--m3-on-surface)' }}
+            >
+              Cancel
+            </motion.button>
+            <motion.button 
+              whileTap={{ scale: 0.97 }} 
+              onClick={() => { handleDelete(deleteConfirmId); setDeleteConfirmId(null); }} 
+              className="flex-1 font-bold py-3.5 rounded-2xl text-white" 
+              style={{ background: '#E05C5C' }}
+            >
+              Delete
+            </motion.button>
+          </div>
+        </div>
       </BottomSheet>
     </div>
   );

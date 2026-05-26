@@ -16,6 +16,7 @@ function ExpenseView({ type, title, icon: Icon, filterDate, setFilterDate, setti
   
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [viewingEntry, setViewingEntry] = useState(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
   const [formData, setFormData] = useState({});
 
@@ -158,7 +159,7 @@ function ExpenseView({ type, title, icon: Icon, filterDate, setFilterDate, setti
       <div className="space-y-3">
         {entries.length === 0 && <p className="text-center py-8" style={{color:'var(--m3-on-surface-muted)'}}>{isBill ? 'No records found.' : 'No records found for this month.'}</p>}
         {entries.map(e => (
-          <SwipeableItem key={e.id} onDelete={() => handleDelete(e.id)} onEdit={() => { setEditingEntry(e); setFormData(e); setIsModalOpen(true); }}>
+          <SwipeableItem key={e.id} onDelete={() => setDeleteConfirmId(e.id)} onEdit={() => { setEditingEntry(e); setFormData(e); setIsModalOpen(true); }}>
             <div className="flex justify-between items-center" onClick={() => { setViewingEntry(e); setIsViewModalOpen(true); }}>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0" style={{background:'var(--m3-icon-btn-bg)', color:'var(--m3-icon-btn-color)'}}>
@@ -303,6 +304,38 @@ function ExpenseView({ type, title, icon: Icon, filterDate, setFilterDate, setti
             </div>
           </div>
         )}
+      </BottomSheet>
+
+      {/* Delete Confirmation Modal */}
+      <BottomSheet 
+        isOpen={deleteConfirmId !== null} 
+        onClose={() => setDeleteConfirmId(null)} 
+        title="Delete Record?" 
+        isCentered={true}
+      >
+        <div className="space-y-4">
+          <p style={{ color: 'var(--m3-on-surface-variant)' }}>
+            Are you sure you want to delete this record? This action cannot be undone.
+          </p>
+          <div className="flex gap-3 mt-4">
+            <motion.button 
+              whileTap={{ scale: 0.97 }} 
+              onClick={() => setDeleteConfirmId(null)} 
+              className="flex-1 font-bold py-3.5 rounded-2xl border" 
+              style={{ background: 'var(--m3-input-bg)', borderColor: 'var(--m3-input-border)', color: 'var(--m3-on-surface)' }}
+            >
+              Cancel
+            </motion.button>
+            <motion.button 
+              whileTap={{ scale: 0.97 }} 
+              onClick={() => { handleDelete(deleteConfirmId); setDeleteConfirmId(null); }} 
+              className="flex-1 font-bold py-3.5 rounded-2xl text-white" 
+              style={{ background: '#E05C5C' }}
+            >
+              Delete
+            </motion.button>
+          </div>
+        </div>
       </BottomSheet>
     </div>
   );

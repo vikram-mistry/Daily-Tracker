@@ -4,10 +4,12 @@ import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { 
   Milk, Flame, Plus, Settings, Calendar, ChevronLeft, ChevronRight, 
   Trash2, Edit3, X, Check, Droplet, Zap, Wifi, ShoppingCart, 
-  Wrench, Package, PauseCircle, PlayCircle, Download, Upload, Info, Share2, LayoutGrid, Train
+  Wrench, Package, PauseCircle, PlayCircle, Download, Upload, Info, Share2, LayoutGrid, Train,
+  Home
 } from 'lucide-react';
 import { db, DEFAULT_SETTINGS } from './db';
 import { GlassCard, SwipeableItem, BottomSheet, StickyHeader } from './components/UI';
+import HomeView from './views/HomeView';
 import MilkView from './views/MilkView';
 import GasView from './views/GasView';
 import CustomCategoryView from './views/CustomCategoryView';
@@ -18,7 +20,7 @@ import { auth, provider, signInWithPopup, signOut, updateProfile } from './fireb
 import { LogIn, LogOut, RefreshCw, User } from 'lucide-react';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('milk'); // milk, gas, settings, custom-{id}
+  const [activeTab, setActiveTab] = useState('home'); // home, milk, gas, settings, custom-{id}
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [categories, setCategories] = useState([]);
   const [isReady, setIsReady] = useState(false);
@@ -149,6 +151,7 @@ export default function App() {
               transition={{ duration: 0.2, ease: 'easeOut' }}
               className="p-4"
             >
+              {activeTab === 'home' && <HomeView filterDate={filterDate} setFilterDate={setFilterDate} settings={settings} />}
               {activeTab === 'milk' && <MilkView filterDate={filterDate} setFilterDate={setFilterDate} settings={settings} />}
               {activeTab === 'gas' && <GasView filterDate={filterDate} setFilterDate={setFilterDate} settings={settings} />}
               {activeTab === 'water' && <WaterView filterDate={filterDate} setFilterDate={setFilterDate} settings={settings} />}
@@ -175,9 +178,8 @@ export default function App() {
         {/* Bottom Navigation Bar */}
         <div className="absolute bottom-0 w-full px-4 pb-6 pt-2 z-40" style={{background:'var(--m3-nav-gradient)'}}>
           <div className="flex items-center justify-around rounded-full py-2 px-2" style={{background:'var(--m3-nav-bg)', backdropFilter:'blur(24px)', WebkitBackdropFilter:'blur(24px)', border:'1px solid var(--m3-nav-border)', boxShadow:'var(--m3-nav-shadow)'}}>
+            <NavIcon icon={Home} label="Home" isActive={activeTab === 'home'} onClick={() => setActiveTab('home')} />
             <NavIcon icon={Milk} label="Milk" isActive={activeTab === 'milk'} onClick={() => setActiveTab('milk')} />
-            <NavIcon icon={Flame} label="Gas" isActive={activeTab === 'gas'} onClick={() => setActiveTab('gas')} />
-            <NavIcon icon={Droplet} label="Water" isActive={activeTab === 'water'} onClick={() => setActiveTab('water')} />
             
             {/* FAB (Add More) */}
             <motion.button
@@ -189,6 +191,7 @@ export default function App() {
               <LayoutGrid size={24} />
             </motion.button>
 
+            <NavIcon icon={Flame} label="Gas" isActive={activeTab === 'gas'} onClick={() => setActiveTab('gas')} />
             <NavIcon icon={Settings} label="Settings" isActive={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
           </div>
         </div>
@@ -196,7 +199,8 @@ export default function App() {
         {/* Add More Bottom Sheet */}
         <BottomSheet isOpen={isAddSheetOpen} onClose={() => setIsAddSheetOpen(false)} title="Track Expenses" isCentered={true}>
           <div className="grid grid-cols-2 gap-4 mt-6">
-             <ExpenseMenuItem icon={ShoppingCart} label="Grocery" onClick={() => { setActiveTab('grocery'); setIsAddSheetOpen(false); }} color="#10b981" />
+             <ExpenseMenuItem icon={ShoppingCart} label="Grocery" onClick={() => { setActiveTab('grocery'); setIsAddSheetOpen(false); }} color="#27ae90" />
+             <ExpenseMenuItem icon={Droplet} label="Water" onClick={() => { setActiveTab('water'); setIsAddSheetOpen(false); }} color="#3b82f6" />
              <ExpenseMenuItem icon={Zap} label="Elec (Lotus)" onClick={() => { setActiveTab('elec-lotus'); setIsAddSheetOpen(false); }} color="#f59e0b" />
              <ExpenseMenuItem icon={Zap} label="Elec (Sadri)" onClick={() => { setActiveTab('elec-sadri'); setIsAddSheetOpen(false); }} color="#f59e0b" />
              <ExpenseMenuItem icon={Droplet} label="Water Bill" onClick={() => { setActiveTab('water-bill'); setIsAddSheetOpen(false); }} color="#3b82f6" />

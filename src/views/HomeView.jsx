@@ -6,12 +6,14 @@ import {
 } from 'lucide-react';
 import { db } from '../db';
 import { GlassCard, StickyHeader } from '../components/UI';
+import { auth } from '../firebase';
 
 const ICONS_MAP = {
   Droplet, Zap, Wifi: Zap, ShoppingCart, Wrench: Package, Package, Train
 };
 
 export default function HomeView({ filterDate, setFilterDate, settings }) {
+  const [user, setUser] = useState(auth.currentUser);
   const [milkEntries, setMilkEntries] = useState([]);
   const [gasEntries, setGasEntries] = useState([]);
   const [groceryEntries, setGroceryEntries] = useState([]);
@@ -23,6 +25,21 @@ export default function HomeView({ filterDate, setFilterDate, settings }) {
   const [categories, setCategories] = useState([]);
 
   const [activeSlice, setActiveSlice] = useState(null);
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((u) => {
+      setUser(u);
+    });
+    return unsubscribe;
+  }, []);
+
+  const headerTitle = useMemo(() => {
+    if (user?.displayName) {
+      const firstName = user.displayName.split(' ')[0];
+      return `Hello ${firstName}`;
+    }
+    return 'Hello Vikram';
+  }, [user]);
 
   useEffect(() => {
     let active = true;
@@ -254,7 +271,7 @@ export default function HomeView({ filterDate, setFilterDate, settings }) {
 
   return (
     <div className="space-y-6 pb-12">
-      <StickyHeader title="Home Analytics" date={filterDate} setDate={setFilterDate} />
+      <StickyHeader title={headerTitle} date={filterDate} setDate={setFilterDate} />
 
       {/* Expense Summary & Donut Card */}
       <GlassCard className="p-6 flex flex-col items-center">

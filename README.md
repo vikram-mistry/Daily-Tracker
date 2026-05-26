@@ -10,11 +10,17 @@
 
 ## ✨ Features
 
+### 🏠 Home Hub Analytics
+*   **Interactive Expense Distribution**: A beautiful, custom SVG donut chart detailing monthly spending allocations across all categories (Milk, Gas, Grocery, Bills, Travel, etc.) with animated slice highlighting.
+*   **Gas Cylinder Longevity Predictor**: Automatically projects remaining usage days and estimated empty date based on your historical cylinder consumption logs.
+*   **Utility Bills Payment Status**: Quick-glance checklist of monthly bills (Lotus Electricity, Sadri Electricity, Water Bill) dynamically checked and flagged as `Paid` or `Unpaid`.
+
 ### 🥛 Milk Tracker
 *   **Monthly Calendar View**: Visual tracking of daily milk intake.
 *   **Bulk Actions**: Easily "Bulk Pause" milk delivery for vacations or holidays.
 *   **Automatic Totals**: Real-time calculation of monthly quantity and total cost.
 *   **Smart Entry**: Quick-add or edit entries with a single tap.
+*   **Delete Safeguards**: Accidental deletion prevention using responsive bottom-sheet confirmation dialogs.
 *   **Premium Aesthetic**: Features a custom "Buffalo Milk" glass icon for a personalized touch.
 
 ### 🌊 Water Intake (Hydration)
@@ -26,10 +32,11 @@
 ### ⛽ Gas Management
 *   **Cylinder Lifecycle**: Track installation and uninstallation dates.
 *   **Usage Insights**: Automatically calculates how many days each cylinder lasted.
-*   **History**: Maintain a complete log of your gas consumption and spending.
+*   **History**: Maintain a complete log of your gas consumption and spending with delete confirmation safeguards.
 
 ### ➕ Household Expenses
 *   **Categorized Tracking**: Dedicated modules for **Grocery**, **Electricity (Lotus & Sadri)**, **Water Bill**, and **Other**.
+*   **Smart Navigation**: Grocery logging is accessible directly via the central FAB (Floating Action Button) menu.
 *   **Detailed Records**: Track purchase dates, payment accounts, and specific notes.
 *   **Monthly Summaries**: View exactly where your money is going each month.
 

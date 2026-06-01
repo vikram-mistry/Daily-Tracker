@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Milk, Flame, Droplet, Zap, ShoppingCart, Train, Package, 
-  AlertCircle, CheckCircle, HelpCircle, IndianRupee
+  AlertCircle, CheckCircle, HelpCircle, ReceiptIndianRupee
 } from 'lucide-react';
 import { db } from '../db';
 import { GlassCard, StickyHeader } from '../components/UI';
@@ -162,7 +162,7 @@ export default function HomeView({ filterDate, setFilterDate, settings }) {
       { key: 'grocery', label: 'Grocery', value: grocerySpend, color: '#27AE90', icon: ShoppingCart },
       { key: 'elec-lotus', label: 'Elec (Lotus)', value: lotusSpend, color: '#F2C94C', icon: Zap },
       { key: 'elec-sadri', label: 'Elec (Sadri)', value: sadriSpend, color: '#F2994A', icon: Zap },
-      { key: 'maintenance', label: 'Maintenance', value: maintenanceSpend, color: '#1ABC9C', icon: IndianRupee },
+      { key: 'maintenance', label: 'Maintenance', value: maintenanceSpend, color: '#1ABC9C', icon: ReceiptIndianRupee },
       { key: 'other', label: 'Travel', value: travelSpend, color: '#9B51E0', icon: Train }
     ];
 
@@ -461,7 +461,7 @@ export default function HomeView({ filterDate, setFilterDate, settings }) {
               <div key={bill.id} className="flex items-center justify-between py-2 border-b last:border-0" style={{ borderColor: 'var(--m3-divider)' }}>
                 <div className="flex items-center gap-3">
                   <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${bill.paid ? 'bg-green-100 dark:bg-green-950 text-green-600 dark:text-green-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-500'}`}>
-                    {bill.id === 'maintenance' ? <IndianRupee size={16} /> : <Zap size={16} />}
+                    {bill.id === 'maintenance' ? <ReceiptIndianRupee size={16} /> : <Zap size={16} />}
                   </div>
                   <span className="text-sm font-semibold" style={{ color: 'var(--m3-on-surface)' }}>{bill.name}</span>
                 </div>

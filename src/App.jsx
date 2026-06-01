@@ -5,7 +5,7 @@ import {
   Milk, Flame, Plus, Settings, Calendar, ChevronLeft, ChevronRight, 
   Trash2, Edit3, X, Check, Droplet, Zap, Wifi, ShoppingCart, 
   Wrench, Package, PauseCircle, PlayCircle, Download, Upload, Info, Share2, LayoutGrid, Train,
-  Home, IndianRupee
+  Home, ReceiptIndianRupee
 } from 'lucide-react';
 import { db, DEFAULT_SETTINGS } from './db';
 import { GlassCard, SwipeableItem, BottomSheet, StickyHeader } from './components/UI';
@@ -158,7 +158,7 @@ export default function App() {
               {activeTab === 'elec-lotus' && <ExpenseView type="electricity_lotus" title="Electricity (Lotus)" icon={Zap} filterDate={filterDate} setFilterDate={setFilterDate} settings={settings} />}
               {activeTab === 'elec-sadri' && <ExpenseView type="electricity_sadri" title="Electricity (Sadri)" icon={Zap} filterDate={filterDate} setFilterDate={setFilterDate} settings={settings} />}
               {activeTab === 'water-bill' && <ExpenseView type="water_bill" title="Water Bill" icon={Droplet} filterDate={filterDate} setFilterDate={setFilterDate} settings={settings} />}
-              {activeTab === 'maintenance' && <ExpenseView type="maintenance" title="Maintenance" icon={IndianRupee} filterDate={filterDate} setFilterDate={setFilterDate} settings={settings} />}
+              {activeTab === 'maintenance' && <ExpenseView type="maintenance" title="Maintenance" icon={ReceiptIndianRupee} filterDate={filterDate} setFilterDate={setFilterDate} settings={settings} />}
               {activeTab === 'other' && <ExpenseView type="other_expenses" title="Travel" icon={Train} filterDate={filterDate} setFilterDate={setFilterDate} settings={settings} />}
               
               {activeTab.startsWith('custom-') && (
@@ -199,7 +199,7 @@ export default function App() {
         <BottomSheet isOpen={isAddSheetOpen} onClose={() => setIsAddSheetOpen(false)} title="Track Expenses" isCentered={true}>
           <div className="grid grid-cols-2 gap-4 mt-6">
              <ExpenseMenuItem icon={ShoppingCart} label="Grocery" onClick={() => { setActiveTab('grocery'); setIsAddSheetOpen(false); }} color="#27ae90" />
-             <ExpenseMenuItem icon={IndianRupee} label="Maintenance" onClick={() => { setActiveTab('maintenance'); setIsAddSheetOpen(false); }} color="#1ABC9C" />
+             <ExpenseMenuItem icon={ReceiptIndianRupee} label="Maintenance" onClick={() => { setActiveTab('maintenance'); setIsAddSheetOpen(false); }} color="#1ABC9C" />
              <ExpenseMenuItem icon={Zap} label="Elec (Lotus)" onClick={() => { setActiveTab('elec-lotus'); setIsAddSheetOpen(false); }} color="#f59e0b" />
              <ExpenseMenuItem icon={Zap} label="Elec (Sadri)" onClick={() => { setActiveTab('elec-sadri'); setIsAddSheetOpen(false); }} color="#f59e0b" />
              <ExpenseMenuItem icon={Droplet} label="Water Bill" onClick={() => { setActiveTab('water-bill'); setIsAddSheetOpen(false); }} color="#3b82f6" />

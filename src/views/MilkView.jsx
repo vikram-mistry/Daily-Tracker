@@ -109,7 +109,8 @@ function MilkView({ filterDate, setFilterDate, settings }) {
     const pausedDays = entries.filter(e => e.isPaused);
 
     const lines = [
-      `🥛 *Milk Report — ${monthYear}*`,
+      `🏠 *Lotus Residency CHS Milk Bill Report — ${monthYear}*`,
+      `📍 Address: 1904 / A-WING`,
       `━━━━━━━━━━━━━━━━━━━━━━━━`,
       `📦 Total Quantity : *${stats.qty} L*`,
       `💰 Total Amount   : *${settings.currency}${stats.amount.toFixed(2)}*`,
@@ -145,7 +146,7 @@ function MilkView({ filterDate, setFilterDate, settings }) {
 
     try {
       if (navigator.share) {
-        await navigator.share({ title: `Milk Report – ${monthYear}`, text: reportText });
+        await navigator.share({ title: `Lotus Residency CHS Milk Bill Report – ${monthYear}`, text: reportText });
       } else {
         // Fallback: copy to clipboard
         await navigator.clipboard.writeText(reportText);

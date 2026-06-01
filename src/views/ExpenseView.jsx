@@ -22,7 +22,7 @@ function ExpenseView({ type, title, icon: Icon, filterDate, setFilterDate, setti
 
   const loadEntries = useCallback(async () => {
     const all = await db.getAll(type);
-    const isBill = type.startsWith('electricity') || type === 'water_bill' || type === 'other_expenses';
+    const isBill = type.startsWith('electricity') || type === 'water_bill' || type === 'other_expenses' || type === 'maintenance';
     let filtered = all;
     if (!isBill) {
       filtered = all.filter(e => {
@@ -36,7 +36,7 @@ function ExpenseView({ type, title, icon: Icon, filterDate, setFilterDate, setti
   useEffect(() => { loadEntries(); }, [loadEntries]);
 
   const totalAmount = entries.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
-  const isBill = type.startsWith('electricity') || type === 'water_bill' || type === 'other_expenses';
+  const isBill = type.startsWith('electricity') || type === 'water_bill' || type === 'other_expenses' || type === 'maintenance';
 
   const handleShareReport = async () => {
     const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -117,6 +117,7 @@ function ExpenseView({ type, title, icon: Icon, filterDate, setFilterDate, setti
   else if (type.startsWith('electricity')) cardIcon = './electricity-icon.png';
   else if (type === 'water_bill') cardIcon = './water-icon.png';
   else if (type === 'other_expenses') cardIcon = './travel-icon.png';
+  else if (type === 'maintenance') cardIcon = null;
 
   return (
     <div>
@@ -211,7 +212,7 @@ function ExpenseView({ type, title, icon: Icon, filterDate, setFilterDate, setti
             </>
           )}
 
-          {(type.startsWith('electricity') || type === 'water_bill') && (
+          {(type.startsWith('electricity') || type === 'water_bill' || type === 'maintenance') && (
             <>
               <div>
                 <label className="text-xs font-semibold uppercase tracking-wider pl-1 mb-1 block" style={{color:'#6750A4'}}>Amount</label>
@@ -278,7 +279,7 @@ function ExpenseView({ type, title, icon: Icon, filterDate, setFilterDate, setti
                 <div className="flex justify-between border-b pb-2" style={{borderColor:'var(--m3-input-border)'}}><span className="font-semibold text-gray-500">Account:</span> <span>{viewingEntry.accountName || '-'}</span></div>
               </>
             )}
-            {(type.startsWith('electricity') || type === 'water_bill') && (
+            {(type.startsWith('electricity') || type === 'water_bill' || type === 'maintenance') && (
               <>
                 <div className="flex justify-between border-b pb-2" style={{borderColor:'var(--m3-input-border)'}}><span className="font-semibold text-gray-500">Amount:</span> <span className="font-bold">{settings.currency}{viewingEntry.amount}</span></div>
                 <div className="flex justify-between border-b pb-2" style={{borderColor:'var(--m3-input-border)'}}><span className="font-semibold text-gray-500">Due Date:</span> <span>{viewingEntry.dueDate}</span></div>

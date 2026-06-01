@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Milk, Flame, Droplet, Zap, ShoppingCart, Train, Package, 
-  AlertCircle, CheckCircle, HelpCircle
+  AlertCircle, CheckCircle, HelpCircle, IndianRupee
 } from 'lucide-react';
 import { db } from '../db';
 import { GlassCard, StickyHeader } from '../components/UI';
@@ -19,12 +19,17 @@ export default function HomeView({ filterDate, setFilterDate, settings }) {
   const [groceryEntries, setGroceryEntries] = useState([]);
   const [lotusEntries, setLotusEntries] = useState([]);
   const [sadriEntries, setSadriEntries] = useState([]);
-  const [waterBillEntries, setWaterBillEntries] = useState([]);
+  const [maintenanceEntries, setMaintenanceEntries] = useState([]);
   const [travelEntries, setTravelEntries] = useState([]);
   const [customEntries, setCustomEntries] = useState([]);
   const [categories, setCategories] = useState([]);
 
   const [activeSlice, setActiveSlice] = useState(null);
+
+  // Reset active slice when month changes to prevent stale highlights
+  useEffect(() => {
+    setActiveSlice(null);
+  }, [filterDate]);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((u) => {
@@ -46,14 +51,14 @@ export default function HomeView({ filterDate, setFilterDate, settings }) {
     async function loadAllData() {
       try {
         const [
-          milk, gas, grocery, lotus, sadri, waterBill, travel, custom, cats
+          milk, gas, grocery, lotus, sadri, maintenance, travel, custom, cats
         ] = await Promise.all([
           db.getAll('milk'),
           db.getAll('gas'),
           db.getAll('grocery'),
           db.getAll('electricity_lotus'),
           db.getAll('electricity_sadri'),
-          db.getAll('water_bill'),
+          db.getAll('maintenance'),
           db.getAll('other_expenses'),
           db.getAll('custom'),
           db.getAll('categories')
@@ -65,7 +70,7 @@ export default function HomeView({ filterDate, setFilterDate, settings }) {
           setGroceryEntries(grocery);
           setLotusEntries(lotus);
           setSadriEntries(sadri);
-          setWaterBillEntries(waterBill);
+          setMaintenanceEntries(maintenance);
           setTravelEntries(travel);
           setCustomEntries(custom);
           setCategories(cats || []);
@@ -125,8 +130,8 @@ export default function HomeView({ filterDate, setFilterDate, settings }) {
       })
       .reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
-    // 6. Water Bill
-    const waterBillSpend = waterBillEntries
+    // 6. Maintenance
+    const maintenanceSpend = maintenanceEntries
       .filter(e => {
         const d = new Date(e.paymentDate || e.date);
         return d.getMonth() === month && d.getFullYear() === year;
@@ -157,7 +162,7 @@ export default function HomeView({ filterDate, setFilterDate, settings }) {
       { key: 'grocery', label: 'Grocery', value: grocerySpend, color: '#27AE90', icon: ShoppingCart },
       { key: 'elec-lotus', label: 'Elec (Lotus)', value: lotusSpend, color: '#F2C94C', icon: Zap },
       { key: 'elec-sadri', label: 'Elec (Sadri)', value: sadriSpend, color: '#F2994A', icon: Zap },
-      { key: 'water-bill', label: 'Water Bill', value: waterBillSpend, color: '#2F80ED', icon: Droplet },
+      { key: 'maintenance', label: 'Maintenance', value: maintenanceSpend, color: '#1ABC9C', icon: IndianRupee },
       { key: 'other', label: 'Travel', value: travelSpend, color: '#9B51E0', icon: Train }
     ];
 
@@ -183,7 +188,7 @@ export default function HomeView({ filterDate, setFilterDate, settings }) {
       milkLiters,
       milkSpend
     };
-  }, [milkEntries, gasEntries, groceryEntries, lotusEntries, sadriEntries, waterBillEntries, travelEntries, customEntries, categories, filterDate]);
+  }, [milkEntries, gasEntries, groceryEntries, lotusEntries, sadriEntries, maintenanceEntries, travelEntries, customEntries, categories, filterDate]);
 
   // Utility Bill Status Evaluator
   const billStatus = useMemo(() => {
@@ -201,9 +206,9 @@ export default function HomeView({ filterDate, setFilterDate, settings }) {
     return [
       { id: 'lotus', name: 'Lotus Elec', ...checkStatus(lotusEntries) },
       { id: 'sadri', name: 'Sadri Elec', ...checkStatus(sadriEntries) },
-      { id: 'water', name: 'Water Bill', ...checkStatus(waterBillEntries) }
+      { id: 'maintenance', name: 'Maintenance', ...checkStatus(maintenanceEntries) }
     ];
-  }, [lotusEntries, sadriEntries, waterBillEntries, filterDate]);
+  }, [lotusEntries, sadriEntries, maintenanceEntries, filterDate]);
 
   // Gas Cylinder Longevity Evaluator
   const gasPrediction = useMemo(() => {
@@ -247,16 +252,20 @@ export default function HomeView({ filterDate, setFilterDate, settings }) {
   const circumference = 2 * Math.PI * radius; // ~314.16
 
   const donutSlices = useMemo(() => {
+    const gapPercent = 0.008; // small gap between slices
+    const totalGap = calculations.activeItems.length > 1 ? gapPercent * calculations.activeItems.length : 0;
+    const usablePercent = 1 - totalGap;
     let accumulatedPercent = 0;
     const slices = [];
     for (const item of calculations.activeItems) {
-      const percent = item.value / calculations.totalSpend;
-      const strokeDashoffset = circumference - (percent * circumference);
+      const rawPercent = item.value / calculations.totalSpend;
+      const scaledPercent = rawPercent * usablePercent;
+      const strokeDashoffset = circumference - (scaledPercent * circumference);
       const rotation = (accumulatedPercent * 360) - 90;
-      accumulatedPercent += percent;
+      accumulatedPercent += scaledPercent + gapPercent;
       slices.push({
         ...item,
-        percent,
+        percent: rawPercent,
         strokeDashoffset,
         rotation
       });
@@ -283,13 +292,13 @@ export default function HomeView({ filterDate, setFilterDate, settings }) {
           <div className="flex flex-col items-center w-full gap-6">
             {/* SVG Donut Chart */}
             <div className="relative w-40 h-40 flex items-center justify-center">
-              <svg width="100%" height="100%" viewBox="0 0 130 130" className="overflow-visible">
+              <svg key={`donut-${filterDate.getMonth()}-${filterDate.getFullYear()}`} width="100%" height="100%" viewBox="0 0 130 130" className="overflow-visible">
                 {/* Background base circle */}
                 <circle cx="65" cy="65" r={radius} fill="transparent" stroke="var(--m3-input-bg)" strokeWidth={strokeWidth} />
                 
                 {donutSlices.map((slice, idx) => (
                   <motion.circle
-                    key={slice.key}
+                    key={`${slice.key}-${filterDate.getMonth()}-${filterDate.getFullYear()}`}
                     cx="65"
                     cy="65"
                     r={radius}
@@ -297,6 +306,7 @@ export default function HomeView({ filterDate, setFilterDate, settings }) {
                     stroke={slice.color}
                     strokeWidth={activeSlice === slice.key ? strokeWidth + 3 : strokeWidth}
                     strokeDasharray={circumference}
+                    strokeLinecap="round"
                     initial={{ strokeDashoffset: circumference }}
                     animate={{ strokeDashoffset: slice.strokeDashoffset }}
                     transition={{ duration: 0.8, ease: 'easeOut', delay: idx * 0.05 }}
@@ -451,7 +461,7 @@ export default function HomeView({ filterDate, setFilterDate, settings }) {
               <div key={bill.id} className="flex items-center justify-between py-2 border-b last:border-0" style={{ borderColor: 'var(--m3-divider)' }}>
                 <div className="flex items-center gap-3">
                   <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${bill.paid ? 'bg-green-100 dark:bg-green-950 text-green-600 dark:text-green-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-500'}`}>
-                    {bill.id === 'water' ? <Droplet size={16} /> : <Zap size={16} />}
+                    {bill.id === 'maintenance' ? <IndianRupee size={16} /> : <Zap size={16} />}
                   </div>
                   <span className="text-sm font-semibold" style={{ color: 'var(--m3-on-surface)' }}>{bill.name}</span>
                 </div>

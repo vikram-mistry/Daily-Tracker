@@ -71,7 +71,8 @@ function SettingsView({ settings, updateSettings, db }) {
         water_bill: await db.getAll('water_bill'),
         other_expenses: await db.getAll('other_expenses'),
         categories: await db.getAll('categories'),
-        custom: await db.getAll('custom')
+        custom: await db.getAll('custom'),
+        maintenance: await db.getAll('maintenance')
       };
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -106,6 +107,7 @@ function SettingsView({ settings, updateSettings, db }) {
         if(data.other_expenses) for(let i of data.other_expenses) await db.put('other_expenses', i);
         if(data.categories) for(let i of data.categories) await db.put('categories', i);
         if(data.custom) for(let i of data.custom) await db.put('custom', i);
+        if(data.maintenance) for(let i of data.maintenance) await db.put('maintenance', i);
         alert('Data imported successfully! App will reload.');
         window.location.reload();
       } catch (err) {
@@ -142,16 +144,6 @@ function SettingsView({ settings, updateSettings, db }) {
                 <option value="light">Light Mode</option>
                 <option value="dark">Dark Mode</option>
               </select>
-            </SettingBlock>
-          </GlassCard>
-        </section>
-
-        {/* Water Settings */}
-        <section>
-          <h3 className="text-xs font-bold uppercase tracking-widest pl-4 mb-2" style={{color:'#79747E'}}>Water Goals</h3>
-          <GlassCard className="px-5">
-            <SettingBlock label="Daily Target (L)">
-              <input type="number" step="0.1" value={settings.waterTarget} onChange={e => updateSettings({ waterTarget: Number(e.target.value) })} className="m3-input text-right" style={{padding:'8px', borderRadius:'12px'}} />
             </SettingBlock>
           </GlassCard>
         </section>

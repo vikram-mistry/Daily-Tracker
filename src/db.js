@@ -10,7 +10,7 @@ import { firestore, auth } from './firebase';
 import { collection, doc, setDoc, getDocs, deleteDoc } from 'firebase/firestore';
 
 const DB_NAME = 'TrackitProDB';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 class LocalDB {
   constructor() {
@@ -19,7 +19,8 @@ class LocalDB {
     this.memoryStore = { 
       settings: [], milk: [], gas: [], water: [], 
       grocery: [], electricity_lotus: [], electricity_sadri: [], 
-      water_bill: [], other_expenses: [], categories: [], custom: [] 
+      water_bill: [], other_expenses: [], categories: [], custom: [],
+      maintenance: []
     };
   }
 
@@ -52,7 +53,8 @@ class LocalDB {
           const stores = [
             'settings', 'milk', 'gas', 'water', 
             'grocery', 'electricity_lotus', 'electricity_sadri', 
-            'water_bill', 'other_expenses', 'categories', 'custom'
+            'water_bill', 'other_expenses', 'categories', 'custom',
+            'maintenance'
           ];
           stores.forEach(store => {
             if (!db.objectStoreNames.contains(store)) db.createObjectStore(store, { keyPath: 'id' });
@@ -153,7 +155,8 @@ class LocalDB {
     const stores = [
       'settings', 'milk', 'gas', 'water', 
       'grocery', 'electricity_lotus', 'electricity_sadri', 
-      'water_bill', 'other_expenses', 'categories', 'custom'
+      'water_bill', 'other_expenses', 'categories', 'custom',
+      'maintenance'
     ];
     
     // 1. Sync Down from Cloud
@@ -184,14 +187,16 @@ class LocalDB {
       this.memoryStore = { 
         settings: [], milk: [], gas: [], water: [], 
         grocery: [], electricity_lotus: [], electricity_sadri: [], 
-        water_bill: [], other_expenses: [], categories: [], custom: [] 
+        water_bill: [], other_expenses: [], categories: [], custom: [],
+        maintenance: []
       };
       return;
     }
     const stores = [
       'settings', 'milk', 'gas', 'water', 
       'grocery', 'electricity_lotus', 'electricity_sadri', 
-      'water_bill', 'other_expenses', 'categories', 'custom'
+      'water_bill', 'other_expenses', 'categories', 'custom',
+      'maintenance'
     ];
     for (let store of stores) {
       await new Promise((resolve) => {
@@ -207,6 +212,5 @@ export const db = new LocalDB();
 
 export const DEFAULT_SETTINGS = {
   id: 'main', theme: 'light', currency: '₹', 
-  milkPrice: 84, milkQty: 1, gasWeight: 14.2,
-  waterTarget: 4
+  milkPrice: 84, milkQty: 1, gasWeight: 14.2
 };

@@ -117,7 +117,7 @@ function ExpenseView({ type, title, icon: Icon, filterDate, setFilterDate, setti
   else if (type.startsWith('electricity')) cardIcon = './electricity-icon.png';
   else if (type === 'water_bill') cardIcon = './bill-icon.png';
   else if (type === 'other_expenses') cardIcon = './travel-icon.png';
-  else if (type === 'maintenance') cardIcon = './maintenance-icon.jpg';
+  else if (type === 'maintenance') cardIcon = './maintenance-icon.png';
 
   return (
     <div>

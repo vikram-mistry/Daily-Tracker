@@ -305,7 +305,7 @@ function SettingsView({ settings, updateSettings, db }) {
   };
 
   return (
-    <div className="pb-12">
+    <div>
       <StickyHeader title="Settings" hideMonthFilter={true} />
 
       <div className="space-y-6">
@@ -379,17 +379,24 @@ function SettingsView({ settings, updateSettings, db }) {
                   return (
                     <div 
                       key={rule.id} 
-                      className="flex items-center justify-between p-3 rounded-lg"
+                      className="flex items-center justify-between p-3 rounded-lg transition-all"
                       style={{
-                        background: isActive ? 'var(--green-light)' : 'var(--fill-quaternary)',
+                        background: isActive 
+                          ? (settings.theme === 'dark' ? 'rgba(52, 199, 89, 0.08)' : 'rgba(52, 199, 89, 0.07)') 
+                          : 'var(--fill-quaternary)',
+                        border: isActive 
+                          ? (settings.theme === 'dark' ? '0.5px solid rgba(52, 199, 89, 0.3)' : '0.5px solid rgba(52, 199, 89, 0.35)') 
+                          : '0.5px solid transparent'
                       }}
                     >
                       <div className="flex items-center gap-3">
                         <div 
                           className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[13px]" 
                           style={{ 
-                            background: isActive ? 'var(--green)' : 'var(--fill-tertiary)', 
-                            color: isActive ? '#fff' : 'var(--label-secondary)' 
+                            background: isActive 
+                              ? (settings.theme === 'dark' ? 'rgba(52, 199, 89, 0.15)' : 'var(--green-light)') 
+                              : 'var(--fill-tertiary)', 
+                            color: isActive ? 'var(--green)' : 'var(--label-secondary)' 
                           }}
                         >
                           {settings.currency}
@@ -401,8 +408,12 @@ function SettingsView({ settings, updateSettings, db }) {
                             </span>
                             {isActive && (
                               <span 
-                                className="text-[10px] font-bold px-2 py-0.5 rounded-full" 
-                                style={{ background: 'var(--green)', color: '#fff' }}
+                                className="text-[10px] font-semibold px-2 py-0.5 rounded-full" 
+                                style={{ 
+                                  background: settings.theme === 'dark' ? 'rgba(52, 199, 89, 0.15)' : 'var(--green-light)', 
+                                  color: 'var(--green)',
+                                  border: '0.5px solid rgba(52, 199, 89, 0.3)'
+                                }}
                               >
                                 Active
                               </span>
@@ -467,17 +478,24 @@ function SettingsView({ settings, updateSettings, db }) {
                   return (
                     <div 
                       key={rule.id} 
-                      className="flex items-center justify-between p-3 rounded-lg"
+                      className="flex items-center justify-between p-3 rounded-lg transition-all"
                       style={{
-                        background: isActive ? 'var(--green-light)' : 'var(--fill-quaternary)',
+                        background: isActive 
+                          ? (settings.theme === 'dark' ? 'rgba(52, 199, 89, 0.08)' : 'rgba(52, 199, 89, 0.07)') 
+                          : 'var(--fill-quaternary)',
+                        border: isActive 
+                          ? (settings.theme === 'dark' ? '0.5px solid rgba(52, 199, 89, 0.3)' : '0.5px solid rgba(52, 199, 89, 0.35)') 
+                          : '0.5px solid transparent'
                       }}
                     >
                       <div className="flex items-center gap-3">
                         <div 
                           className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[13px]" 
                           style={{ 
-                            background: isActive ? 'var(--green)' : 'var(--fill-tertiary)', 
-                            color: isActive ? '#fff' : 'var(--label-secondary)' 
+                            background: isActive 
+                              ? (settings.theme === 'dark' ? 'rgba(52, 199, 89, 0.15)' : 'var(--green-light)') 
+                              : 'var(--fill-tertiary)', 
+                            color: isActive ? 'var(--green)' : 'var(--label-secondary)' 
                           }}
                         >
                           <Droplet size={15} />
@@ -489,8 +507,12 @@ function SettingsView({ settings, updateSettings, db }) {
                             </span>
                             {isActive && (
                               <span 
-                                className="text-[10px] font-bold px-2 py-0.5 rounded-full" 
-                                style={{ background: 'var(--green)', color: '#fff' }}
+                                className="text-[10px] font-semibold px-2 py-0.5 rounded-full" 
+                                style={{ 
+                                  background: settings.theme === 'dark' ? 'rgba(52, 199, 89, 0.15)' : 'var(--green-light)', 
+                                  color: 'var(--green)',
+                                  border: '0.5px solid rgba(52, 199, 89, 0.3)'
+                                }}
                               >
                                 Active
                               </span>
@@ -600,20 +622,29 @@ function SettingsView({ settings, updateSettings, db }) {
         </section>
 
         {/* ── App Footer ─────────────────── */}
-        <div className="pt-6 pb-6 flex flex-col items-center justify-center text-center">
+        <div className="pt-4 pb-2 flex flex-col items-center justify-center text-center">
           <div 
-            className="w-10 h-10 rounded-xl mb-2 flex items-center justify-center" 
+            className="w-9 h-9 rounded-xl mb-1.5 flex items-center justify-center" 
             style={{ background: 'var(--fill-tertiary)' }}
           >
-            <Info size={18} style={{ color: 'var(--accent)' }} />
+            <Info size={17} style={{ color: 'var(--accent)' }} />
           </div>
           <p className="text-[13px] font-semibold uppercase tracking-wider" style={{ color: 'var(--label-primary)' }}>
             Trackit Pro
           </p>
           <p className="text-[11px] mt-0.5" style={{ color: 'var(--label-secondary)' }}>
-            Version 1.2.0 • Offline DB with Cloud Sync
+            Version 2.1.0 • Offline DB with Cloud Sync
           </p>
-          <p className="text-[12px] mt-3 font-medium" style={{ color: 'var(--accent)' }}>
+          
+          <div className="flex flex-wrap items-center justify-center gap-1.5 mt-2.5 mb-2 px-6">
+            <span className="text-[10px] font-medium px-2 py-0.5 rounded-md" style={{ background: 'var(--fill-tertiary)', color: 'var(--label-secondary)' }}>React</span>
+            <span className="text-[10px] font-medium px-2 py-0.5 rounded-md" style={{ background: 'var(--fill-tertiary)', color: 'var(--label-secondary)' }}>Tailwind CSS</span>
+            <span className="text-[10px] font-medium px-2 py-0.5 rounded-md" style={{ background: 'var(--fill-tertiary)', color: 'var(--label-secondary)' }}>IndexedDB</span>
+            <span className="text-[10px] font-medium px-2 py-0.5 rounded-md" style={{ background: 'var(--fill-tertiary)', color: 'var(--label-secondary)' }}>Firebase Cloud</span>
+            <span className="text-[10px] font-medium px-2 py-0.5 rounded-md" style={{ background: 'var(--fill-tertiary)', color: 'var(--label-secondary)' }}>iOS PWA</span>
+          </div>
+
+          <p className="text-[12px] font-medium" style={{ color: 'var(--accent)' }}>
             Made by Vikram Mistry
           </p>
         </div>

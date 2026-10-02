@@ -124,8 +124,7 @@ function MilkView({ filterDate, setFilterDate, settings }) {
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
-  /* ── Share Report ──────────────────── */
-  const handleShareReport = async () => {
+  const generateReportText = () => {
     const monthYear = `${monthNames[filterDate.getMonth()]} ${filterDate.getFullYear()}`;
     const sorted = [...entries].filter((e) => !e.isPaused).sort((a, b) => new Date(a.date) - new Date(b.date));
     const pausedDays = entries.filter((e) => e.isPaused);
@@ -166,7 +165,13 @@ function MilkView({ filterDate, setFilterDate, settings }) {
       `Shared via Trackit App 📱`,
     ];
 
-    const reportText = lines.join('\n');
+    return lines.join('\n');
+  };
+
+  /* ── Share Report ──────────────────── */
+  const handleShareReport = async () => {
+    const reportText = generateReportText();
+    const monthYear = `${monthNames[filterDate.getMonth()]} ${filterDate.getFullYear()}`;
     try {
       if (navigator.share) {
         await navigator.share({ title: `Lotus Residency CHS Milk Bill Report – ${monthYear}`, text: reportText });
@@ -179,6 +184,11 @@ function MilkView({ filterDate, setFilterDate, settings }) {
     }
   };
 
+  const handleWhatsAppShare = () => {
+    const reportText = generateReportText();
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(reportText)}`, '_blank');
+  };
+
   /* ── Calendar days ─────────────────── */
   const daysInMonth = new Date(filterDate.getFullYear(), filterDate.getMonth() + 1, 0).getDate();
   const calYearStr = String(filterDate.getFullYear());
@@ -188,8 +198,7 @@ function MilkView({ filterDate, setFilterDate, settings }) {
   );
   const firstDayOffset = new Date(filterDate.getFullYear(), filterDate.getMonth(), 1).getDay();
 
-  const totalTrackedDays = stats.active + stats.pause;
-  const deliveryRate = totalTrackedDays > 0 ? Math.round((stats.active / totalTrackedDays) * 100) : 0;
+  const monthProgressPercent = Math.min(100, Math.round((stats.active / daysInMonth) * 100));
 
   return (
     <div>
@@ -197,7 +206,7 @@ function MilkView({ filterDate, setFilterDate, settings }) {
 
       {/* ── Summary Hero Card ───────────────── */}
       <GlassCard className="p-4 mb-4">
-        {/* Top Tier: Amount & Quantity on left, Share & Cow/Milk icon on right */}
+        {/* Top Tier: Amount & Quantity on left, WhatsApp & Share icons on right */}
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-1.5 mb-1">
@@ -219,6 +228,24 @@ function MilkView({ filterDate, setFilterDate, settings }) {
 
           <div className="flex items-center gap-2 flex-shrink-0">
             <button
+              onClick={handleWhatsAppShare}
+              className="w-10 h-10 rounded-xl flex items-center justify-center transition-opacity active:opacity-70"
+              style={{ 
+                background: 'rgba(37, 211, 102, 0.15)', 
+                border: '0.5px solid rgba(37, 211, 102, 0.3)' 
+              }}
+              title="Share on WhatsApp"
+              aria-label="Share on WhatsApp"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.414-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.885-9.888 9.885m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.746.953 3.71 1.456 5.711 1.457h.005c6.554 0 11.89-5.335 11.893-11.893a11.82 11.82 0 00-3.48-8.413z"
+                  fill="#25D366"
+                />
+              </svg>
+            </button>
+
+            <button
               onClick={handleShareReport}
               className="w-10 h-10 rounded-xl flex items-center justify-center transition-opacity active:opacity-70"
               style={{ background: 'var(--accent-light)' }}
@@ -227,21 +254,6 @@ function MilkView({ filterDate, setFilterDate, settings }) {
             >
               <Share2 size={17} style={{ color: 'var(--accent)' }} />
             </button>
-            <div 
-              className="w-11 h-11 rounded-xl flex items-center justify-center overflow-hidden" 
-              style={{ background: 'var(--accent-light)' }}
-            >
-              <img 
-                src="./cow-icon.png" 
-                alt="Milk" 
-                className="w-8 h-8 object-contain" 
-                onError={(e) => { 
-                  e.target.style.display = 'none'; 
-                  if (e.target.nextSibling) e.target.nextSibling.style.display = 'block'; 
-                }} 
-              />
-              <Milk size={22} style={{ color: 'var(--accent)', display: 'none' }} />
-            </div>
           </div>
         </div>
 
@@ -291,26 +303,24 @@ function MilkView({ filterDate, setFilterDate, settings }) {
           </div>
         </div>
 
-        {/* Delivery Consistency Progress Bar */}
-        {totalTrackedDays > 0 && (
-          <div className="mt-3 pt-2.5" style={{ borderTop: '0.5px solid var(--separator)' }}>
-            <div className="flex justify-between items-center text-[11px] mb-1.5">
-              <span style={{ color: 'var(--label-tertiary)' }}>Delivery Rate</span>
-              <span className="font-semibold tabular-nums" style={{ color: 'var(--green)' }}>
-                {deliveryRate}% on track
-              </span>
-            </div>
-            <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--fill-tertiary)' }}>
-              <div 
-                className="h-full rounded-full transition-all duration-500" 
-                style={{ 
-                  width: `${deliveryRate}%`, 
-                  background: 'var(--green)' 
-                }} 
-              />
-            </div>
+        {/* Monthly Delivered Days Progress Bar (Blue) */}
+        <div className="mt-3 pt-2.5" style={{ borderTop: '0.5px solid var(--separator)' }}>
+          <div className="flex justify-between items-center text-[11px] mb-1.5">
+            <span style={{ color: 'var(--label-secondary)' }}>Delivered</span>
+            <span className="font-semibold tabular-nums" style={{ color: 'var(--accent)' }}>
+              {stats.active} of {daysInMonth} days ({monthProgressPercent}%)
+            </span>
           </div>
-        )}
+          <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--fill-tertiary)' }}>
+            <div 
+              className="h-full rounded-full transition-all duration-500" 
+              style={{ 
+                width: `${monthProgressPercent}%`, 
+                background: 'var(--accent)' 
+              }} 
+            />
+          </div>
+        </div>
       </GlassCard>
 
       {/* ── Calendar Header ───────────────── */}

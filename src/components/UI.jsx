@@ -116,10 +116,7 @@ const StickyHeader = ({ title, date, setDate, hideMonthFilter = false }) => {
     return unsub;
   }, []);
 
-  const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
-  ];
+  const shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const handlePrev = () => setDate(new Date(date.getFullYear(), date.getMonth() - 1, 1));
   const handleNext = () => setDate(new Date(date.getFullYear(), date.getMonth() + 1, 1));
 
@@ -127,79 +124,93 @@ const StickyHeader = ({ title, date, setDate, hideMonthFilter = false }) => {
     <div
       className="sticky top-0 z-30 -mx-4 px-4"
       style={{
-        paddingTop: 'max(calc(env(safe-area-inset-top, 0px) + 22px), 62px)',
-        paddingBottom: '14px',
-        marginBottom: '16px',
+        paddingTop: 'max(calc(env(safe-area-inset-top, 0px) + 20px), 58px)',
+        paddingBottom: '10px',
+        marginBottom: '12px',
         background: 'var(--header-bg)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
         borderBottom: '0.5px solid var(--separator)',
       }}
     >
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between gap-2">
         <h1
-          className="text-[24px] font-bold tracking-tight"
+          className="text-[20px] font-bold tracking-tight truncate flex-shrink min-w-0"
           style={{ color: 'var(--label-primary)' }}
         >
           {title}
         </h1>
-        <button
-          onClick={() => window.dispatchEvent(new Event('open-profile'))}
-          className="min-w-[44px] min-h-[44px] -mr-2 flex items-center justify-center"
-          aria-label="Profile and Sync"
-        >
-          <div 
-            className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0"
-            style={{ background: 'var(--fill-tertiary)' }}
+
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {!hideMonthFilter && (
+            <div 
+              className="flex items-center rounded-full px-1 py-0.5"
+              style={{ background: 'var(--fill-quaternary)', border: '0.5px solid var(--separator)' }}
+            >
+              <button 
+                onClick={handlePrev} 
+                className="w-7 h-7 flex items-center justify-center rounded-full active:opacity-60"
+                aria-label="Previous month"
+              >
+                <ChevronLeft size={16} style={{ color: 'var(--accent)' }} />
+              </button>
+              <span
+                className="text-[12px] font-semibold px-1 text-center min-w-[62px] tabular-nums"
+                style={{ color: 'var(--label-primary)' }}
+              >
+                {shortMonths[date.getMonth()]} '{String(date.getFullYear()).slice(-2)}
+              </span>
+              <button 
+                onClick={handleNext} 
+                className="w-7 h-7 flex items-center justify-center rounded-full active:opacity-60"
+                aria-label="Next month"
+              >
+                <ChevronRight size={16} style={{ color: 'var(--accent)' }} />
+              </button>
+            </div>
+          )}
+
+          <button
+            onClick={() => window.dispatchEvent(new Event('open-profile'))}
+            className="w-9 h-9 -mr-1 flex items-center justify-center rounded-full"
+            aria-label="Profile and Sync"
           >
-            {user ? (
-              user.photoURL ? (
-                <>
-                  <img
-                    src={user.photoURL}
-                    alt=""
-                    className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
-                    }}
-                  />
-                  <span
-                    className="text-xs font-semibold w-full h-full items-center justify-center hidden"
-                    style={{ color: 'var(--accent)', background: 'var(--accent-light)' }}
-                  >
+            <div 
+              className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0"
+              style={{ background: 'var(--fill-tertiary)' }}
+            >
+              {user ? (
+                user.photoURL ? (
+                  <>
+                    <img
+                      src={user.photoURL}
+                      alt=""
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                    <span
+                      className="text-xs font-semibold w-full h-full items-center justify-center hidden"
+                      style={{ color: 'var(--accent)', background: 'var(--accent-light)' }}
+                    >
+                      {user.displayName?.[0] || 'U'}
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>
                     {user.displayName?.[0] || 'U'}
                   </span>
-                </>
+                )
               ) : (
-                <span className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>
-                  {user.displayName?.[0] || 'U'}
-                </span>
-              )
-            ) : (
-              <User size={16} style={{ color: 'var(--label-tertiary)' }} />
-            )}
-          </div>
-        </button>
-      </div>
-
-      {!hideMonthFilter && (
-        <div className="flex items-center gap-2 mt-1.5">
-          <button onClick={handlePrev} className="p-1 -ml-1 min-w-[44px] min-h-[44px] flex items-center justify-center">
-            <ChevronLeft size={20} style={{ color: 'var(--accent)' }} />
-          </button>
-          <span
-            className="text-[15px] font-medium min-w-[130px] text-center"
-            style={{ color: 'var(--label-primary)' }}
-          >
-            {months[date.getMonth()]} {date.getFullYear()}
-          </span>
-          <button onClick={handleNext} className="p-1 min-w-[44px] min-h-[44px] flex items-center justify-center">
-            <ChevronRight size={20} style={{ color: 'var(--accent)' }} />
+                <User size={16} style={{ color: 'var(--label-tertiary)' }} />
+              )}
+            </div>
           </button>
         </div>
-      )}
+      </div>
     </div>
   );
 };

@@ -125,8 +125,11 @@ const StickyHeader = ({ title, date, setDate, hideMonthFilter = false }) => {
 
   return (
     <div
-      className="sticky top-0 z-30 pt-12 pb-2.5 px-4"
+      className="sticky top-0 z-30 -mx-4 px-4"
       style={{
+        paddingTop: 'max(calc(env(safe-area-inset-top, 0px) + 22px), 62px)',
+        paddingBottom: '14px',
+        marginBottom: '16px',
         background: 'var(--header-bg)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
@@ -135,7 +138,7 @@ const StickyHeader = ({ title, date, setDate, hideMonthFilter = false }) => {
     >
       <div className="flex justify-between items-center">
         <h1
-          className="text-[22px] font-bold tracking-tight"
+          className="text-[24px] font-bold tracking-tight"
           style={{ color: 'var(--label-primary)' }}
         >
           {title}

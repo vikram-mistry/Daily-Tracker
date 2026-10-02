@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Droplet, PauseCircle, Share2, Plus, Trash2, Edit3,
+  Droplet, PauseCircle, Share2, Plus, Trash2, Edit3, Check, Milk,
 } from 'lucide-react';
 import { db, getEffectiveMilkPrice, getEffectiveMilkQty } from '../db';
 import { GlassCard, SwipeableItem, BottomSheet, StickyHeader } from '../components/UI';
@@ -119,9 +119,13 @@ function MilkView({ filterDate, setFilterDate, settings }) {
     setIsModalOpen(true);
   };
 
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
   /* ── Share Report ──────────────────── */
   const handleShareReport = async () => {
-    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     const monthYear = `${monthNames[filterDate.getMonth()]} ${filterDate.getFullYear()}`;
     const sorted = [...entries].filter((e) => !e.isPaused).sort((a, b) => new Date(a.date) - new Date(b.date));
     const pausedDays = entries.filter((e) => e.isPaused);
@@ -184,27 +188,129 @@ function MilkView({ filterDate, setFilterDate, settings }) {
   );
   const firstDayOffset = new Date(filterDate.getFullYear(), filterDate.getMonth(), 1).getDay();
 
+  const totalTrackedDays = stats.active + stats.pause;
+  const deliveryRate = totalTrackedDays > 0 ? Math.round((stats.active / totalTrackedDays) * 100) : 0;
+
   return (
     <div>
       <StickyHeader title="Milk" date={filterDate} setDate={setFilterDate} />
 
-      {/* ── Summary Row ───────────────────── */}
+      {/* ── Summary Hero Card ───────────────── */}
       <GlassCard className="p-4 mb-4">
-        <div className="flex items-center justify-between">
-          <div className="grid grid-cols-4 gap-1 flex-1">
-            <StatCell label="Total" value={`${settings.currency}${stats.amount.toFixed(0)}`} />
-            <StatCell label="Qty" value={`${stats.qty}L`} />
-            <StatCell label="Active" value={stats.active} color="var(--green)" />
-            <StatCell label="Paused" value={stats.pause} color="var(--orange)" />
+        {/* Top Tier: Amount & Quantity on left, Share & Cow/Milk icon on right */}
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--accent)' }}>
+                Milk Delivery
+              </span>
+              <span className="text-[11px]" style={{ color: 'var(--label-tertiary)' }}>•</span>
+              <span className="text-[11px] font-medium" style={{ color: 'var(--label-secondary)' }}>
+                {monthNames[filterDate.getMonth()]}
+              </span>
+            </div>
+            <p className="text-[32px] font-bold tracking-tight leading-none" style={{ color: 'var(--label-primary)' }}>
+              {settings.currency}{Number(stats.amount).toFixed(2)}
+            </p>
+            <p className="text-[13px] font-medium mt-1.5" style={{ color: 'var(--label-secondary)' }}>
+              {stats.qty} <span style={{ color: 'var(--label-tertiary)' }}>Liters delivered this month</span>
+            </p>
           </div>
-          <button
-            onClick={handleShareReport}
-            className="w-9 h-9 rounded-full flex items-center justify-center ml-3 flex-shrink-0"
-            style={{ background: 'var(--accent-light)' }}
-          >
-            <Share2 size={16} style={{ color: 'var(--accent)' }} />
-          </button>
+
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={handleShareReport}
+              className="w-10 h-10 rounded-xl flex items-center justify-center transition-opacity active:opacity-70"
+              style={{ background: 'var(--accent-light)' }}
+              title="Share Bill Report"
+              aria-label="Share Bill Report"
+            >
+              <Share2 size={17} style={{ color: 'var(--accent)' }} />
+            </button>
+            <div 
+              className="w-11 h-11 rounded-xl flex items-center justify-center overflow-hidden" 
+              style={{ background: 'var(--accent-light)' }}
+            >
+              <img 
+                src="./cow-icon.png" 
+                alt="Milk" 
+                className="w-8 h-8 object-contain" 
+                onError={(e) => { 
+                  e.target.style.display = 'none'; 
+                  if (e.target.nextSibling) e.target.nextSibling.style.display = 'block'; 
+                }} 
+              />
+              <Milk size={22} style={{ color: 'var(--accent)', display: 'none' }} />
+            </div>
+          </div>
         </div>
+
+        {/* Subtle Separator */}
+        <div className="my-3.5" style={{ borderTop: '0.5px solid var(--separator)' }} />
+
+        {/* Bottom Tier: 2 values shifted down into visual status pills */}
+        <div className="grid grid-cols-2 gap-2.5">
+          <div 
+            className="flex items-center gap-2.5 p-2.5 rounded-xl"
+            style={{ background: 'var(--green-light)' }}
+          >
+            <div 
+              className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ background: 'var(--green)', color: '#fff' }}
+            >
+              <Check size={14} strokeWidth={3} />
+            </div>
+            <div>
+              <p className="text-[10px] uppercase font-semibold tracking-wider" style={{ color: 'var(--green)' }}>
+                Active Days
+              </p>
+              <p className="text-[16px] font-bold tabular-nums" style={{ color: 'var(--label-primary)' }}>
+                {stats.active} <span className="text-[11px] font-normal" style={{ color: 'var(--label-secondary)' }}>days</span>
+              </p>
+            </div>
+          </div>
+
+          <div 
+            className="flex items-center gap-2.5 p-2.5 rounded-xl"
+            style={{ background: 'var(--orange-light)' }}
+          >
+            <div 
+              className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ background: 'var(--orange)', color: '#fff' }}
+            >
+              <PauseCircle size={15} />
+            </div>
+            <div>
+              <p className="text-[10px] uppercase font-semibold tracking-wider" style={{ color: 'var(--orange)' }}>
+                Paused Days
+              </p>
+              <p className="text-[16px] font-bold tabular-nums" style={{ color: 'var(--label-primary)' }}>
+                {stats.pause} <span className="text-[11px] font-normal" style={{ color: 'var(--label-secondary)' }}>days</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Delivery Consistency Progress Bar */}
+        {totalTrackedDays > 0 && (
+          <div className="mt-3 pt-2.5" style={{ borderTop: '0.5px solid var(--separator)' }}>
+            <div className="flex justify-between items-center text-[11px] mb-1.5">
+              <span style={{ color: 'var(--label-tertiary)' }}>Delivery Rate</span>
+              <span className="font-semibold tabular-nums" style={{ color: 'var(--green)' }}>
+                {deliveryRate}% on track
+              </span>
+            </div>
+            <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--fill-tertiary)' }}>
+              <div 
+                className="h-full rounded-full transition-all duration-500" 
+                style={{ 
+                  width: `${deliveryRate}%`, 
+                  background: 'var(--green)' 
+                }} 
+              />
+            </div>
+          </div>
+        )}
       </GlassCard>
 
       {/* ── Calendar Header ───────────────── */}
@@ -481,16 +587,6 @@ function MilkView({ filterDate, setFilterDate, settings }) {
           </div>
         </div>
       </BottomSheet>
-    </div>
-  );
-}
-
-/* ── Compact stat cell ───────────────── */
-function StatCell({ label, value, color }) {
-  return (
-    <div className="text-center">
-      <p className="text-[10px] uppercase tracking-wider mb-0.5" style={{ color: 'var(--label-tertiary)' }}>{label}</p>
-      <p className="text-[15px] font-bold tabular-nums" style={{ color: color || 'var(--label-primary)' }}>{value}</p>
     </div>
   );
 }

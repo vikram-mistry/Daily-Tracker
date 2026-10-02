@@ -11,7 +11,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'apple-touch-icon-v2.png', 'masked-icon.svg'],
       manifest: {
         name: 'Trackit Pro',
         short_name: 'Trackit',

@@ -7,7 +7,7 @@ import {
   Wrench, Package, PauseCircle, PlayCircle, Download, Upload, Info, Share2, LayoutGrid, Train,
   LogIn, LogOut, RefreshCw, Clock, History, CheckCircle2
 } from 'lucide-react';
-import { db, getEffectiveMilkPrice, getEffectiveMilkQty, reconcileMilkEntries } from '../db';
+import { db, getEffectiveMilkPrice, getEffectiveMilkQty, reconcileMilkPriceFromDate, reconcileMilkQtyFromDate } from '../db';
 import { GlassCard, SwipeableItem, BottomSheet, StickyHeader } from '../components/UI';
 import { auth, provider, signInWithPopup, signOut } from '../firebase';
 
@@ -22,7 +22,6 @@ const SettingBlock = ({ label, children }) => (
 function SettingsView({ settings, updateSettings, db }) {
   const [user, setUser] = useState(auth.currentUser);
   const [syncing, setSyncing] = useState(false);
-  const [isReconciling, setIsReconciling] = useState(false);
 
   // Local draft states for text/number inputs to prevent keyboard blur & cursor jump
   const [currencyDraft, setCurrencyDraft] = useState(settings.currency ?? '₹');
@@ -163,7 +162,7 @@ function SettingsView({ settings, updateSettings, db }) {
     reader.readAsText(file);
   };
 
-  // Save base defaults on blur or enter
+  // Save base defaults on blur or enter (SAFEGUARD: never modifies existing entries)
   const commitCurrency = () => {
     if (currencyDraft !== settings.currency) {
       updateSettings({ currency: currencyDraft || '₹' });
@@ -173,9 +172,7 @@ function SettingsView({ settings, updateSettings, db }) {
   const commitMilkPrice = async () => {
     const val = parseFloat(milkPriceDraft);
     if (!isNaN(val) && val > 0 && val !== settings.milkPrice) {
-      const updated = { ...settings, milkPrice: val };
       await updateSettings({ milkPrice: val });
-      await reconcileMilkEntries(updated);
     } else {
       setMilkPriceDraft(String(settings.milkPrice ?? 84));
     }
@@ -184,9 +181,7 @@ function SettingsView({ settings, updateSettings, db }) {
   const commitMilkQty = async () => {
     const val = parseFloat(milkQtyDraft);
     if (!isNaN(val) && val > 0 && val !== settings.milkQty) {
-      const updated = { ...settings, milkQty: val };
       await updateSettings({ milkQty: val });
-      await reconcileMilkEntries(updated);
     } else {
       setMilkQtyDraft(String(settings.milkQty ?? 1));
     }
@@ -266,18 +261,18 @@ function SettingsView({ settings, updateSettings, db }) {
     setPriceModalOpen(false);
     setEditingPriceRule(null);
 
-    const count = await reconcileMilkEntries(updatedSettings);
-    alert(`Price schedule saved! Reconciled ${count} milk ${count === 1 ? 'entry' : 'entries'}.`);
+    // SAFEGUARD: Only reconcile active entries on or after priceForm.fromDate
+    const count = await reconcileMilkPriceFromDate(priceForm.fromDate, priceNum);
+    alert(`Price schedule saved! Updated ${count} milk ${count === 1 ? 'entry' : 'entries'} on or after ${priceForm.fromDate}. All earlier entries remain untouched.`);
   };
 
   const handleDeletePriceRule = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this price rate? All entries will be reconciled according to the remaining schedule.')) return;
+    if (!window.confirm('Delete this rate change from schedule? Note: Past recorded entries will not be altered.')) return;
     const currentHistory = settings.milkPriceHistory || [];
     const updatedHistory = currentHistory.filter(r => r.id !== id);
     const updatedSettings = { ...settings, milkPriceHistory: updatedHistory };
     await updateSettings(updatedSettings);
-    const count = await reconcileMilkEntries(updatedSettings);
-    alert(`Price rate deleted! Reconciled ${count} milk ${count === 1 ? 'entry' : 'entries'}.`);
+    alert('Price rate removed from schedule.');
   };
 
   // Quantity Schedule Management
@@ -345,31 +340,18 @@ function SettingsView({ settings, updateSettings, db }) {
     setQtyModalOpen(false);
     setEditingQtyRule(null);
 
-    const count = await reconcileMilkEntries(updatedSettings);
-    alert(`Quantity schedule saved! Reconciled ${count} milk ${count === 1 ? 'entry' : 'entries'}.`);
+    // SAFEGUARD: Only reconcile active entries on or after qtyForm.fromDate
+    const count = await reconcileMilkQtyFromDate(qtyForm.fromDate, qtyNum);
+    alert(`Quantity schedule saved! Updated ${count} milk ${count === 1 ? 'entry' : 'entries'} on or after ${qtyForm.fromDate}. All earlier entries remain untouched.`);
   };
 
   const handleDeleteQtyRule = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this quantity change? All entries will be reconciled according to the remaining schedule.')) return;
+    if (!window.confirm('Delete this quantity change from schedule? Note: Past recorded entries will not be altered.')) return;
     const currentHistory = settings.milkQtyHistory || [];
     const updatedHistory = currentHistory.filter(r => r.id !== id);
     const updatedSettings = { ...settings, milkQtyHistory: updatedHistory };
     await updateSettings(updatedSettings);
-    const count = await reconcileMilkEntries(updatedSettings);
-    alert(`Quantity rule deleted! Reconciled ${count} milk ${count === 1 ? 'entry' : 'entries'}.`);
-  };
-
-  // Manual Full Reconciliation
-  const handleManualReconcile = async () => {
-    setIsReconciling(true);
-    try {
-      const count = await reconcileMilkEntries(settings);
-      alert(`Reconciliation complete! ${count} entries were updated to match current schedules.`);
-    } catch (e) {
-      alert('Reconciliation failed: ' + e.message);
-    } finally {
-      setIsReconciling(false);
-    }
+    alert('Quantity rule removed from schedule.');
   };
 
   const formatDateDisplay = (dateStr) => {
@@ -414,17 +396,8 @@ function SettingsView({ settings, updateSettings, db }) {
 
         {/* Milk Settings */}
         <section>
-          <div className="flex justify-between items-center pl-4 pr-1 mb-2">
+          <div className="pl-4 pr-1 mb-2">
             <h3 className="text-xs font-bold uppercase tracking-widest" style={{ color: '#79747E' }}>Milk Settings & Rates</h3>
-            <button 
-              onClick={handleManualReconcile} 
-              disabled={isReconciling}
-              className="text-[11px] font-semibold flex items-center gap-1.5 px-3 py-1 rounded-full transition-opacity active:opacity-75"
-              style={{ background: 'var(--m3-primary-container)', color: 'var(--m3-on-primary-container)' }}
-            >
-              <RefreshCw size={12} className={isReconciling ? 'animate-spin' : ''} />
-              {isReconciling ? 'Reconciling...' : 'Reconcile Data'}
-            </button>
           </div>
 
           <GlassCard className="px-5 mb-4">
@@ -459,7 +432,7 @@ function SettingsView({ settings, updateSettings, db }) {
             <div className="flex justify-between items-center pl-4 pr-2 mb-2">
               <div>
                 <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#79747E' }}>Price Rate History</span>
-                <p className="text-[11px]" style={{ color: 'var(--m3-on-surface-muted)' }}>Applicable from specified date onward</p>
+                <p className="text-[11px]" style={{ color: 'var(--m3-on-surface-muted)' }}>Only applies from the selected date onward</p>
               </div>
               <motion.button 
                 whileTap={{ scale: 0.95 }}
@@ -475,10 +448,10 @@ function SettingsView({ settings, updateSettings, db }) {
               {sortedPriceHistory.length === 0 ? (
                 <div className="py-4 text-center">
                   <p className="text-xs" style={{ color: 'var(--m3-on-surface-muted)' }}>
-                    No date-specific price changes recorded.
+                    No scheduled price changes recorded.
                   </p>
                   <p className="text-[11px] mt-1 font-medium" style={{ color: '#6750A4' }}>
-                    Default rate of {settings.currency}{settings.milkPrice}/L applies to all deliveries.
+                    Default base rate of {settings.currency}{settings.milkPrice}/L applies.
                   </p>
                 </div>
               ) : (
@@ -548,7 +521,7 @@ function SettingsView({ settings, updateSettings, db }) {
             <div className="flex justify-between items-center pl-4 pr-2 mb-2">
               <div>
                 <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#79747E' }}>Delivery Quantity History</span>
-                <p className="text-[11px]" style={{ color: 'var(--m3-on-surface-muted)' }}>Applicable from specified date onward</p>
+                <p className="text-[11px]" style={{ color: 'var(--m3-on-surface-muted)' }}>Only applies from the selected date onward</p>
               </div>
               <motion.button 
                 whileTap={{ scale: 0.95 }}
@@ -564,10 +537,10 @@ function SettingsView({ settings, updateSettings, db }) {
               {sortedQtyHistory.length === 0 ? (
                 <div className="py-4 text-center">
                   <p className="text-xs" style={{ color: 'var(--m3-on-surface-muted)' }}>
-                    No date-specific quantity changes recorded.
+                    No scheduled quantity changes recorded.
                   </p>
                   <p className="text-[11px] mt-1 font-medium" style={{ color: '#16A085' }}>
-                    Default quantity of {settings.milkQty} L applies to all deliveries.
+                    Default base quantity of {settings.milkQty} L applies.
                   </p>
                 </div>
               ) : (
@@ -725,7 +698,7 @@ function SettingsView({ settings, updateSettings, db }) {
           </div>
 
           <p className="text-xs leading-relaxed p-3 rounded-xl" style={{ background: 'var(--m3-input-bg)', color: 'var(--m3-on-surface-muted)' }}>
-            💡 All deliveries on and after this date will be calculated at this rate. Past and future entries will be automatically reconciled.
+            💡 This rate applies strictly to deliveries on or after this date. All earlier deliveries remain completely untouched.
           </p>
 
           <div className="pt-2 flex gap-3">
@@ -743,7 +716,7 @@ function SettingsView({ settings, updateSettings, db }) {
               className="flex-[2] font-bold py-3.5 rounded-2xl text-white shadow-lg" 
               style={{ background: 'linear-gradient(135deg, #6750A4, #4A90D9)' }}
             >
-              Save &amp; Reconcile
+              Save &amp; Apply
             </motion.button>
           </div>
         </div>
@@ -782,7 +755,7 @@ function SettingsView({ settings, updateSettings, db }) {
           </div>
 
           <p className="text-xs leading-relaxed p-3 rounded-xl" style={{ background: 'var(--m3-input-bg)', color: 'var(--m3-on-surface-muted)' }}>
-            💡 Daily milk quantity from this date onward will be set to this amount. Past and future entries from this date will be automatically reconciled.
+            💡 This quantity applies strictly to deliveries on or after this date. All earlier deliveries remain completely untouched.
           </p>
 
           <div className="pt-2 flex gap-3">
@@ -800,7 +773,7 @@ function SettingsView({ settings, updateSettings, db }) {
               className="flex-[2] font-bold py-3.5 rounded-2xl text-white shadow-lg" 
               style={{ background: 'linear-gradient(135deg, #1ABC9C, #16A085)' }}
             >
-              Save &amp; Reconcile
+              Save &amp; Apply
             </motion.button>
           </div>
         </div>

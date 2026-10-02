@@ -255,31 +255,56 @@ export function getEffectiveMilkQty(dateStr, settings) {
   return Number(sorted[0].qty) || Number(settings.milkQty) || 1;
 }
 
-export async function reconcileMilkEntries(settings) {
+// Safeguarded: ONLY reconcile active entries on or after fromDate.
+// Leaves custom quantity intact, only updates price and total for entries >= fromDate.
+export async function reconcileMilkPriceFromDate(fromDate, newPrice) {
+  if (!fromDate || newPrice == null || isNaN(Number(newPrice))) return 0;
+  const targetPrice = Number(newPrice);
   const allMilk = await db.getAll('milk');
   let updatedCount = 0;
   for (const entry of allMilk) {
     if (entry.isPaused) continue;
-    
-    const targetPrice = getEffectiveMilkPrice(entry.date, settings);
-    const targetQty = getEffectiveMilkQty(entry.date, settings);
-    const targetTotal = Number((targetQty * targetPrice).toFixed(2));
-    
-    if (
-      Number(entry.price) !== targetPrice || 
-      Number(entry.qty) !== targetQty || 
-      Number(entry.total) !== targetTotal
-    ) {
-      const updated = {
-        ...entry,
-        price: targetPrice,
-        qty: targetQty,
-        total: targetTotal
-      };
-      await db.put('milk', updated);
-      updatedCount++;
+    if (entry.date >= fromDate) {
+      const currentQty = Number(entry.qty) || 0;
+      const newTotal = Number((currentQty * targetPrice).toFixed(2));
+      if (Number(entry.price) !== targetPrice || Number(entry.total) !== newTotal) {
+        const updated = {
+          ...entry,
+          price: targetPrice,
+          total: newTotal
+        };
+        await db.put('milk', updated);
+        updatedCount++;
+      }
     }
   }
   return updatedCount;
 }
+
+// Safeguarded: ONLY reconcile active entries on or after fromDate.
+// Leaves custom price intact, only updates quantity and total for entries >= fromDate.
+export async function reconcileMilkQtyFromDate(fromDate, newQty) {
+  if (!fromDate || newQty == null || isNaN(Number(newQty))) return 0;
+  const targetQty = Number(newQty);
+  const allMilk = await db.getAll('milk');
+  let updatedCount = 0;
+  for (const entry of allMilk) {
+    if (entry.isPaused) continue;
+    if (entry.date >= fromDate) {
+      const currentPrice = Number(entry.price) || 0;
+      const newTotal = Number((targetQty * currentPrice).toFixed(2));
+      if (Number(entry.qty) !== targetQty || Number(entry.total) !== newTotal) {
+        const updated = {
+          ...entry,
+          qty: targetQty,
+          total: newTotal
+        };
+        await db.put('milk', updated);
+        updatedCount++;
+      }
+    }
+  }
+  return updatedCount;
+}
+
 

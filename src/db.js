@@ -7,7 +7,7 @@ import {
   Wrench, Package, PauseCircle, PlayCircle, Download, Upload, Info, Share2, LayoutGrid, Train
 } from 'lucide-react';
 import { firestore, auth } from './firebase';
-import { collection, doc, setDoc, getDocs, deleteDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, getDocs, deleteDoc, writeBatch } from 'firebase/firestore';
 
 const DB_NAME = 'TrackitProDB';
 const DB_VERSION = 3;
@@ -129,14 +129,18 @@ class LocalDB {
   }
 
   async put(storeName, item) {
-    await this._localPut(storeName, item);
+    const stamped = {
+      ...item,
+      updatedAt: item.updatedAt || Date.now()
+    };
+    await this._localPut(storeName, stamped);
     const user = auth.currentUser;
     if (user) {
       try {
-        await setDoc(doc(firestore, `users/${user.uid}/${storeName}`, String(item.id)), item);
+        await setDoc(doc(firestore, `users/${user.uid}/${storeName}`, String(stamped.id)), stamped);
       } catch (e) { console.error("Firebase sync error on put", e); }
     }
-    return item;
+    return stamped;
   }
 
   async delete(storeName, key) {
@@ -159,25 +163,66 @@ class LocalDB {
       'maintenance'
     ];
     
-    // 1. Sync Down from Cloud
-    for (let store of stores) {
+    for (const store of stores) {
       try {
         const snap = await getDocs(collection(firestore, `users/${user.uid}/${store}`));
         const cloudDocs = snap.docs.map(d => d.data());
-        for (let item of cloudDocs) {
-          await this._localPut(store, item);
-        }
-      } catch(e) { console.error("Sync down error", e); }
-    }
+        const cloudMap = new Map();
+        cloudDocs.forEach(item => {
+          if (item && item.id != null) cloudMap.set(String(item.id), item);
+        });
 
-    // 2. Sync Up to Cloud
-    for (let store of stores) {
-      try {
-        const allLocal = await this._localGetAll(store);
-        for (let item of allLocal) {
-          await setDoc(doc(firestore, `users/${user.uid}/${store}`, String(item.id)), item);
+        const localItems = await this._localGetAll(store);
+        const localMap = new Map();
+        localItems.forEach(item => {
+          if (item && item.id != null) localMap.set(String(item.id), item);
+        });
+
+        // 1. Sync Down: update local ONLY if cloud item has strictly newer updatedAt or local missing
+        for (const [id, cloudItem] of cloudMap.entries()) {
+          const localItem = localMap.get(id);
+          if (!localItem) {
+            await this._localPut(store, cloudItem);
+            localMap.set(id, cloudItem);
+          } else {
+            const cloudTime = Number(cloudItem.updatedAt) || 0;
+            const localTime = Number(localItem.updatedAt) || 0;
+            if (cloudTime > localTime) {
+              await this._localPut(store, cloudItem);
+              localMap.set(id, cloudItem);
+            }
+          }
         }
-      } catch(e) { console.error("Sync up error", e); }
+
+        // 2. Sync Up: upload local items to cloud in batches if local is newer or cloud missing
+        const toUpload = [];
+        for (const [id, localItem] of localMap.entries()) {
+          const cloudItem = cloudMap.get(id);
+          if (!cloudItem) {
+            toUpload.push(localItem);
+          } else {
+            const cloudTime = Number(cloudItem.updatedAt) || 0;
+            const localTime = Number(localItem.updatedAt) || 0;
+            if (localTime >= cloudTime) {
+              toUpload.push(localItem);
+            }
+          }
+        }
+
+        if (toUpload.length > 0) {
+          for (let i = 0; i < toUpload.length; i += 400) {
+            const batch = writeBatch(firestore);
+            const chunk = toUpload.slice(i, i + 400);
+            chunk.forEach(item => {
+              const ref = doc(firestore, `users/${user.uid}/${store}`, String(item.id));
+              batch.set(ref, item);
+            });
+            await batch.commit();
+          }
+        }
+      } catch (e) {
+        console.error("Sync error for store:", store, e);
+      }
     }
   }
 
@@ -220,13 +265,17 @@ class LocalDB {
     // 1. Clear local IndexedDB stores
     await this.clearAll();
 
-    // 2. If logged in, clear cloud Firestore collections too
+    // 2. If logged in, clear cloud Firestore collections using batched deletes
     if (user) {
       for (const store of stores) {
         try {
           const snap = await getDocs(collection(firestore, `users/${user.uid}/${store}`));
-          for (const d of snap.docs) {
-            await deleteDoc(d.ref);
+          const docs = snap.docs;
+          for (let i = 0; i < docs.length; i += 400) {
+            const batch = writeBatch(firestore);
+            const chunk = docs.slice(i, i + 400);
+            chunk.forEach(d => batch.delete(d.ref));
+            await batch.commit();
           }
         } catch (e) {
           console.error("Error clearing cloud collection for restore:", store, e);
@@ -234,11 +283,29 @@ class LocalDB {
       }
     }
 
-    // 3. Put all restored items into local IndexedDB and Cloud Firestore
+    // 3. Put all restored items into local IndexedDB and Cloud Firestore in batches
+    const now = Date.now();
     for (const store of stores) {
       if (data[store] && Array.isArray(data[store])) {
-        for (const item of data[store]) {
-          await this.put(store, item);
+        const items = data[store].map(item => ({
+          ...item,
+          updatedAt: item.updatedAt || now
+        }));
+
+        for (const item of items) {
+          await this._localPut(store, item);
+        }
+
+        if (user) {
+          for (let i = 0; i < items.length; i += 400) {
+            const batch = writeBatch(firestore);
+            const chunk = items.slice(i, i + 400);
+            chunk.forEach(item => {
+              const ref = doc(firestore, `users/${user.uid}/${store}`, String(item.id));
+              batch.set(ref, item);
+            });
+            await batch.commit();
+          }
         }
       }
     }
@@ -294,21 +361,27 @@ export function getEffectiveMilkQty(dateStr, settings) {
 
 // Safeguarded: ONLY reconcile active entries on or after fromDate.
 // Leaves custom quantity intact, only updates price and total for entries >= fromDate.
-export async function reconcileMilkPriceFromDate(fromDate, newPrice) {
-  if (!fromDate || newPrice == null || isNaN(Number(newPrice))) return 0;
-  const targetPrice = Number(newPrice);
+export async function reconcileMilkPriceFromDate(fromDate, newPrice, currentSettings) {
+  if (!fromDate) return 0;
+  const settings = currentSettings || (await db.get('settings', 'main')) || DEFAULT_SETTINGS;
   const allMilk = await db.getAll('milk');
   let updatedCount = 0;
+  const now = Date.now();
   for (const entry of allMilk) {
     if (entry.isPaused) continue;
     if (entry.date >= fromDate) {
-      const currentQty = Number(entry.qty) || 0;
-      const newTotal = Number((currentQty * targetPrice).toFixed(2));
-      if (Number(entry.price) !== targetPrice || Number(entry.total) !== newTotal) {
+      const effectivePrice = getEffectiveMilkPrice(entry.date, settings);
+      const currentQty = (entry.qty != null && !isNaN(Number(entry.qty)) && Number(entry.qty) > 0)
+        ? Number(entry.qty)
+        : getEffectiveMilkQty(entry.date, settings);
+      const newTotal = Number((currentQty * effectivePrice).toFixed(2));
+      if (Number(entry.price) !== effectivePrice || Number(entry.total) !== newTotal) {
         const updated = {
           ...entry,
-          price: targetPrice,
-          total: newTotal
+          price: effectivePrice,
+          qty: currentQty,
+          total: newTotal,
+          updatedAt: now
         };
         await db.put('milk', updated);
         updatedCount++;
@@ -320,21 +393,27 @@ export async function reconcileMilkPriceFromDate(fromDate, newPrice) {
 
 // Safeguarded: ONLY reconcile active entries on or after fromDate.
 // Leaves custom price intact, only updates quantity and total for entries >= fromDate.
-export async function reconcileMilkQtyFromDate(fromDate, newQty) {
-  if (!fromDate || newQty == null || isNaN(Number(newQty))) return 0;
-  const targetQty = Number(newQty);
+export async function reconcileMilkQtyFromDate(fromDate, newQty, currentSettings) {
+  if (!fromDate) return 0;
+  const settings = currentSettings || (await db.get('settings', 'main')) || DEFAULT_SETTINGS;
   const allMilk = await db.getAll('milk');
   let updatedCount = 0;
+  const now = Date.now();
   for (const entry of allMilk) {
     if (entry.isPaused) continue;
     if (entry.date >= fromDate) {
-      const currentPrice = Number(entry.price) || 0;
-      const newTotal = Number((targetQty * currentPrice).toFixed(2));
-      if (Number(entry.qty) !== targetQty || Number(entry.total) !== newTotal) {
+      const effectiveQty = getEffectiveMilkQty(entry.date, settings);
+      const currentPrice = (entry.price != null && !isNaN(Number(entry.price)) && Number(entry.price) > 0)
+        ? Number(entry.price)
+        : getEffectiveMilkPrice(entry.date, settings);
+      const newTotal = Number((effectiveQty * currentPrice).toFixed(2));
+      if (Number(entry.qty) !== effectiveQty || Number(entry.total) !== newTotal) {
         const updated = {
           ...entry,
-          qty: targetQty,
-          total: newTotal
+          qty: effectiveQty,
+          price: currentPrice,
+          total: newTotal,
+          updatedAt: now
         };
         await db.put('milk', updated);
         updatedCount++;

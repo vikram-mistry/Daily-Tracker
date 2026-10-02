@@ -57,9 +57,6 @@ function SettingsView({ settings, updateSettings, db }) {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((u) => {
       setUser(u);
-      if (u) {
-        db.syncUpAndDown();
-      }
     });
     return unsubscribe;
   }, []);
@@ -172,10 +169,12 @@ function SettingsView({ settings, updateSettings, db }) {
     return applicable.length > 0 ? applicable[applicable.length - 1].id : null;
   }, [settings.milkPriceHistory, todayStr]);
 
-  const openAddPriceModal = () => {
+  const openAddPriceModal = async () => {
     setEditingPriceRule(null);
+    const currentSettings = (await db.get('settings', 'main')) || settings;
+    const activeRate = getEffectiveMilkPrice(todayStr, currentSettings);
     setPriceForm({
-      price: String(currentActiveRate || 84),
+      price: String(activeRate || 84),
       fromDate: todayStr
     });
     setPriceModalOpen(true);
@@ -201,7 +200,8 @@ function SettingsView({ settings, updateSettings, db }) {
       return;
     }
 
-    const currentHistory = settings.milkPriceHistory || [];
+    const currentSettings = (await db.get('settings', 'main')) || settings;
+    const currentHistory = currentSettings.milkPriceHistory || [];
     let updatedHistory;
 
     if (editingPriceRule) {
@@ -220,24 +220,25 @@ function SettingsView({ settings, updateSettings, db }) {
     }
 
     const updatedSettings = { 
-      ...settings, 
+      ...currentSettings, 
       milkPriceHistory: updatedHistory,
       ...(priceForm.fromDate <= todayStr ? { milkPrice: priceNum } : {})
     };
-    await updateSettings(updatedSettings);
+    const saved = await updateSettings(updatedSettings);
     setPriceModalOpen(false);
     setEditingPriceRule(null);
 
-    // SAFEGUARD: Only reconcile active entries on or after priceForm.fromDate
-    const count = await reconcileMilkPriceFromDate(priceForm.fromDate, priceNum);
-    alert(`Price rate of ${settings.currency}${priceNum}/L saved! Updated ${count} milk ${count === 1 ? 'entry' : 'entries'} on or after ${formatDateDisplay(priceForm.fromDate)}. All earlier entries remain untouched.`);
+    // SAFEGUARD: Only reconcile active entries on or after priceForm.fromDate using fresh settings
+    const count = await reconcileMilkPriceFromDate(priceForm.fromDate, priceNum, saved);
+    alert(`Price rate of ${saved.currency || '₹'}${priceNum}/L saved! Updated ${count} milk ${count === 1 ? 'entry' : 'entries'} on or after ${formatDateDisplay(priceForm.fromDate)}. All earlier entries remain untouched.`);
   };
 
   const handleDeletePriceRule = async (id) => {
     if (!window.confirm('Delete this rate change from schedule? Note: Past recorded entries will not be altered.')) return;
-    const currentHistory = settings.milkPriceHistory || [];
+    const currentSettings = (await db.get('settings', 'main')) || settings;
+    const currentHistory = currentSettings.milkPriceHistory || [];
     const updatedHistory = currentHistory.filter(r => r.id !== id);
-    const updatedSettings = { ...settings, milkPriceHistory: updatedHistory };
+    const updatedSettings = { ...currentSettings, milkPriceHistory: updatedHistory };
     await updateSettings(updatedSettings);
     alert('Price rate removed from schedule.');
   };
@@ -254,10 +255,12 @@ function SettingsView({ settings, updateSettings, db }) {
     return applicable.length > 0 ? applicable[applicable.length - 1].id : null;
   }, [settings.milkQtyHistory, todayStr]);
 
-  const openAddQtyModal = () => {
+  const openAddQtyModal = async () => {
     setEditingQtyRule(null);
+    const currentSettings = (await db.get('settings', 'main')) || settings;
+    const activeQty = getEffectiveMilkQty(todayStr, currentSettings);
     setQtyForm({
-      qty: String(currentActiveQty || 1),
+      qty: String(activeQty || 1),
       fromDate: todayStr
     });
     setQtyModalOpen(true);
@@ -283,7 +286,8 @@ function SettingsView({ settings, updateSettings, db }) {
       return;
     }
 
-    const currentHistory = settings.milkQtyHistory || [];
+    const currentSettings = (await db.get('settings', 'main')) || settings;
+    const currentHistory = currentSettings.milkQtyHistory || [];
     let updatedHistory;
 
     if (editingQtyRule) {
@@ -302,24 +306,25 @@ function SettingsView({ settings, updateSettings, db }) {
     }
 
     const updatedSettings = { 
-      ...settings, 
+      ...currentSettings, 
       milkQtyHistory: updatedHistory,
       ...(qtyForm.fromDate <= todayStr ? { milkQty: qtyNum } : {})
     };
-    await updateSettings(updatedSettings);
+    const saved = await updateSettings(updatedSettings);
     setQtyModalOpen(false);
     setEditingQtyRule(null);
 
-    // SAFEGUARD: Only reconcile active entries on or after qtyForm.fromDate
-    const count = await reconcileMilkQtyFromDate(qtyForm.fromDate, qtyNum);
+    // SAFEGUARD: Only reconcile active entries on or after qtyForm.fromDate using fresh settings
+    const count = await reconcileMilkQtyFromDate(qtyForm.fromDate, qtyNum, saved);
     alert(`Daily quantity of ${qtyNum}L saved! Updated ${count} milk ${count === 1 ? 'entry' : 'entries'} on or after ${formatDateDisplay(qtyForm.fromDate)}. All earlier entries remain untouched.`);
   };
 
   const handleDeleteQtyRule = async (id) => {
     if (!window.confirm('Delete this quantity change from schedule? Note: Past recorded entries will not be altered.')) return;
-    const currentHistory = settings.milkQtyHistory || [];
+    const currentSettings = (await db.get('settings', 'main')) || settings;
+    const currentHistory = currentSettings.milkQtyHistory || [];
     const updatedHistory = currentHistory.filter(r => r.id !== id);
-    const updatedSettings = { ...settings, milkQtyHistory: updatedHistory };
+    const updatedSettings = { ...currentSettings, milkQtyHistory: updatedHistory };
     await updateSettings(updatedSettings);
     alert('Quantity rule removed from schedule.');
   };

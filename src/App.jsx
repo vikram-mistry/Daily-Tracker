@@ -115,9 +115,15 @@ export default function App() {
   }, []);
 
   const updateSettings = async (newSettings) => {
-    const updated = { ...settings, ...newSettings };
+    const current = (await db.get('settings', 'main')) || DEFAULT_SETTINGS;
+    const updated = {
+      ...current,
+      ...newSettings,
+      updatedAt: Date.now()
+    };
     setSettings(updated);
     await db.put('settings', updated);
+    return updated;
   };
 
   // Sync document body theme attribute for React Portals

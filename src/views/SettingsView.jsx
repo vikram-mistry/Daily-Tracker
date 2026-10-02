@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { 
   Milk, Flame, Plus, Settings, Calendar, ChevronLeft, ChevronRight, 
-  Trash2, Edit3, X, Check, PauseCircle, PlayCircle, Download, Upload, Info, Share2,
+  Trash2, Edit3, X, Check, Droplet, PauseCircle, PlayCircle, Download, Upload, Info, Share2,
   LogIn, LogOut, RefreshCw, Clock, History, CheckCircle2
 } from 'lucide-react';
 import { db, getEffectiveMilkPrice, getEffectiveMilkQty, reconcileMilkPriceFromDate, reconcileMilkQtyFromDate } from '../db';
@@ -150,12 +150,16 @@ function SettingsView({ settings, updateSettings, db }) {
   // Price Schedule Management
   const sortedPriceHistory = useMemo(() => {
     const history = settings.milkPriceHistory || [];
-    return [...history].sort((a, b) => b.fromDate.localeCompare(a.fromDate));
+    return [...history]
+      .filter(r => r && r.fromDate)
+      .sort((a, b) => String(b.fromDate).localeCompare(String(a.fromDate)));
   }, [settings.milkPriceHistory]);
 
   const activePriceRuleId = useMemo(() => {
     const history = settings.milkPriceHistory || [];
-    const applicable = [...history].filter(r => r.fromDate <= todayStr).sort((a, b) => a.fromDate.localeCompare(b.fromDate));
+    const applicable = [...history]
+      .filter(r => r && r.fromDate && r.fromDate <= todayStr)
+      .sort((a, b) => String(a.fromDate).localeCompare(String(b.fromDate)));
     return applicable.length > 0 ? applicable[applicable.length - 1].id : null;
   }, [settings.milkPriceHistory, todayStr]);
 
@@ -236,12 +240,16 @@ function SettingsView({ settings, updateSettings, db }) {
   // Quantity Schedule Management
   const sortedQtyHistory = useMemo(() => {
     const history = settings.milkQtyHistory || [];
-    return [...history].sort((a, b) => b.fromDate.localeCompare(a.fromDate));
+    return [...history]
+      .filter(r => r && r.fromDate)
+      .sort((a, b) => String(b.fromDate).localeCompare(String(a.fromDate)));
   }, [settings.milkQtyHistory]);
 
   const activeQtyRuleId = useMemo(() => {
     const history = settings.milkQtyHistory || [];
-    const applicable = [...history].filter(r => r.fromDate <= todayStr).sort((a, b) => a.fromDate.localeCompare(b.fromDate));
+    const applicable = [...history]
+      .filter(r => r && r.fromDate && r.fromDate <= todayStr)
+      .sort((a, b) => String(a.fromDate).localeCompare(String(b.fromDate)));
     return applicable.length > 0 ? applicable[applicable.length - 1].id : null;
   }, [settings.milkQtyHistory, todayStr]);
 

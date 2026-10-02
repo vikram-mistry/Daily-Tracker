@@ -12,6 +12,30 @@ import { collection, doc, setDoc, getDocs, deleteDoc, writeBatch } from 'firebas
 const DB_NAME = 'TrackitProDB';
 const DB_VERSION = 3;
 
+function mergeRuleHistories(localRules = [], cloudRules = []) {
+  const map = new Map();
+  
+  if (Array.isArray(cloudRules)) {
+    cloudRules.forEach(r => {
+      if (r && r.fromDate) {
+        const key = r.id || `${r.fromDate}-${r.price ?? r.qty}`;
+        map.set(key, r);
+      }
+    });
+  }
+  
+  if (Array.isArray(localRules)) {
+    localRules.forEach(r => {
+      if (r && r.fromDate) {
+        const key = r.id || `${r.fromDate}-${r.price ?? r.qty}`;
+        map.set(key, r);
+      }
+    });
+  }
+  
+  return Array.from(map.values()).sort((a, b) => String(b.fromDate).localeCompare(String(a.fromDate)));
+}
+
 class LocalDB {
   constructor() {
     this.db = null;
@@ -189,6 +213,41 @@ class LocalDB {
         localItems.forEach(item => {
           if (item && item.id != null) localMap.set(String(item.id), item);
         });
+
+        // Special handling for 'settings': union-merge rule histories to guarantee zero data loss
+        if (store === 'settings') {
+          const cloudSettings = cloudDocs.find(d => d.id === 'main') || cloudDocs[0];
+          const localSettings = localItems.find(d => d.id === 'main') || localItems[0];
+
+          if (cloudSettings && localSettings) {
+            const mergedPriceHistory = mergeRuleHistories(localSettings.milkPriceHistory, cloudSettings.milkPriceHistory);
+            const mergedQtyHistory = mergeRuleHistories(localSettings.milkQtyHistory, cloudSettings.milkQtyHistory);
+
+            const cloudTime = Number(cloudSettings.updatedAt) || 0;
+            const localTime = Number(localSettings.updatedAt) || 0;
+            const base = localTime >= cloudTime ? localSettings : cloudSettings;
+
+            const merged = {
+              ...DEFAULT_SETTINGS,
+              ...cloudSettings,
+              ...localSettings,
+              ...base,
+              milkPriceHistory: mergedPriceHistory,
+              milkQtyHistory: mergedQtyHistory,
+              updatedAt: Math.max(localTime, cloudTime, Date.now())
+            };
+
+            await this._localPut('settings', merged);
+            await setDoc(doc(firestore, `users/${user.uid}/settings`, 'main'), merged);
+            continue;
+          } else if (localSettings && !cloudSettings) {
+            await setDoc(doc(firestore, `users/${user.uid}/settings`, 'main'), localSettings);
+            continue;
+          } else if (cloudSettings && !localSettings) {
+            await this._localPut('settings', cloudSettings);
+            continue;
+          }
+        }
 
         // 1. Sync Down: update local in one high-speed transaction if cloud item is newer or local missing
         const toPutLocal = [];

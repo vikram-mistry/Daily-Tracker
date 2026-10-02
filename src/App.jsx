@@ -28,10 +28,16 @@ export default function App() {
   const [filterDate, setFilterDate] = useState(new Date());
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((u) => {
+    const unsubscribe = auth.onAuthStateChanged(async (u) => {
       setUser(u);
       if (u) {
-        db.syncUpAndDown();
+        try {
+          await db.syncUpAndDown();
+          const fresh = await db.get('settings', 'main');
+          if (fresh) setSettings(fresh);
+        } catch (e) {
+          console.error("Auth sync error", e);
+        }
         const googlePhoto = u.providerData?.[0]?.photoURL;
         if (googlePhoto && googlePhoto !== u.photoURL) {
           updateProfile(u, { photoURL: googlePhoto })
@@ -46,15 +52,30 @@ export default function App() {
     const handleOpenProfile = () => setIsProfileOpen(true);
     window.addEventListener('open-profile', handleOpenProfile);
 
+    // Live listener to keep settings in sync whenever db-synced fires
+    const handleDbSynced = async () => {
+      try {
+        const fresh = await db.get('settings', 'main');
+        if (fresh) setSettings(fresh);
+      } catch (err) {
+        console.error("Failed to refresh settings on db-synced", err);
+      }
+    };
+    window.addEventListener('db-synced', handleDbSynced);
+
     return () => {
       unsubscribe();
       window.removeEventListener('open-profile', handleOpenProfile);
+      window.removeEventListener('db-synced', handleDbSynced);
     };
   }, []);
 
   const handleGoogleLogin = async () => {
     try {
       await signInWithPopup(auth, provider);
+      await db.syncUpAndDown();
+      const fresh = await db.get('settings', 'main');
+      if (fresh) setSettings(fresh);
       alert('Logged in successfully! Syncing your data...');
       setIsProfileOpen(false);
     } catch (e) {
@@ -79,6 +100,8 @@ export default function App() {
     setSyncing(true);
     try {
       await db.syncUpAndDown();
+      const fresh = await db.get('settings', 'main');
+      if (fresh) setSettings(fresh);
       alert('Sync Complete!');
     } catch (e) {
       alert('Sync failed: ' + e.message);

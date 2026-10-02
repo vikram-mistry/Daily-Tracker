@@ -379,7 +379,7 @@ function SettingsView({ settings, updateSettings, db }) {
           {/* Price Rate Schedule */}
           <div className="mb-5">
             <div className="flex justify-between items-center pl-4 pr-2 mb-2">
-              <div>
+              <div className="min-w-0 pr-2">
                 <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#79747E' }}>Price Rate Schedule</span>
                 <p className="text-[12px] font-semibold" style={{ color: '#6750A4' }}>
                   Current Rate: {settings.currency}{currentActiveRate} / L
@@ -388,7 +388,7 @@ function SettingsView({ settings, updateSettings, db }) {
               <motion.button 
                 whileTap={{ scale: 0.95 }}
                 onClick={openAddPriceModal}
-                className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm"
+                className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm whitespace-nowrap flex-shrink-0"
                 style={{ background: 'linear-gradient(135deg, #6750A4, #4A90D9)', color: '#fff' }}
               >
                 <Plus size={14} /> Change Rate
@@ -470,16 +470,16 @@ function SettingsView({ settings, updateSettings, db }) {
           {/* Quantity Schedule */}
           <div>
             <div className="flex justify-between items-center pl-4 pr-2 mb-2">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#79747E' }}>Delivery Quantity Schedule</span>
+              <div className="min-w-0 pr-2">
+                <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#79747E' }}>Quantity Schedule</span>
                 <p className="text-[12px] font-semibold" style={{ color: '#16A085' }}>
-                  Current Delivery: {currentActiveQty} L / day
+                  Current: {currentActiveQty} L / day
                 </p>
               </div>
               <motion.button 
                 whileTap={{ scale: 0.95 }}
                 onClick={openAddQtyModal}
-                className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm"
+                className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm whitespace-nowrap flex-shrink-0"
                 style={{ background: 'linear-gradient(135deg, #1ABC9C, #16A085)', color: '#fff' }}
               >
                 <Plus size={14} /> Change Qty

@@ -102,6 +102,26 @@ class LocalDB {
     });
   }
 
+  async _localPutMany(storeName, items) {
+    if (!items || items.length === 0) return;
+    await this.init();
+    if (this.isFallback) {
+      items.forEach(item => {
+        const index = this.memoryStore[storeName].findIndex(i => i.id === item.id);
+        if (index > -1) this.memoryStore[storeName][index] = item;
+        else this.memoryStore[storeName].push(item);
+      });
+      return;
+    }
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction(storeName, 'readwrite');
+      const store = tx.objectStore(storeName);
+      items.forEach(item => store.put(item));
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
   async _localDelete(storeName, key) {
     await this.init();
     if (this.isFallback) {
@@ -170,20 +190,25 @@ class LocalDB {
           if (item && item.id != null) localMap.set(String(item.id), item);
         });
 
-        // 1. Sync Down: update local ONLY if cloud item has strictly newer updatedAt or local missing
+        // 1. Sync Down: update local in one high-speed transaction if cloud item is newer or local missing
+        const toPutLocal = [];
         for (const [id, cloudItem] of cloudMap.entries()) {
           const localItem = localMap.get(id);
           if (!localItem) {
-            await this._localPut(store, cloudItem);
+            toPutLocal.push(cloudItem);
             localMap.set(id, cloudItem);
           } else {
             const cloudTime = Number(cloudItem.updatedAt) || 0;
             const localTime = Number(localItem.updatedAt) || 0;
             if (cloudTime > localTime) {
-              await this._localPut(store, cloudItem);
+              toPutLocal.push(cloudItem);
               localMap.set(id, cloudItem);
             }
           }
+        }
+
+        if (toPutLocal.length > 0) {
+          await this._localPutMany(store, toPutLocal);
         }
 
         // 2. Sync Up: upload local items to cloud in batches if local is newer or cloud missing
@@ -215,6 +240,11 @@ class LocalDB {
       } catch (e) {
         console.error("Sync error for store:", store, e);
       }
+    }
+
+    // Notify all active views that data sync completed
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('db-synced'));
     }
   }
 
@@ -271,9 +301,7 @@ class LocalDB {
           updatedAt: item.updatedAt || now
         }));
 
-        for (const item of items) {
-          await this._localPut(store, item);
-        }
+        await this._localPutMany(store, items);
 
         if (user) {
           for (let i = 0; i < items.length; i += 400) {
@@ -287,6 +315,11 @@ class LocalDB {
           }
         }
       }
+    }
+
+    // Notify all active views that data restore completed
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('db-synced'));
     }
   }
 }

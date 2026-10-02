@@ -52,30 +52,30 @@ export default function HomeView({ filterDate, setFilterDate, settings }) {
       }
     }
     loadAllData();
+
+    const handleSync = () => loadAllData();
+    window.addEventListener('db-synced', handleSync);
+
     return () => {
       active = false;
+      window.removeEventListener('db-synced', handleSync);
     };
   }, [filterDate]);
 
   // Aggregate Calculations (Milk & Gas)
   const calculations = useMemo(() => {
-    const month = filterDate.getMonth();
-    const year = filterDate.getFullYear();
+    const yearStr = String(filterDate.getFullYear());
+    const monthStr = String(filterDate.getMonth() + 1).padStart(2, '0');
+    const targetMonth = `${yearStr}-${monthStr}`;
 
     // 1. Milk
-    const milkThisMonth = milkEntries.filter(e => {
-      const d = new Date(e.date);
-      return d.getMonth() === month && d.getFullYear() === year;
-    });
+    const milkThisMonth = milkEntries.filter(e => e && e.date && e.date.startsWith(targetMonth));
     const milkSpend = milkThisMonth.reduce((sum, e) => sum + (e.isPaused ? 0 : Number(e.total || 0)), 0);
     const milkLiters = milkThisMonth.reduce((sum, e) => sum + (e.isPaused ? 0 : Number(e.qty || 0)), 0);
 
     // 2. Gas
     const gasSpend = gasEntries
-      .filter(e => {
-        const d = new Date(e.installDate);
-        return d.getMonth() === month && d.getFullYear() === year;
-      })
+      .filter(e => e && e.installDate && e.installDate.startsWith(targetMonth))
       .reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
     // Compile into chart-ready data

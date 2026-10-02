@@ -33,6 +33,13 @@ function GasView({ filterDate, setFilterDate, settings }) {
 
   useEffect(() => { loadEntries(); }, [loadEntries]);
 
+  // Real-time listener for cloud sync completion
+  useEffect(() => {
+    const handleSync = () => loadEntries();
+    window.addEventListener('db-synced', handleSync);
+    return () => window.removeEventListener('db-synced', handleSync);
+  }, [loadEntries]);
+
   // Utility to calculate days used correctly handling cross-month logic.
   const calculateDays = (start, end) => {
     if (!start) return 0;

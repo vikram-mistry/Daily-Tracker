@@ -30,14 +30,22 @@ function MilkView({ filterDate, setFilterDate, settings }) {
 
   const loadEntries = useCallback(async () => {
     const all = await db.getAll('milk');
-    const filtered = all.filter(e => {
-      const d = new Date(e.date);
-      return d.getMonth() === filterDate.getMonth() && d.getFullYear() === filterDate.getFullYear();
-    });
-    setEntries(filtered.sort((a, b) => new Date(b.date) - new Date(a.date)));
+    const yearStr = String(filterDate.getFullYear());
+    const monthStr = String(filterDate.getMonth() + 1).padStart(2, '0');
+    const targetMonth = `${yearStr}-${monthStr}`;
+
+    const filtered = all.filter(e => e && e.date && e.date.startsWith(targetMonth));
+    setEntries(filtered.sort((a, b) => (b.date || '').localeCompare(a.date || '')));
   }, [filterDate]);
 
   useEffect(() => { loadEntries(); }, [loadEntries]);
+
+  // Real-time listener for cloud sync completion
+  useEffect(() => {
+    const handleSync = () => loadEntries();
+    window.addEventListener('db-synced', handleSync);
+    return () => window.removeEventListener('db-synced', handleSync);
+  }, [loadEntries]);
 
   // Calculations
   const stats = useMemo(() => {
@@ -176,15 +184,10 @@ function MilkView({ filterDate, setFilterDate, settings }) {
 
   // Generate Calendar Days
   const daysInMonth = new Date(filterDate.getFullYear(), filterDate.getMonth() + 1, 0).getDate();
+  const calYearStr = String(filterDate.getFullYear());
+  const calMonthStr = String(filterDate.getMonth() + 1).padStart(2, '0');
   const calendarDays = Array.from({length: daysInMonth}, (_, i) => {
-    const d = new Date(filterDate.getFullYear(), filterDate.getMonth(), i + 1);
-    // Adjust to local timezone string format YYYY-MM-DD
-    const dateStr = [
-      d.getFullYear(),
-      String(d.getMonth() + 1).padStart(2, '0'),
-      String(d.getDate()).padStart(2, '0')
-    ].join('-');
-    return dateStr;
+    return `${calYearStr}-${calMonthStr}-${String(i + 1).padStart(2, '0')}`;
   });
 
   return (

@@ -140,22 +140,11 @@ function SettingsView({ settings, updateSettings, db }) {
     reader.onload = async (event) => {
       try {
         const data = JSON.parse(event.target.result);
-        await db.clearAll();
-        if(data.settings) for(let i of data.settings) await db.put('settings', i);
-        if(data.milk) for(let i of data.milk) await db.put('milk', i);
-        if(data.gas) for(let i of data.gas) await db.put('gas', i);
-        if(data.water) for(let i of data.water) await db.put('water', i);
-        if(data.grocery) for(let i of data.grocery) await db.put('grocery', i);
-        if(data.electricity_lotus) for(let i of data.electricity_lotus) await db.put('electricity_lotus', i);
-        if(data.electricity_sadri) for(let i of data.electricity_sadri) await db.put('electricity_sadri', i);
-        if(data.water_bill) for(let i of data.water_bill) await db.put('water_bill', i);
-        if(data.other_expenses) for(let i of data.other_expenses) await db.put('other_expenses', i);
-        if(data.categories) for(let i of data.categories) await db.put('categories', i);
-        if(data.custom) for(let i of data.custom) await db.put('custom', i);
-        if(data.maintenance) for(let i of data.maintenance) await db.put('maintenance', i);
-        alert('Data imported successfully! App will reload.');
+        await db.restoreBackup(data);
+        alert('Data imported and synced to cloud successfully! App will reload.');
         window.location.reload();
       } catch (err) {
+        console.error("Import error", err);
         alert('Invalid backup file.');
       }
     };

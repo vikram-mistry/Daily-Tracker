@@ -206,6 +206,43 @@ class LocalDB {
       });
     }
   }
+
+  async restoreBackup(data) {
+    await this.init();
+    const user = auth.currentUser;
+    const stores = [
+      'settings', 'milk', 'gas', 'water', 
+      'grocery', 'electricity_lotus', 'electricity_sadri', 
+      'water_bill', 'other_expenses', 'categories', 'custom',
+      'maintenance'
+    ];
+
+    // 1. Clear local IndexedDB stores
+    await this.clearAll();
+
+    // 2. If logged in, clear cloud Firestore collections too
+    if (user) {
+      for (const store of stores) {
+        try {
+          const snap = await getDocs(collection(firestore, `users/${user.uid}/${store}`));
+          for (const d of snap.docs) {
+            await deleteDoc(d.ref);
+          }
+        } catch (e) {
+          console.error("Error clearing cloud collection for restore:", store, e);
+        }
+      }
+    }
+
+    // 3. Put all restored items into local IndexedDB and Cloud Firestore
+    for (const store of stores) {
+      if (data[store] && Array.isArray(data[store])) {
+        for (const item of data[store]) {
+          await this.put(store, item);
+        }
+      }
+    }
+  }
 }
 
 export const db = new LocalDB();

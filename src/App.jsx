@@ -2,35 +2,27 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { 
-  Milk, Flame, Plus, Settings, Calendar, ChevronLeft, ChevronRight, 
-  Trash2, Edit3, X, Check, Droplet, Zap, Wifi, ShoppingCart, 
-  Wrench, Package, PauseCircle, PlayCircle, Download, Upload, Info, Share2, LayoutGrid, Train,
-  Home, ReceiptIndianRupee
+  Milk, Flame, Settings, Calendar, ChevronLeft, ChevronRight, 
+  Trash2, Edit3, X, Check, PauseCircle, PlayCircle, Download, Upload, Info, Share2,
+  Home, LogIn, LogOut, RefreshCw, User
 } from 'lucide-react';
 import { db, DEFAULT_SETTINGS } from './db';
-import { GlassCard, SwipeableItem, BottomSheet, StickyHeader } from './components/UI';
+import { GlassCard, BottomSheet, StickyHeader } from './components/UI';
 import HomeView from './views/HomeView';
 import MilkView from './views/MilkView';
 import GasView from './views/GasView';
-import CustomCategoryView from './views/CustomCategoryView';
 import SettingsView from './views/SettingsView';
-import ExpenseView from './views/ExpenseView';
 import { auth, provider, signInWithPopup, signOut, updateProfile } from './firebase';
-import { LogIn, LogOut, RefreshCw, User } from 'lucide-react';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('home'); // home, milk, gas, settings, custom-{id}
+  const [activeTab, setActiveTab] = useState('home'); // home, milk, gas, settings
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
-  const [categories, setCategories] = useState([]);
   const [isReady, setIsReady] = useState(false);
   
   // Firebase Auth and Sync State
   const [user, setUser] = useState(auth.currentUser);
   const [syncing, setSyncing] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-
-  // Modals state
-  const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
   
   // Global Month/Year filter
   const [filterDate, setFilterDate] = useState(new Date());
@@ -102,9 +94,6 @@ export default function App() {
         const storedSettings = await db.get('settings', 'main');
         if (storedSettings) setSettings(storedSettings);
         else await db.put('settings', DEFAULT_SETTINGS);
-
-        const storedCats = await db.getAll('categories');
-        setCategories(storedCats || []);
       } catch (err) {
         console.error("Failed to load DB", err);
       } finally {
@@ -160,58 +149,19 @@ export default function App() {
               {activeTab === 'milk' && <MilkView filterDate={filterDate} setFilterDate={setFilterDate} settings={settings} />}
               {activeTab === 'gas' && <GasView filterDate={filterDate} setFilterDate={setFilterDate} settings={settings} />}
               {activeTab === 'settings' && <SettingsView settings={settings} updateSettings={updateSettings} db={db} />}
-              {activeTab === 'grocery' && <ExpenseView type="grocery" title="Grocery" icon={ShoppingCart} filterDate={filterDate} setFilterDate={setFilterDate} settings={settings} />}
-              {activeTab === 'elec-lotus' && <ExpenseView type="electricity_lotus" title="Electricity (Lotus)" icon={Zap} filterDate={filterDate} setFilterDate={setFilterDate} settings={settings} />}
-              {activeTab === 'elec-sadri' && <ExpenseView type="electricity_sadri" title="Electricity (Sadri)" icon={Zap} filterDate={filterDate} setFilterDate={setFilterDate} settings={settings} />}
-              {activeTab === 'water-bill' && <ExpenseView type="water_bill" title="Water Bill" icon={Droplet} filterDate={filterDate} setFilterDate={setFilterDate} settings={settings} />}
-              {activeTab === 'maintenance' && <ExpenseView type="maintenance" title="Maintenance" icon={ReceiptIndianRupee} filterDate={filterDate} setFilterDate={setFilterDate} settings={settings} />}
-              {activeTab === 'other' && <ExpenseView type="other_expenses" title="Travel" icon={Train} filterDate={filterDate} setFilterDate={setFilterDate} settings={settings} />}
-              
-              {activeTab.startsWith('custom-') && (
-                <CustomCategoryView 
-                  categoryId={activeTab.replace('custom-', '')} 
-                  categories={categories}
-                  settings={settings}
-                  filterDate={filterDate}
-                  setFilterDate={setFilterDate}
-                />
-              )}
             </motion.div>
           </AnimatePresence>
         </div>
 
         {/* Bottom Navigation Bar */}
         <div className="absolute bottom-0 w-full px-4 pb-6 pt-2 z-40" style={{background:'var(--m3-nav-gradient)'}}>
-          <div className="flex items-center justify-around rounded-full py-2 px-2" style={{background:'var(--m3-nav-bg)', backdropFilter:'blur(24px)', WebkitBackdropFilter:'blur(24px)', border:'1px solid var(--m3-nav-border)', boxShadow:'var(--m3-nav-shadow)'}}>
+          <div className="flex items-center justify-around rounded-full py-2 px-3" style={{background:'var(--m3-nav-bg)', backdropFilter:'blur(24px)', WebkitBackdropFilter:'blur(24px)', border:'1px solid var(--m3-nav-border)', boxShadow:'var(--m3-nav-shadow)'}}>
             <NavIcon icon={Home} label="Home" isActive={activeTab === 'home'} onClick={() => setActiveTab('home')} />
             <NavIcon icon={Milk} label="Milk" isActive={activeTab === 'milk'} onClick={() => setActiveTab('milk')} />
-            
-            {/* FAB (Add More) */}
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setIsAddSheetOpen(true)}
-              className="-mt-6 z-50 p-4 rounded-full"
-              style={{background:'linear-gradient(135deg,#7C3AED,#6750A4)', color:'#fff', boxShadow:'0 4px 20px rgba(103,80,164,0.4)', border:'4px solid var(--m3-fab-border)'}}
-            >
-              <LayoutGrid size={24} />
-            </motion.button>
-
             <NavIcon icon={Flame} label="Gas" isActive={activeTab === 'gas'} onClick={() => setActiveTab('gas')} />
             <NavIcon icon={Settings} label="Settings" isActive={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
           </div>
         </div>
-
-        {/* Add More Bottom Sheet */}
-        <BottomSheet isOpen={isAddSheetOpen} onClose={() => setIsAddSheetOpen(false)} title="Track Expenses" isCentered={true}>
-          <div className="grid grid-cols-2 gap-4 mt-6">
-             <ExpenseMenuItem icon={ShoppingCart} label="Grocery" onClick={() => { setActiveTab('grocery'); setIsAddSheetOpen(false); }} color="#27ae90" />
-             <ExpenseMenuItem icon={ReceiptIndianRupee} label="Maintenance" onClick={() => { setActiveTab('maintenance'); setIsAddSheetOpen(false); }} color="#1ABC9C" />
-             <ExpenseMenuItem icon={Zap} label="Elec (Lotus)" onClick={() => { setActiveTab('elec-lotus'); setIsAddSheetOpen(false); }} color="#f59e0b" />
-             <ExpenseMenuItem icon={Zap} label="Elec (Sadri)" onClick={() => { setActiveTab('elec-sadri'); setIsAddSheetOpen(false); }} color="#f59e0b" />
-             <ExpenseMenuItem icon={Droplet} label="Water Bill" onClick={() => { setActiveTab('water-bill'); setIsAddSheetOpen(false); }} color="#3b82f6" />
-             <ExpenseMenuItem icon={Train} label="Travel" onClick={() => { setActiveTab('other'); setIsAddSheetOpen(false); }} color="#8b5cf6" />
-          </div>
-        </BottomSheet>
 
         {/* Google Cloud Sync / Profile Modal */}
         <BottomSheet isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} title="Account & Sync" isCentered={true}>
@@ -277,15 +227,6 @@ export default function App() {
     </div>
   );
 }
-
-const ExpenseMenuItem = ({ icon: Icon, label, onClick, color }) => (
-  <motion.button whileTap={{scale:0.96}} onClick={onClick} className="flex items-center gap-3 p-4 rounded-2xl transition-all" style={{background:'var(--m3-swipe-inner)', border:'1px solid var(--m3-swipe-inner-border)', boxShadow:'var(--m3-swipe-inner-shadow)'}}>
-    <div className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${color}20`, color }}>
-      <Icon size={20} />
-    </div>
-    <span className="font-semibold text-sm" style={{color:'var(--m3-on-surface)'}}>{label}</span>
-  </motion.button>
-);
 
 const NavIcon = ({ icon: Icon, label, isActive, onClick }) => (
   <motion.button whileTap={{scale:0.9}} onClick={onClick} className="flex flex-col items-center gap-1 w-16">

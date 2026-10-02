@@ -1,28 +1,16 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  Milk, Flame, Droplet, Zap, ShoppingCart, Train, Package, 
-  AlertCircle, CheckCircle, HelpCircle, ReceiptIndianRupee
+  Milk, Flame, HelpCircle
 } from 'lucide-react';
 import { db } from '../db';
 import { GlassCard, StickyHeader } from '../components/UI';
 import { auth } from '../firebase';
 
-const ICONS_MAP = {
-  Droplet, Zap, Wifi: Zap, ShoppingCart, Wrench: Package, Package, Train
-};
-
 export default function HomeView({ filterDate, setFilterDate, settings }) {
   const [user, setUser] = useState(auth.currentUser);
   const [milkEntries, setMilkEntries] = useState([]);
   const [gasEntries, setGasEntries] = useState([]);
-  const [groceryEntries, setGroceryEntries] = useState([]);
-  const [lotusEntries, setLotusEntries] = useState([]);
-  const [sadriEntries, setSadriEntries] = useState([]);
-  const [maintenanceEntries, setMaintenanceEntries] = useState([]);
-  const [travelEntries, setTravelEntries] = useState([]);
-  const [customEntries, setCustomEntries] = useState([]);
-  const [categories, setCategories] = useState([]);
 
   const [activeSlice, setActiveSlice] = useState(null);
 
@@ -50,30 +38,14 @@ export default function HomeView({ filterDate, setFilterDate, settings }) {
     let active = true;
     async function loadAllData() {
       try {
-        const [
-          milk, gas, grocery, lotus, sadri, maintenance, travel, custom, cats
-        ] = await Promise.all([
+        const [milk, gas] = await Promise.all([
           db.getAll('milk'),
-          db.getAll('gas'),
-          db.getAll('grocery'),
-          db.getAll('electricity_lotus'),
-          db.getAll('electricity_sadri'),
-          db.getAll('maintenance'),
-          db.getAll('other_expenses'),
-          db.getAll('custom'),
-          db.getAll('categories')
+          db.getAll('gas')
         ]);
 
         if (active) {
-          setMilkEntries(milk);
-          setGasEntries(gas);
-          setGroceryEntries(grocery);
-          setLotusEntries(lotus);
-          setSadriEntries(sadri);
-          setMaintenanceEntries(maintenance);
-          setTravelEntries(travel);
-          setCustomEntries(custom);
-          setCategories(cats || []);
+          setMilkEntries(milk || []);
+          setGasEntries(gas || []);
         }
       } catch (err) {
         console.error("Failed to load data for dashboard", err);
@@ -85,7 +57,7 @@ export default function HomeView({ filterDate, setFilterDate, settings }) {
     };
   }, [filterDate]);
 
-  // Aggregate Calculations
+  // Aggregate Calculations (Milk & Gas)
   const calculations = useMemo(() => {
     const month = filterDate.getMonth();
     const year = filterDate.getFullYear();
@@ -106,78 +78,11 @@ export default function HomeView({ filterDate, setFilterDate, settings }) {
       })
       .reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
-    // 3. Grocery
-    const grocerySpend = groceryEntries
-      .filter(e => {
-        const d = new Date(e.date || e.paymentDate);
-        return d.getMonth() === month && d.getFullYear() === year;
-      })
-      .reduce((sum, e) => sum + Number(e.amount || 0), 0);
-
-    // 4. Lotus Electricity
-    const lotusSpend = lotusEntries
-      .filter(e => {
-        const d = new Date(e.paymentDate || e.date);
-        return d.getMonth() === month && d.getFullYear() === year;
-      })
-      .reduce((sum, e) => sum + Number(e.amount || 0), 0);
-
-    // 5. Sadri Electricity
-    const sadriSpend = sadriEntries
-      .filter(e => {
-        const d = new Date(e.paymentDate || e.date);
-        return d.getMonth() === month && d.getFullYear() === year;
-      })
-      .reduce((sum, e) => sum + Number(e.amount || 0), 0);
-
-    // 6. Maintenance
-    const maintenanceSpend = maintenanceEntries
-      .filter(e => {
-        const d = new Date(e.paymentDate || e.date);
-        return d.getMonth() === month && d.getFullYear() === year;
-      })
-      .reduce((sum, e) => sum + Number(e.amount || 0), 0);
-
-    // 7. Travel (Other expenses)
-    const travelSpend = travelEntries
-      .filter(e => {
-        const d = new Date(e.paymentDate || e.date);
-        return d.getMonth() === month && d.getFullYear() === year;
-      })
-      .reduce((sum, e) => sum + Number(e.amount || 0), 0);
-
-    // 8. Custom Categories
-    const customSpendByCategory = {};
-    customEntries.forEach(e => {
-      const d = new Date(e.date);
-      if (d.getMonth() === month && d.getFullYear() === year) {
-        customSpendByCategory[e.categoryId] = (customSpendByCategory[e.categoryId] || 0) + Number(e.amount || 0);
-      }
-    });
-
     // Compile into chart-ready data
     const items = [
       { key: 'milk', label: 'Milk', value: milkSpend, color: '#6750A4', icon: Milk },
-      { key: 'gas', label: 'Gas', value: gasSpend, color: '#E67E22', icon: Flame },
-      { key: 'grocery', label: 'Grocery', value: grocerySpend, color: '#27AE90', icon: ShoppingCart },
-      { key: 'elec-lotus', label: 'Elec (Lotus)', value: lotusSpend, color: '#F2C94C', icon: Zap },
-      { key: 'elec-sadri', label: 'Elec (Sadri)', value: sadriSpend, color: '#F2994A', icon: Zap },
-      { key: 'maintenance', label: 'Maintenance', value: maintenanceSpend, color: '#1ABC9C', icon: ReceiptIndianRupee },
-      { key: 'other', label: 'Travel', value: travelSpend, color: '#9B51E0', icon: Train }
+      { key: 'gas', label: 'Gas', value: gasSpend, color: '#E67E22', icon: Flame }
     ];
-
-    categories.forEach(c => {
-      const val = customSpendByCategory[c.id] || 0;
-      if (val > 0) {
-        items.push({
-          key: `custom-${c.id}`,
-          label: c.name,
-          value: val,
-          color: c.color || '#4F4F4F',
-          icon: ICONS_MAP[c.icon] || Package
-        });
-      }
-    });
 
     const activeItems = items.filter(item => item.value > 0);
     const totalSpend = activeItems.reduce((sum, item) => sum + item.value, 0);
@@ -186,29 +91,10 @@ export default function HomeView({ filterDate, setFilterDate, settings }) {
       activeItems,
       totalSpend,
       milkLiters,
-      milkSpend
+      milkSpend,
+      gasSpend
     };
-  }, [milkEntries, gasEntries, groceryEntries, lotusEntries, sadriEntries, maintenanceEntries, travelEntries, customEntries, categories, filterDate]);
-
-  // Utility Bill Status Evaluator
-  const billStatus = useMemo(() => {
-    const month = filterDate.getMonth();
-    const year = filterDate.getFullYear();
-
-    const checkStatus = (entries) => {
-      const record = entries.find(e => {
-        const d = new Date(e.paymentDate || e.dueDate);
-        return d.getMonth() === month && d.getFullYear() === year;
-      });
-      return record ? { paid: true, amount: record.amount } : { paid: false };
-    };
-
-    return [
-      { id: 'lotus', name: 'Lotus Elec', ...checkStatus(lotusEntries) },
-      { id: 'sadri', name: 'Sadri Elec', ...checkStatus(sadriEntries) },
-      { id: 'maintenance', name: 'Maintenance', ...checkStatus(maintenanceEntries) }
-    ];
-  }, [lotusEntries, sadriEntries, maintenanceEntries, filterDate]);
+  }, [milkEntries, gasEntries, filterDate]);
 
   // Gas Cylinder Longevity Evaluator
   const gasPrediction = useMemo(() => {
@@ -448,41 +334,6 @@ export default function HomeView({ filterDate, setFilterDate, settings }) {
             <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400">
               <Milk size={20} />
             </div>
-          </div>
-        </GlassCard>
-
-        {/* Utility Bills Status Card */}
-        <GlassCard className="p-5">
-          <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--m3-on-surface-muted)' }}>
-            Utility Bills (This Month)
-          </p>
-          <div className="space-y-3">
-            {billStatus.map(bill => (
-              <div key={bill.id} className="flex items-center justify-between py-2 border-b last:border-0" style={{ borderColor: 'var(--m3-divider)' }}>
-                <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${bill.paid ? 'bg-green-100 dark:bg-green-950 text-green-600 dark:text-green-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-500'}`}>
-                    {bill.id === 'maintenance' ? <ReceiptIndianRupee size={16} /> : <Zap size={16} />}
-                  </div>
-                  <span className="text-sm font-semibold" style={{ color: 'var(--m3-on-surface)' }}>{bill.name}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {bill.paid ? (
-                    <>
-                      <span className="text-xs font-bold" style={{ color: 'var(--m3-on-surface)' }}>
-                        {settings.currency}{bill.amount}
-                      </span>
-                      <span className="flex items-center gap-1 text-xs font-bold text-green-600 dark:text-green-400">
-                        <CheckCircle size={14} /> Paid
-                      </span>
-                    </>
-                  ) : (
-                    <span className="flex items-center gap-1 text-xs font-bold text-orange-600 dark:text-orange-400">
-                      <AlertCircle size={14} /> Unpaid
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
           </div>
         </GlassCard>
       </div>

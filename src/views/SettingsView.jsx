@@ -3,8 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { 
   Milk, Flame, Plus, Settings, Calendar, ChevronLeft, ChevronRight, 
-  Trash2, Edit3, X, Check, Droplet, Zap, Wifi, ShoppingCart, 
-  Wrench, Package, PauseCircle, PlayCircle, Download, Upload, Info, Share2, LayoutGrid, Train,
+  Trash2, Edit3, X, Check, PauseCircle, PlayCircle, Download, Upload, Info, Share2,
   LogIn, LogOut, RefreshCw, Clock, History, CheckCircle2
 } from 'lucide-react';
 import { db, getEffectiveMilkPrice, getEffectiveMilkQty, reconcileMilkPriceFromDate, reconcileMilkQtyFromDate } from '../db';
@@ -99,16 +98,7 @@ function SettingsView({ settings, updateSettings, db }) {
       const data = {
         settings: await db.getAll('settings'),
         milk: await db.getAll('milk'),
-        gas: await db.getAll('gas'),
-        water: await db.getAll('water'),
-        grocery: await db.getAll('grocery'),
-        electricity_lotus: await db.getAll('electricity_lotus'),
-        electricity_sadri: await db.getAll('electricity_sadri'),
-        water_bill: await db.getAll('water_bill'),
-        other_expenses: await db.getAll('other_expenses'),
-        categories: await db.getAll('categories'),
-        custom: await db.getAll('custom'),
-        maintenance: await db.getAll('maintenance')
+        gas: await db.getAll('gas')
       };
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);

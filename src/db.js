@@ -17,10 +17,7 @@ class LocalDB {
     this.db = null;
     this.isFallback = false;
     this.memoryStore = { 
-      settings: [], milk: [], gas: [], water: [], 
-      grocery: [], electricity_lotus: [], electricity_sadri: [], 
-      water_bill: [], other_expenses: [], categories: [], custom: [],
-      maintenance: []
+      settings: [], milk: [], gas: []
     };
   }
 
@@ -156,12 +153,7 @@ class LocalDB {
   async syncUpAndDown() {
     const user = auth.currentUser;
     if (!user) return;
-    const stores = [
-      'settings', 'milk', 'gas', 'water', 
-      'grocery', 'electricity_lotus', 'electricity_sadri', 
-      'water_bill', 'other_expenses', 'categories', 'custom',
-      'maintenance'
-    ];
+    const stores = ['settings', 'milk', 'gas'];
     
     for (const store of stores) {
       try {
@@ -230,19 +222,11 @@ class LocalDB {
     await this.init();
     if (this.isFallback) {
       this.memoryStore = { 
-        settings: [], milk: [], gas: [], water: [], 
-        grocery: [], electricity_lotus: [], electricity_sadri: [], 
-        water_bill: [], other_expenses: [], categories: [], custom: [],
-        maintenance: []
+        settings: [], milk: [], gas: []
       };
       return;
     }
-    const stores = [
-      'settings', 'milk', 'gas', 'water', 
-      'grocery', 'electricity_lotus', 'electricity_sadri', 
-      'water_bill', 'other_expenses', 'categories', 'custom',
-      'maintenance'
-    ];
+    const stores = ['settings', 'milk', 'gas'];
     for (let store of stores) {
       await new Promise((resolve) => {
         const tx = this.db.transaction(store, 'readwrite');
@@ -255,12 +239,7 @@ class LocalDB {
   async restoreBackup(data) {
     await this.init();
     const user = auth.currentUser;
-    const stores = [
-      'settings', 'milk', 'gas', 'water', 
-      'grocery', 'electricity_lotus', 'electricity_sadri', 
-      'water_bill', 'other_expenses', 'categories', 'custom',
-      'maintenance'
-    ];
+    const stores = ['settings', 'milk', 'gas'];
 
     // 1. Clear local IndexedDB stores
     await this.clearAll();

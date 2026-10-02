@@ -23,10 +23,8 @@ function SettingsView({ settings, updateSettings, db }) {
   const [user, setUser] = useState(auth.currentUser);
   const [syncing, setSyncing] = useState(false);
 
-  // Local draft states for text/number inputs to prevent keyboard blur & cursor jump
+  // Local draft states for general & gas inputs to prevent keyboard blur
   const [currencyDraft, setCurrencyDraft] = useState(settings.currency ?? '₹');
-  const [milkPriceDraft, setMilkPriceDraft] = useState(settings.milkPrice !== undefined ? String(settings.milkPrice) : '84');
-  const [milkQtyDraft, setMilkQtyDraft] = useState(settings.milkQty !== undefined ? String(settings.milkQty) : '1');
   const [gasWeightDraft, setGasWeightDraft] = useState(settings.gasWeight !== undefined ? String(settings.gasWeight) : '14.2');
 
   useEffect(() => {
@@ -34,30 +32,26 @@ function SettingsView({ settings, updateSettings, db }) {
   }, [settings.currency]);
 
   useEffect(() => {
-    setMilkPriceDraft(settings.milkPrice !== undefined ? String(settings.milkPrice) : '84');
-  }, [settings.milkPrice]);
-
-  useEffect(() => {
-    setMilkQtyDraft(settings.milkQty !== undefined ? String(settings.milkQty) : '1');
-  }, [settings.milkQty]);
-
-  useEffect(() => {
     setGasWeightDraft(settings.gasWeight !== undefined ? String(settings.gasWeight) : '14.2');
   }, [settings.gasWeight]);
+
+  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const currentActiveRate = useMemo(() => getEffectiveMilkPrice(todayStr, settings), [todayStr, settings]);
+  const currentActiveQty = useMemo(() => getEffectiveMilkQty(todayStr, settings), [todayStr, settings]);
 
   // Modals for Price and Quantity Schedules
   const [priceModalOpen, setPriceModalOpen] = useState(false);
   const [editingPriceRule, setEditingPriceRule] = useState(null);
   const [priceForm, setPriceForm] = useState({
     price: '',
-    fromDate: new Date().toISOString().split('T')[0]
+    fromDate: todayStr
   });
 
   const [qtyModalOpen, setQtyModalOpen] = useState(false);
   const [editingQtyRule, setEditingQtyRule] = useState(null);
   const [qtyForm, setQtyForm] = useState({
     qty: '',
-    fromDate: new Date().toISOString().split('T')[0]
+    fromDate: todayStr
   });
 
   useEffect(() => {
@@ -151,28 +145,9 @@ function SettingsView({ settings, updateSettings, db }) {
     reader.readAsText(file);
   };
 
-  // Save base defaults on blur or enter (SAFEGUARD: never modifies existing entries)
   const commitCurrency = () => {
     if (currencyDraft !== settings.currency) {
       updateSettings({ currency: currencyDraft || '₹' });
-    }
-  };
-
-  const commitMilkPrice = async () => {
-    const val = parseFloat(milkPriceDraft);
-    if (!isNaN(val) && val > 0 && val !== settings.milkPrice) {
-      await updateSettings({ milkPrice: val });
-    } else {
-      setMilkPriceDraft(String(settings.milkPrice ?? 84));
-    }
-  };
-
-  const commitMilkQty = async () => {
-    const val = parseFloat(milkQtyDraft);
-    if (!isNaN(val) && val > 0 && val !== settings.milkQty) {
-      await updateSettings({ milkQty: val });
-    } else {
-      setMilkQtyDraft(String(settings.milkQty ?? 1));
     }
   };
 
@@ -192,17 +167,16 @@ function SettingsView({ settings, updateSettings, db }) {
   }, [settings.milkPriceHistory]);
 
   const activePriceRuleId = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
     const history = settings.milkPriceHistory || [];
-    const applicable = [...history].filter(r => r.fromDate <= today).sort((a, b) => a.fromDate.localeCompare(b.fromDate));
+    const applicable = [...history].filter(r => r.fromDate <= todayStr).sort((a, b) => a.fromDate.localeCompare(b.fromDate));
     return applicable.length > 0 ? applicable[applicable.length - 1].id : null;
-  }, [settings.milkPriceHistory]);
+  }, [settings.milkPriceHistory, todayStr]);
 
   const openAddPriceModal = () => {
     setEditingPriceRule(null);
     setPriceForm({
-      price: String(settings.milkPrice || 84),
-      fromDate: new Date().toISOString().split('T')[0]
+      price: String(currentActiveRate || 84),
+      fromDate: todayStr
     });
     setPriceModalOpen(true);
   };
@@ -245,14 +219,18 @@ function SettingsView({ settings, updateSettings, db }) {
       ];
     }
 
-    const updatedSettings = { ...settings, milkPriceHistory: updatedHistory };
+    const updatedSettings = { 
+      ...settings, 
+      milkPriceHistory: updatedHistory,
+      ...(priceForm.fromDate <= todayStr ? { milkPrice: priceNum } : {})
+    };
     await updateSettings(updatedSettings);
     setPriceModalOpen(false);
     setEditingPriceRule(null);
 
     // SAFEGUARD: Only reconcile active entries on or after priceForm.fromDate
     const count = await reconcileMilkPriceFromDate(priceForm.fromDate, priceNum);
-    alert(`Price schedule saved! Updated ${count} milk ${count === 1 ? 'entry' : 'entries'} on or after ${priceForm.fromDate}. All earlier entries remain untouched.`);
+    alert(`Price rate of ${settings.currency}${priceNum}/L saved! Updated ${count} milk ${count === 1 ? 'entry' : 'entries'} on or after ${formatDateDisplay(priceForm.fromDate)}. All earlier entries remain untouched.`);
   };
 
   const handleDeletePriceRule = async (id) => {
@@ -271,17 +249,16 @@ function SettingsView({ settings, updateSettings, db }) {
   }, [settings.milkQtyHistory]);
 
   const activeQtyRuleId = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
     const history = settings.milkQtyHistory || [];
-    const applicable = [...history].filter(r => r.fromDate <= today).sort((a, b) => a.fromDate.localeCompare(b.fromDate));
+    const applicable = [...history].filter(r => r.fromDate <= todayStr).sort((a, b) => a.fromDate.localeCompare(b.fromDate));
     return applicable.length > 0 ? applicable[applicable.length - 1].id : null;
-  }, [settings.milkQtyHistory]);
+  }, [settings.milkQtyHistory, todayStr]);
 
   const openAddQtyModal = () => {
     setEditingQtyRule(null);
     setQtyForm({
-      qty: String(settings.milkQty || 1),
-      fromDate: new Date().toISOString().split('T')[0]
+      qty: String(currentActiveQty || 1),
+      fromDate: todayStr
     });
     setQtyModalOpen(true);
   };
@@ -324,14 +301,18 @@ function SettingsView({ settings, updateSettings, db }) {
       ];
     }
 
-    const updatedSettings = { ...settings, milkQtyHistory: updatedHistory };
+    const updatedSettings = { 
+      ...settings, 
+      milkQtyHistory: updatedHistory,
+      ...(qtyForm.fromDate <= todayStr ? { milkQty: qtyNum } : {})
+    };
     await updateSettings(updatedSettings);
     setQtyModalOpen(false);
     setEditingQtyRule(null);
 
     // SAFEGUARD: Only reconcile active entries on or after qtyForm.fromDate
     const count = await reconcileMilkQtyFromDate(qtyForm.fromDate, qtyNum);
-    alert(`Quantity schedule saved! Updated ${count} milk ${count === 1 ? 'entry' : 'entries'} on or after ${qtyForm.fromDate}. All earlier entries remain untouched.`);
+    alert(`Daily quantity of ${qtyNum}L saved! Updated ${count} milk ${count === 1 ? 'entry' : 'entries'} on or after ${formatDateDisplay(qtyForm.fromDate)}. All earlier entries remain untouched.`);
   };
 
   const handleDeleteQtyRule = async (id) => {
@@ -386,50 +367,28 @@ function SettingsView({ settings, updateSettings, db }) {
         {/* Milk Settings */}
         <section>
           <div className="pl-4 pr-1 mb-2">
-            <h3 className="text-xs font-bold uppercase tracking-widest" style={{ color: '#79747E' }}>Milk Settings & Rates</h3>
+            <h3 className="text-xs font-bold uppercase tracking-widest" style={{ color: '#79747E' }}>Milk Rates &amp; Delivery Schedule</h3>
+            <p className="text-[11px] mt-0.5" style={{ color: 'var(--m3-on-surface-muted)' }}>
+              Scheduled rates &amp; quantities automatically pre-fill as defaults when adding entries in the Milk tab.
+            </p>
           </div>
 
-          <GlassCard className="px-5 mb-4">
-            <SettingBlock label={`Default Base Price (${settings.currency}/L)`}>
-              <input 
-                type="number" 
-                step="any"
-                value={milkPriceDraft} 
-                onChange={e => setMilkPriceDraft(e.target.value)}
-                onBlur={commitMilkPrice}
-                onKeyDown={e => e.key === 'Enter' && commitMilkPrice()}
-                className="m3-input text-right w-24" 
-                style={{ padding: '8px', borderRadius: '12px' }} 
-              />
-            </SettingBlock>
-            <SettingBlock label="Default Base Quantity (L)">
-              <input 
-                type="number" 
-                step="0.5" 
-                value={milkQtyDraft} 
-                onChange={e => setMilkQtyDraft(e.target.value)}
-                onBlur={commitMilkQty}
-                onKeyDown={e => e.key === 'Enter' && commitMilkQty()}
-                className="m3-input text-right w-24" 
-                style={{ padding: '8px', borderRadius: '12px' }} 
-              />
-            </SettingBlock>
-          </GlassCard>
-
           {/* Price Rate Schedule */}
-          <div className="mb-4">
+          <div className="mb-5">
             <div className="flex justify-between items-center pl-4 pr-2 mb-2">
               <div>
-                <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#79747E' }}>Price Rate History</span>
-                <p className="text-[11px]" style={{ color: 'var(--m3-on-surface-muted)' }}>Only applies from the selected date onward</p>
+                <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#79747E' }}>Price Rate Schedule</span>
+                <p className="text-[12px] font-semibold" style={{ color: '#6750A4' }}>
+                  Current Rate: {settings.currency}{currentActiveRate} / L
+                </p>
               </div>
               <motion.button 
                 whileTap={{ scale: 0.95 }}
                 onClick={openAddPriceModal}
-                className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full"
+                className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm"
                 style={{ background: 'linear-gradient(135deg, #6750A4, #4A90D9)', color: '#fff' }}
               >
-                <Plus size={14} /> Add Price
+                <Plus size={14} /> Change Rate
               </motion.button>
             </div>
 
@@ -437,10 +396,10 @@ function SettingsView({ settings, updateSettings, db }) {
               {sortedPriceHistory.length === 0 ? (
                 <div className="py-4 text-center">
                   <p className="text-xs" style={{ color: 'var(--m3-on-surface-muted)' }}>
-                    No scheduled price changes recorded.
+                    Using base rate of {settings.currency}{currentActiveRate}/L.
                   </p>
                   <p className="text-[11px] mt-1 font-medium" style={{ color: '#6750A4' }}>
-                    Default base rate of {settings.currency}{settings.milkPrice}/L applies.
+                    Tap "+ Change Rate" to set a new price from a specific date.
                   </p>
                 </div>
               ) : (
@@ -509,16 +468,18 @@ function SettingsView({ settings, updateSettings, db }) {
           <div>
             <div className="flex justify-between items-center pl-4 pr-2 mb-2">
               <div>
-                <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#79747E' }}>Delivery Quantity History</span>
-                <p className="text-[11px]" style={{ color: 'var(--m3-on-surface-muted)' }}>Only applies from the selected date onward</p>
+                <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#79747E' }}>Delivery Quantity Schedule</span>
+                <p className="text-[12px] font-semibold" style={{ color: '#16A085' }}>
+                  Current Delivery: {currentActiveQty} L / day
+                </p>
               </div>
               <motion.button 
                 whileTap={{ scale: 0.95 }}
                 onClick={openAddQtyModal}
-                className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full"
+                className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm"
                 style={{ background: 'linear-gradient(135deg, #1ABC9C, #16A085)', color: '#fff' }}
               >
-                <Plus size={14} /> Add Quantity
+                <Plus size={14} /> Change Qty
               </motion.button>
             </div>
 
@@ -526,10 +487,10 @@ function SettingsView({ settings, updateSettings, db }) {
               {sortedQtyHistory.length === 0 ? (
                 <div className="py-4 text-center">
                   <p className="text-xs" style={{ color: 'var(--m3-on-surface-muted)' }}>
-                    No scheduled quantity changes recorded.
+                    Using base quantity of {currentActiveQty} L.
                   </p>
                   <p className="text-[11px] mt-1 font-medium" style={{ color: '#16A085' }}>
-                    Default base quantity of {settings.milkQty} L applies.
+                    Tap "+ Change Qty" to set a new quantity from a specific date.
                   </p>
                 </div>
               ) : (
@@ -678,7 +639,7 @@ function SettingsView({ settings, updateSettings, db }) {
               <input 
                 type="number" 
                 step="any" 
-                placeholder="e.g. 88"
+                placeholder="e.g. 90"
                 value={priceForm.price} 
                 onChange={e => setPriceForm({ ...priceForm, price: e.target.value })} 
                 className="m3-input mt-1 pl-7 text-xl font-bold" 

@@ -16,8 +16,8 @@ export default defineConfig({
         name: 'Trackit Pro',
         short_name: 'Trackit',
         description: 'Personal Daily Expense & Utility Tracker',
-        theme_color: '#F8F4FF',
-        background_color: '#F8F4FF',
+        theme_color: '#000000',
+        background_color: '#000000',
         display: 'standalone',
         orientation: 'portrait',
         icons: [

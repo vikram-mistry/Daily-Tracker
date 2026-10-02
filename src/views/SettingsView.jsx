@@ -4,16 +4,62 @@ import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { 
   Milk, Flame, Plus, Settings, Calendar, ChevronLeft, ChevronRight, 
   Trash2, Edit3, X, Check, Droplet, Zap, Wifi, ShoppingCart, 
-  Wrench, Package, PauseCircle, PlayCircle, Download, Upload, Info, Share2, LayoutGrid, Train
+  Wrench, Package, PauseCircle, PlayCircle, Download, Upload, Info, Share2, LayoutGrid, Train,
+  LogIn, LogOut, RefreshCw, Clock, History, CheckCircle2
 } from 'lucide-react';
-import { db } from '../db';
+import { db, getEffectiveMilkPrice, getEffectiveMilkQty, reconcileMilkEntries } from '../db';
 import { GlassCard, SwipeableItem, BottomSheet, StickyHeader } from '../components/UI';
 import { auth, provider, signInWithPopup, signOut } from '../firebase';
-import { LogIn, LogOut, RefreshCw } from 'lucide-react';
+
+// Static top-level component to avoid re-mounting inputs on parent re-render (fixes keyboard blur bug)
+const SettingBlock = ({ label, children }) => (
+  <div className="flex justify-between items-center py-4 last:border-0" style={{ borderBottom: '1px solid var(--m3-divider)' }}>
+    <span className="font-medium" style={{ color: 'var(--m3-on-surface)' }}>{label}</span>
+    <div className="w-1/2 text-right">{children}</div>
+  </div>
+);
 
 function SettingsView({ settings, updateSettings, db }) {
   const [user, setUser] = useState(auth.currentUser);
   const [syncing, setSyncing] = useState(false);
+  const [isReconciling, setIsReconciling] = useState(false);
+
+  // Local draft states for text/number inputs to prevent keyboard blur & cursor jump
+  const [currencyDraft, setCurrencyDraft] = useState(settings.currency ?? '₹');
+  const [milkPriceDraft, setMilkPriceDraft] = useState(settings.milkPrice !== undefined ? String(settings.milkPrice) : '84');
+  const [milkQtyDraft, setMilkQtyDraft] = useState(settings.milkQty !== undefined ? String(settings.milkQty) : '1');
+  const [gasWeightDraft, setGasWeightDraft] = useState(settings.gasWeight !== undefined ? String(settings.gasWeight) : '14.2');
+
+  useEffect(() => {
+    setCurrencyDraft(settings.currency ?? '₹');
+  }, [settings.currency]);
+
+  useEffect(() => {
+    setMilkPriceDraft(settings.milkPrice !== undefined ? String(settings.milkPrice) : '84');
+  }, [settings.milkPrice]);
+
+  useEffect(() => {
+    setMilkQtyDraft(settings.milkQty !== undefined ? String(settings.milkQty) : '1');
+  }, [settings.milkQty]);
+
+  useEffect(() => {
+    setGasWeightDraft(settings.gasWeight !== undefined ? String(settings.gasWeight) : '14.2');
+  }, [settings.gasWeight]);
+
+  // Modals for Price and Quantity Schedules
+  const [priceModalOpen, setPriceModalOpen] = useState(false);
+  const [editingPriceRule, setEditingPriceRule] = useState(null);
+  const [priceForm, setPriceForm] = useState({
+    price: '',
+    fromDate: new Date().toISOString().split('T')[0]
+  });
+
+  const [qtyModalOpen, setQtyModalOpen] = useState(false);
+  const [editingQtyRule, setEditingQtyRule] = useState(null);
+  const [qtyForm, setQtyForm] = useState({
+    qty: '',
+    fromDate: new Date().toISOString().split('T')[0]
+  });
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((u) => {
@@ -117,12 +163,222 @@ function SettingsView({ settings, updateSettings, db }) {
     reader.readAsText(file);
   };
 
-  const SettingBlock = ({ label, children }) => (
-    <div className="flex justify-between items-center py-4 last:border-0" style={{borderBottom:'1px solid var(--m3-divider)'}}>
-      <span className="font-medium" style={{color:'var(--m3-on-surface)'}}>{label}</span>
-      <div className="w-1/2 text-right">{children}</div>
-    </div>
-  );
+  // Save base defaults on blur or enter
+  const commitCurrency = () => {
+    if (currencyDraft !== settings.currency) {
+      updateSettings({ currency: currencyDraft || '₹' });
+    }
+  };
+
+  const commitMilkPrice = async () => {
+    const val = parseFloat(milkPriceDraft);
+    if (!isNaN(val) && val > 0 && val !== settings.milkPrice) {
+      const updated = { ...settings, milkPrice: val };
+      await updateSettings({ milkPrice: val });
+      await reconcileMilkEntries(updated);
+    } else {
+      setMilkPriceDraft(String(settings.milkPrice ?? 84));
+    }
+  };
+
+  const commitMilkQty = async () => {
+    const val = parseFloat(milkQtyDraft);
+    if (!isNaN(val) && val > 0 && val !== settings.milkQty) {
+      const updated = { ...settings, milkQty: val };
+      await updateSettings({ milkQty: val });
+      await reconcileMilkEntries(updated);
+    } else {
+      setMilkQtyDraft(String(settings.milkQty ?? 1));
+    }
+  };
+
+  const commitGasWeight = () => {
+    const val = parseFloat(gasWeightDraft);
+    if (!isNaN(val) && val > 0 && val !== settings.gasWeight) {
+      updateSettings({ gasWeight: val });
+    } else {
+      setGasWeightDraft(String(settings.gasWeight ?? 14.2));
+    }
+  };
+
+  // Price Schedule Management
+  const sortedPriceHistory = useMemo(() => {
+    const history = settings.milkPriceHistory || [];
+    return [...history].sort((a, b) => b.fromDate.localeCompare(a.fromDate));
+  }, [settings.milkPriceHistory]);
+
+  const activePriceRuleId = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const history = settings.milkPriceHistory || [];
+    const applicable = [...history].filter(r => r.fromDate <= today).sort((a, b) => a.fromDate.localeCompare(b.fromDate));
+    return applicable.length > 0 ? applicable[applicable.length - 1].id : null;
+  }, [settings.milkPriceHistory]);
+
+  const openAddPriceModal = () => {
+    setEditingPriceRule(null);
+    setPriceForm({
+      price: String(settings.milkPrice || 84),
+      fromDate: new Date().toISOString().split('T')[0]
+    });
+    setPriceModalOpen(true);
+  };
+
+  const openEditPriceModal = (rule) => {
+    setEditingPriceRule(rule);
+    setPriceForm({
+      price: String(rule.price),
+      fromDate: rule.fromDate
+    });
+    setPriceModalOpen(true);
+  };
+
+  const handleSavePriceRule = async () => {
+    const priceNum = parseFloat(priceForm.price);
+    if (isNaN(priceNum) || priceNum <= 0) {
+      alert('Please enter a valid price per liter.');
+      return;
+    }
+    if (!priceForm.fromDate) {
+      alert('Please select an effective from date.');
+      return;
+    }
+
+    const currentHistory = settings.milkPriceHistory || [];
+    let updatedHistory;
+
+    if (editingPriceRule) {
+      updatedHistory = currentHistory.map(r => 
+        r.id === editingPriceRule.id ? { ...r, price: priceNum, fromDate: priceForm.fromDate } : r
+      );
+    } else {
+      updatedHistory = [
+        ...currentHistory,
+        {
+          id: Date.now().toString(),
+          price: priceNum,
+          fromDate: priceForm.fromDate
+        }
+      ];
+    }
+
+    const updatedSettings = { ...settings, milkPriceHistory: updatedHistory };
+    await updateSettings(updatedSettings);
+    setPriceModalOpen(false);
+    setEditingPriceRule(null);
+
+    const count = await reconcileMilkEntries(updatedSettings);
+    alert(`Price schedule saved! Reconciled ${count} milk ${count === 1 ? 'entry' : 'entries'}.`);
+  };
+
+  const handleDeletePriceRule = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this price rate? All entries will be reconciled according to the remaining schedule.')) return;
+    const currentHistory = settings.milkPriceHistory || [];
+    const updatedHistory = currentHistory.filter(r => r.id !== id);
+    const updatedSettings = { ...settings, milkPriceHistory: updatedHistory };
+    await updateSettings(updatedSettings);
+    const count = await reconcileMilkEntries(updatedSettings);
+    alert(`Price rate deleted! Reconciled ${count} milk ${count === 1 ? 'entry' : 'entries'}.`);
+  };
+
+  // Quantity Schedule Management
+  const sortedQtyHistory = useMemo(() => {
+    const history = settings.milkQtyHistory || [];
+    return [...history].sort((a, b) => b.fromDate.localeCompare(a.fromDate));
+  }, [settings.milkQtyHistory]);
+
+  const activeQtyRuleId = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const history = settings.milkQtyHistory || [];
+    const applicable = [...history].filter(r => r.fromDate <= today).sort((a, b) => a.fromDate.localeCompare(b.fromDate));
+    return applicable.length > 0 ? applicable[applicable.length - 1].id : null;
+  }, [settings.milkQtyHistory]);
+
+  const openAddQtyModal = () => {
+    setEditingQtyRule(null);
+    setQtyForm({
+      qty: String(settings.milkQty || 1),
+      fromDate: new Date().toISOString().split('T')[0]
+    });
+    setQtyModalOpen(true);
+  };
+
+  const openEditQtyModal = (rule) => {
+    setEditingQtyRule(rule);
+    setQtyForm({
+      qty: String(rule.qty),
+      fromDate: rule.fromDate
+    });
+    setQtyModalOpen(true);
+  };
+
+  const handleSaveQtyRule = async () => {
+    const qtyNum = parseFloat(qtyForm.qty);
+    if (isNaN(qtyNum) || qtyNum <= 0) {
+      alert('Please enter a valid quantity in liters.');
+      return;
+    }
+    if (!qtyForm.fromDate) {
+      alert('Please select an effective from date.');
+      return;
+    }
+
+    const currentHistory = settings.milkQtyHistory || [];
+    let updatedHistory;
+
+    if (editingQtyRule) {
+      updatedHistory = currentHistory.map(r => 
+        r.id === editingQtyRule.id ? { ...r, qty: qtyNum, fromDate: qtyForm.fromDate } : r
+      );
+    } else {
+      updatedHistory = [
+        ...currentHistory,
+        {
+          id: Date.now().toString(),
+          qty: qtyNum,
+          fromDate: qtyForm.fromDate
+        }
+      ];
+    }
+
+    const updatedSettings = { ...settings, milkQtyHistory: updatedHistory };
+    await updateSettings(updatedSettings);
+    setQtyModalOpen(false);
+    setEditingQtyRule(null);
+
+    const count = await reconcileMilkEntries(updatedSettings);
+    alert(`Quantity schedule saved! Reconciled ${count} milk ${count === 1 ? 'entry' : 'entries'}.`);
+  };
+
+  const handleDeleteQtyRule = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this quantity change? All entries will be reconciled according to the remaining schedule.')) return;
+    const currentHistory = settings.milkQtyHistory || [];
+    const updatedHistory = currentHistory.filter(r => r.id !== id);
+    const updatedSettings = { ...settings, milkQtyHistory: updatedHistory };
+    await updateSettings(updatedSettings);
+    const count = await reconcileMilkEntries(updatedSettings);
+    alert(`Quantity rule deleted! Reconciled ${count} milk ${count === 1 ? 'entry' : 'entries'}.`);
+  };
+
+  // Manual Full Reconciliation
+  const handleManualReconcile = async () => {
+    setIsReconciling(true);
+    try {
+      const count = await reconcileMilkEntries(settings);
+      alert(`Reconciliation complete! ${count} entries were updated to match current schedules.`);
+    } catch (e) {
+      alert('Reconciliation failed: ' + e.message);
+    } finally {
+      setIsReconciling(false);
+    }
+  };
+
+  const formatDateDisplay = (dateStr) => {
+    if (!dateStr) return '';
+    const [y, m, d] = dateStr.split('-');
+    if (!y || !m || !d) return dateStr;
+    const date = new Date(Number(y), Number(m) - 1, Number(d));
+    return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
 
   return (
     <div className="pb-8">
@@ -131,12 +387,20 @@ function SettingsView({ settings, updateSettings, db }) {
       <div className="space-y-6">
         {/* General Settings */}
         <section>
-          <h3 className="text-xs font-bold uppercase tracking-widest pl-4 mb-2" style={{color:'#79747E'}}>General</h3>
+          <h3 className="text-xs font-bold uppercase tracking-widest pl-4 mb-2" style={{ color: '#79747E' }}>General</h3>
           <GlassCard className="px-5">
             <SettingBlock label="Currency Symbol">
               <div className="flex items-center justify-end gap-2">
-                <input type="text" value={settings.currency} onChange={e => updateSettings({ currency: e.target.value })} className="m3-input text-right w-12" style={{padding:'8px', borderRadius:'12px'}} />
-                <span className="text-sm font-medium" style={{color:'var(--m3-on-surface-muted)'}}>Rupee</span>
+                <input 
+                  type="text" 
+                  value={currencyDraft} 
+                  onChange={e => setCurrencyDraft(e.target.value)} 
+                  onBlur={commitCurrency}
+                  onKeyDown={e => e.key === 'Enter' && commitCurrency()}
+                  className="m3-input text-right w-12" 
+                  style={{ padding: '8px', borderRadius: '12px' }} 
+                />
+                <span className="text-sm font-medium" style={{ color: 'var(--m3-on-surface-muted)' }}>Symbol</span>
               </div>
             </SettingBlock>
             <SettingBlock label="Theme">
@@ -150,68 +414,399 @@ function SettingsView({ settings, updateSettings, db }) {
 
         {/* Milk Settings */}
         <section>
-          <h3 className="text-xs font-bold uppercase tracking-widest pl-4 mb-2" style={{color:'#79747E'}}>Milk Defaults</h3>
-          <GlassCard className="px-5">
-            <SettingBlock label={`Default Price (${settings.currency}/L)`}>
-              <input type="number" value={settings.milkPrice} onChange={e => updateSettings({ milkPrice: Number(e.target.value) })} className="m3-input text-right" style={{padding:'8px', borderRadius:'12px'}} />
+          <div className="flex justify-between items-center pl-4 pr-1 mb-2">
+            <h3 className="text-xs font-bold uppercase tracking-widest" style={{ color: '#79747E' }}>Milk Settings & Rates</h3>
+            <button 
+              onClick={handleManualReconcile} 
+              disabled={isReconciling}
+              className="text-[11px] font-semibold flex items-center gap-1.5 px-3 py-1 rounded-full transition-opacity active:opacity-75"
+              style={{ background: 'var(--m3-primary-container)', color: 'var(--m3-on-primary-container)' }}
+            >
+              <RefreshCw size={12} className={isReconciling ? 'animate-spin' : ''} />
+              {isReconciling ? 'Reconciling...' : 'Reconcile Data'}
+            </button>
+          </div>
+
+          <GlassCard className="px-5 mb-4">
+            <SettingBlock label={`Default Base Price (${settings.currency}/L)`}>
+              <input 
+                type="number" 
+                step="any"
+                value={milkPriceDraft} 
+                onChange={e => setMilkPriceDraft(e.target.value)}
+                onBlur={commitMilkPrice}
+                onKeyDown={e => e.key === 'Enter' && commitMilkPrice()}
+                className="m3-input text-right w-24" 
+                style={{ padding: '8px', borderRadius: '12px' }} 
+              />
             </SettingBlock>
-            <SettingBlock label="Default Quantity (L)">
-              <input type="number" step="0.5" value={settings.milkQty} onChange={e => updateSettings({ milkQty: Number(e.target.value) })} className="m3-input text-right" style={{padding:'8px', borderRadius:'12px'}} />
+            <SettingBlock label="Default Base Quantity (L)">
+              <input 
+                type="number" 
+                step="0.5" 
+                value={milkQtyDraft} 
+                onChange={e => setMilkQtyDraft(e.target.value)}
+                onBlur={commitMilkQty}
+                onKeyDown={e => e.key === 'Enter' && commitMilkQty()}
+                className="m3-input text-right w-24" 
+                style={{ padding: '8px', borderRadius: '12px' }} 
+              />
             </SettingBlock>
           </GlassCard>
+
+          {/* Price Rate Schedule */}
+          <div className="mb-4">
+            <div className="flex justify-between items-center pl-4 pr-2 mb-2">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#79747E' }}>Price Rate History</span>
+                <p className="text-[11px]" style={{ color: 'var(--m3-on-surface-muted)' }}>Applicable from specified date onward</p>
+              </div>
+              <motion.button 
+                whileTap={{ scale: 0.95 }}
+                onClick={openAddPriceModal}
+                className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full"
+                style={{ background: 'linear-gradient(135deg, #6750A4, #4A90D9)', color: '#fff' }}
+              >
+                <Plus size={14} /> Add Price
+              </motion.button>
+            </div>
+
+            <GlassCard className="p-3">
+              {sortedPriceHistory.length === 0 ? (
+                <div className="py-4 text-center">
+                  <p className="text-xs" style={{ color: 'var(--m3-on-surface-muted)' }}>
+                    No date-specific price changes recorded.
+                  </p>
+                  <p className="text-[11px] mt-1 font-medium" style={{ color: '#6750A4' }}>
+                    Default rate of {settings.currency}{settings.milkPrice}/L applies to all deliveries.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {sortedPriceHistory.map((rule) => {
+                    const isActive = rule.id === activePriceRuleId;
+                    return (
+                      <div 
+                        key={rule.id} 
+                        className="flex items-center justify-between p-3 rounded-xl border transition-all"
+                        style={{
+                          background: isActive ? (settings.theme === 'dark' ? 'rgba(52, 211, 153, 0.12)' : '#E8F5E9') : 'var(--m3-input-bg)',
+                          borderColor: isActive ? (settings.theme === 'dark' ? '#34D399' : '#81C784') : 'var(--m3-input-border)'
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm" style={{ background: 'var(--m3-primary-container)', color: 'var(--m3-on-primary-container)' }}>
+                            {settings.currency}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-base" style={{ color: 'var(--m3-on-surface)' }}>
+                                {settings.currency}{rule.price} <span className="text-xs font-normal text-[var(--m3-on-surface-muted)]">/ L</span>
+                              </span>
+                              {isActive && (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: '#2E7D32', color: '#fff' }}>
+                                  Active
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs flex items-center gap-1 mt-0.5" style={{ color: 'var(--m3-on-surface-muted)' }}>
+                              <Calendar size={11} /> From {formatDateDisplay(rule.fromDate)}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          <motion.button 
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => openEditPriceModal(rule)}
+                            className="p-2 rounded-full"
+                            style={{ color: '#4A90D9' }}
+                            title="Edit"
+                          >
+                            <Edit3 size={16} />
+                          </motion.button>
+                          <motion.button 
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => handleDeletePriceRule(rule.id)}
+                            className="p-2 rounded-full"
+                            style={{ color: '#E05C5C' }}
+                            title="Delete"
+                          >
+                            <Trash2 size={16} />
+                          </motion.button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </GlassCard>
+          </div>
+
+          {/* Quantity Schedule */}
+          <div>
+            <div className="flex justify-between items-center pl-4 pr-2 mb-2">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#79747E' }}>Delivery Quantity History</span>
+                <p className="text-[11px]" style={{ color: 'var(--m3-on-surface-muted)' }}>Applicable from specified date onward</p>
+              </div>
+              <motion.button 
+                whileTap={{ scale: 0.95 }}
+                onClick={openAddQtyModal}
+                className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full"
+                style={{ background: 'linear-gradient(135deg, #1ABC9C, #16A085)', color: '#fff' }}
+              >
+                <Plus size={14} /> Add Quantity
+              </motion.button>
+            </div>
+
+            <GlassCard className="p-3">
+              {sortedQtyHistory.length === 0 ? (
+                <div className="py-4 text-center">
+                  <p className="text-xs" style={{ color: 'var(--m3-on-surface-muted)' }}>
+                    No date-specific quantity changes recorded.
+                  </p>
+                  <p className="text-[11px] mt-1 font-medium" style={{ color: '#16A085' }}>
+                    Default quantity of {settings.milkQty} L applies to all deliveries.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {sortedQtyHistory.map((rule) => {
+                    const isActive = rule.id === activeQtyRuleId;
+                    return (
+                      <div 
+                        key={rule.id} 
+                        className="flex items-center justify-between p-3 rounded-xl border transition-all"
+                        style={{
+                          background: isActive ? (settings.theme === 'dark' ? 'rgba(26, 188, 156, 0.12)' : '#E0F2F1') : 'var(--m3-input-bg)',
+                          borderColor: isActive ? (settings.theme === 'dark' ? '#1ABC9C' : '#80CBC4') : 'var(--m3-input-border)'
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm" style={{ background: 'rgba(26, 188, 156, 0.15)', color: '#16A085' }}>
+                            <Droplet size={18} />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-base" style={{ color: 'var(--m3-on-surface)' }}>
+                                {rule.qty} <span className="text-xs font-normal text-[var(--m3-on-surface-muted)]">L / day</span>
+                              </span>
+                              {isActive && (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: '#00796B', color: '#fff' }}>
+                                  Active
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs flex items-center gap-1 mt-0.5" style={{ color: 'var(--m3-on-surface-muted)' }}>
+                              <Calendar size={11} /> From {formatDateDisplay(rule.fromDate)}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          <motion.button 
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => openEditQtyModal(rule)}
+                            className="p-2 rounded-full"
+                            style={{ color: '#4A90D9' }}
+                            title="Edit"
+                          >
+                            <Edit3 size={16} />
+                          </motion.button>
+                          <motion.button 
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => handleDeleteQtyRule(rule.id)}
+                            className="p-2 rounded-full"
+                            style={{ color: '#E05C5C' }}
+                            title="Delete"
+                          >
+                            <Trash2 size={16} />
+                          </motion.button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </GlassCard>
+          </div>
         </section>
 
         {/* Gas Settings */}
         <section>
-          <h3 className="text-xs font-bold uppercase tracking-widest pl-4 mb-2" style={{color:'#79747E'}}>Gas Defaults</h3>
+          <h3 className="text-xs font-bold uppercase tracking-widest pl-4 mb-2" style={{ color: '#79747E' }}>Gas Defaults</h3>
           <GlassCard className="px-5">
             <SettingBlock label="Cylinder Weight (KG)">
-              <input type="number" step="0.1" value={settings.gasWeight} onChange={e => updateSettings({ gasWeight: Number(e.target.value) })} className="m3-input text-right" style={{padding:'8px', borderRadius:'12px'}} />
+              <input 
+                type="number" 
+                step="0.1" 
+                value={gasWeightDraft} 
+                onChange={e => setGasWeightDraft(e.target.value)}
+                onBlur={commitGasWeight}
+                onKeyDown={e => e.key === 'Enter' && commitGasWeight()}
+                className="m3-input text-right w-24" 
+                style={{ padding: '8px', borderRadius: '12px' }} 
+              />
             </SettingBlock>
           </GlassCard>
         </section>
 
         {/* Data Management */}
         <section>
-          <h3 className="text-xs font-bold uppercase tracking-widest pl-4 mb-2" style={{color:'var(--m3-section-label)'}}>Data &amp; Storage</h3>
+          <h3 className="text-xs font-bold uppercase tracking-widest pl-4 mb-2" style={{ color: 'var(--m3-section-label)' }}>Data &amp; Storage</h3>
           <GlassCard className="p-2">
-            <button onClick={handleExport} className="w-full flex items-center justify-between p-4 rounded-xl transition-colors" style={{color:'var(--m3-on-surface)'}}>
-              <span className="flex items-center gap-3"><Download size={20} style={{color:'#4A90D9'}}/> Backup Data (JSON)</span>
-              <ChevronRight size={16} style={{color:'var(--m3-on-surface-muted)'}}/>
+            <button onClick={handleExport} className="w-full flex items-center justify-between p-4 rounded-xl transition-colors" style={{ color: 'var(--m3-on-surface)' }}>
+              <span className="flex items-center gap-3"><Download size={20} style={{ color: '#4A90D9' }} /> Backup Data (JSON)</span>
+              <ChevronRight size={16} style={{ color: 'var(--m3-on-surface-muted)' }} />
             </button>
             <div className="relative w-full">
               <input type="file" accept=".json" onChange={handleImport} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
-              <div className="w-full flex items-center justify-between p-4 rounded-xl transition-colors" style={{color:'var(--m3-on-surface)'}}>
-                <span className="flex items-center gap-3"><Upload size={20} style={{color:'#E67E22'}}/> Restore Backup</span>
-                <ChevronRight size={16} style={{color:'var(--m3-on-surface-muted)'}}/>
+              <div className="w-full flex items-center justify-between p-4 rounded-xl transition-colors" style={{ color: 'var(--m3-on-surface)' }}>
+                <span className="flex items-center gap-3"><Upload size={20} style={{ color: '#E67E22' }} /> Restore Backup</span>
+                <ChevronRight size={16} style={{ color: 'var(--m3-on-surface-muted)' }} />
               </div>
             </div>
             <button onClick={async () => {
-              if(window.confirm('Are you sure you want to delete ALL data? This cannot be undone.')) {
+              if (window.confirm('Are you sure you want to delete ALL data? This cannot be undone.')) {
                 await db.clearAll(); window.location.reload();
               }
-            }} className="w-full flex items-center justify-between p-4 rounded-xl transition-colors" style={{color:'#C0392B'}}>
-              <span className="flex items-center gap-3"><Trash2 size={20}/> Delete All Data</span>
+            }} className="w-full flex items-center justify-between p-4 rounded-xl transition-colors" style={{ color: '#C0392B' }}>
+              <span className="flex items-center gap-3"><Trash2 size={20} /> Delete All Data</span>
             </button>
           </GlassCard>
         </section>
 
         {/* Footer */}
         <div className="pt-8 pb-12 flex flex-col items-center justify-center text-center">
-          <div className="w-12 h-12 rounded-full mb-3 flex items-center justify-center" style={{background:'linear-gradient(135deg,#EADDFF,#C8E6FF)'}}>
-            <Info size={20} style={{color:'#6750A4'}} />
+          <div className="w-12 h-12 rounded-full mb-3 flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#EADDFF,#C8E6FF)' }}>
+            <Info size={20} style={{ color: '#6750A4' }} />
           </div>
-          <p className="text-sm font-bold tracking-widest uppercase mb-1" style={{color:'#1C1B1F'}}>Trackit Pro</p>
-          <p className="text-[10px] mb-4" style={{color:'#79747E'}}>Version 1.1.0 • Local Offline DB</p>
-          <div className="flex gap-2 text-[10px] px-3 py-1 rounded-full" style={{background:'#F3EEFF', color:'#79747E', border:'1px solid #EDE7F6'}}>
+          <p className="text-sm font-bold tracking-widest uppercase mb-1" style={{ color: '#1C1B1F' }}>Trackit Pro</p>
+          <p className="text-[10px] mb-4" style={{ color: '#79747E' }}>Version 1.2.0 • Local Offline DB with Firebase Sync</p>
+          <div className="flex gap-2 text-[10px] px-3 py-1 rounded-full" style={{ background: '#F3EEFF', color: '#79747E', border: '1px solid #EDE7F6' }}>
             <span>React</span>•<span>Tailwind</span>•<span>IndexedDB</span>•<span>PWA</span>
           </div>
-          <p className="text-xs mt-6 font-semibold" style={{color:'#6750A4'}}>Made by Vikram Mistry</p>
+          <p className="text-xs mt-6 font-semibold" style={{ color: '#6750A4' }}>Made by Vikram Mistry</p>
         </div>
       </div>
+
+      {/* Add/Edit Price Rate Modal */}
+      <BottomSheet 
+        isOpen={priceModalOpen} 
+        onClose={() => setPriceModalOpen(false)} 
+        title={editingPriceRule ? "Edit Milk Price Rate" : "Add Milk Price Change"}
+        isCentered={true}
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-wider pl-1" style={{ color: '#6750A4' }}>Effective From Date</label>
+            <input 
+              type="date" 
+              value={priceForm.fromDate} 
+              onChange={e => setPriceForm({ ...priceForm, fromDate: e.target.value })} 
+              className="m3-input mt-1 text-sm" 
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-wider pl-1" style={{ color: '#6750A4' }}>Price Per Liter ({settings.currency})</label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold" style={{ color: 'var(--m3-on-surface-muted)' }}>{settings.currency}</span>
+              <input 
+                type="number" 
+                step="any" 
+                placeholder="e.g. 88"
+                value={priceForm.price} 
+                onChange={e => setPriceForm({ ...priceForm, price: e.target.value })} 
+                className="m3-input mt-1 pl-7 text-xl font-bold" 
+              />
+            </div>
+          </div>
+
+          <p className="text-xs leading-relaxed p-3 rounded-xl" style={{ background: 'var(--m3-input-bg)', color: 'var(--m3-on-surface-muted)' }}>
+            💡 All deliveries on and after this date will be calculated at this rate. Past and future entries will be automatically reconciled.
+          </p>
+
+          <div className="pt-2 flex gap-3">
+            <motion.button 
+              whileTap={{ scale: 0.97 }} 
+              onClick={() => setPriceModalOpen(false)} 
+              className="flex-1 font-bold py-3.5 rounded-2xl border" 
+              style={{ background: 'var(--m3-input-bg)', borderColor: 'var(--m3-input-border)', color: 'var(--m3-on-surface)' }}
+            >
+              Cancel
+            </motion.button>
+            <motion.button 
+              whileTap={{ scale: 0.97 }} 
+              onClick={handleSavePriceRule} 
+              className="flex-[2] font-bold py-3.5 rounded-2xl text-white shadow-lg" 
+              style={{ background: 'linear-gradient(135deg, #6750A4, #4A90D9)' }}
+            >
+              Save &amp; Reconcile
+            </motion.button>
+          </div>
+        </div>
+      </BottomSheet>
+
+      {/* Add/Edit Quantity Modal */}
+      <BottomSheet 
+        isOpen={qtyModalOpen} 
+        onClose={() => setQtyModalOpen(false)} 
+        title={editingQtyRule ? "Edit Milk Quantity" : "Add Milk Quantity Change"}
+        isCentered={true}
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-wider pl-1" style={{ color: '#16A085' }}>Effective From Date</label>
+            <input 
+              type="date" 
+              value={qtyForm.fromDate} 
+              onChange={e => setQtyForm({ ...qtyForm, fromDate: e.target.value })} 
+              className="m3-input mt-1 text-sm" 
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-wider pl-1" style={{ color: '#16A085' }}>Daily Quantity (Liters)</label>
+            <div className="relative">
+              <input 
+                type="number" 
+                step="0.5" 
+                placeholder="e.g. 1.5"
+                value={qtyForm.qty} 
+                onChange={e => setQtyForm({ ...qtyForm, qty: e.target.value })} 
+                className="m3-input mt-1 text-xl font-bold" 
+              />
+            </div>
+          </div>
+
+          <p className="text-xs leading-relaxed p-3 rounded-xl" style={{ background: 'var(--m3-input-bg)', color: 'var(--m3-on-surface-muted)' }}>
+            💡 Daily milk quantity from this date onward will be set to this amount. Past and future entries from this date will be automatically reconciled.
+          </p>
+
+          <div className="pt-2 flex gap-3">
+            <motion.button 
+              whileTap={{ scale: 0.97 }} 
+              onClick={() => setQtyModalOpen(false)} 
+              className="flex-1 font-bold py-3.5 rounded-2xl border" 
+              style={{ background: 'var(--m3-input-bg)', borderColor: 'var(--m3-input-border)', color: 'var(--m3-on-surface)' }}
+            >
+              Cancel
+            </motion.button>
+            <motion.button 
+              whileTap={{ scale: 0.97 }} 
+              onClick={handleSaveQtyRule} 
+              className="flex-[2] font-bold py-3.5 rounded-2xl text-white shadow-lg" 
+              style={{ background: 'linear-gradient(135deg, #1ABC9C, #16A085)' }}
+            >
+              Save &amp; Reconcile
+            </motion.button>
+          </div>
+        </div>
+      </BottomSheet>
     </div>
   );
 }
-
 
 export default SettingsView;

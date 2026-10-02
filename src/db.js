@@ -212,5 +212,74 @@ export const db = new LocalDB();
 
 export const DEFAULT_SETTINGS = {
   id: 'main', theme: 'light', currency: '₹', 
-  milkPrice: 84, milkQty: 1, gasWeight: 14.2
+  milkPrice: 84, milkQty: 1, gasWeight: 14.2,
+  milkPriceHistory: [],
+  milkQtyHistory: []
 };
+
+export function getEffectiveMilkPrice(dateStr, settings) {
+  if (!settings) return 84;
+  const history = settings.milkPriceHistory || [];
+  if (!history.length) return Number(settings.milkPrice) || 84;
+  
+  const sorted = [...history]
+    .filter(r => r && r.fromDate && r.price != null && !isNaN(Number(r.price)))
+    .sort((a, b) => a.fromDate.localeCompare(b.fromDate));
+    
+  if (!sorted.length) return Number(settings.milkPrice) || 84;
+
+  const applicable = sorted.filter(r => r.fromDate <= dateStr);
+  if (applicable.length > 0) {
+    return Number(applicable[applicable.length - 1].price);
+  }
+  
+  return Number(sorted[0].price) || Number(settings.milkPrice) || 84;
+}
+
+export function getEffectiveMilkQty(dateStr, settings) {
+  if (!settings) return 1;
+  const history = settings.milkQtyHistory || [];
+  if (!history.length) return Number(settings.milkQty) || 1;
+  
+  const sorted = [...history]
+    .filter(r => r && r.fromDate && r.qty != null && !isNaN(Number(r.qty)))
+    .sort((a, b) => a.fromDate.localeCompare(b.fromDate));
+    
+  if (!sorted.length) return Number(settings.milkQty) || 1;
+
+  const applicable = sorted.filter(r => r.fromDate <= dateStr);
+  if (applicable.length > 0) {
+    return Number(applicable[applicable.length - 1].qty);
+  }
+  
+  return Number(sorted[0].qty) || Number(settings.milkQty) || 1;
+}
+
+export async function reconcileMilkEntries(settings) {
+  const allMilk = await db.getAll('milk');
+  let updatedCount = 0;
+  for (const entry of allMilk) {
+    if (entry.isPaused) continue;
+    
+    const targetPrice = getEffectiveMilkPrice(entry.date, settings);
+    const targetQty = getEffectiveMilkQty(entry.date, settings);
+    const targetTotal = Number((targetQty * targetPrice).toFixed(2));
+    
+    if (
+      Number(entry.price) !== targetPrice || 
+      Number(entry.qty) !== targetQty || 
+      Number(entry.total) !== targetTotal
+    ) {
+      const updated = {
+        ...entry,
+        price: targetPrice,
+        qty: targetQty,
+        total: targetTotal
+      };
+      await db.put('milk', updated);
+      updatedCount++;
+    }
+  }
+  return updatedCount;
+}
+

@@ -6,7 +6,7 @@ import {
   Trash2, Edit3, X, Check, Droplet, Zap, Wifi, ShoppingCart, 
   Wrench, Package, PauseCircle, PlayCircle, Download, Upload, Info, Share2, LayoutGrid, Train
 } from 'lucide-react';
-import { db } from '../db';
+import { db, getEffectiveMilkPrice, getEffectiveMilkQty } from '../db';
 import { GlassCard, SwipeableItem, BottomSheet, StickyHeader } from '../components/UI';
 
 function MilkView({ filterDate, setFilterDate, settings }) {
@@ -21,10 +21,11 @@ function MilkView({ filterDate, setFilterDate, settings }) {
   const [selectedDates, setSelectedDates] = useState([]);
 
   // Form State
+  const todayStr = new Date().toISOString().split('T')[0];
   const [formData, setFormData] = useState({ 
-    date: new Date().toISOString().split('T')[0], 
-    qty: settings.milkQty, 
-    price: settings.milkPrice 
+    date: todayStr, 
+    qty: getEffectiveMilkQty(todayStr, settings), 
+    price: getEffectiveMilkPrice(todayStr, settings) 
   });
 
   const loadEntries = useCallback(async () => {
@@ -72,7 +73,19 @@ function MilkView({ filterDate, setFilterDate, settings }) {
   const togglePauseStatus = async (dateStr) => {
     const existing = entries.find(e => e.date === dateStr);
     if (existing) {
-      await db.put('milk', { ...existing, isPaused: !existing.isPaused, qty: 0, total: 0 });
+      if (!existing.isPaused) {
+        await db.put('milk', { ...existing, isPaused: true, qty: 0, total: 0 });
+      } else {
+        const effQty = getEffectiveMilkQty(dateStr, settings);
+        const effPrice = getEffectiveMilkPrice(dateStr, settings);
+        await db.put('milk', { 
+          ...existing, 
+          isPaused: false, 
+          qty: effQty, 
+          price: effPrice, 
+          total: Number((effQty * effPrice).toFixed(2)) 
+        });
+      }
     } else {
       await db.put('milk', { id: Date.now().toString(), date: dateStr, isPaused: true, qty: 0, price: 0, total: 0 });
     }
@@ -95,7 +108,11 @@ function MilkView({ filterDate, setFilterDate, settings }) {
 
   const openAdd = (dateStr = new Date().toISOString().split('T')[0]) => {
     setEditingEntry(null);
-    setFormData({ date: dateStr, qty: settings.milkQty, price: settings.milkPrice });
+    setFormData({ 
+      date: dateStr, 
+      qty: getEffectiveMilkQty(dateStr, settings), 
+      price: getEffectiveMilkPrice(dateStr, settings) 
+    });
     setIsModalOpen(true);
   };
 
@@ -188,7 +205,7 @@ function MilkView({ filterDate, setFilterDate, settings }) {
         <div className="grid grid-cols-2 gap-4 relative z-10">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color: settings.theme === 'dark' ? 'var(--m3-on-surface-variant)' : '#49454F'}}>Total Amount</p>
-            <p className="text-3xl font-bold" style={{color: settings.theme === 'dark' ? '#FFFFFF' : '#1A1C1E'}}>{settings.currency}{stats.amount}</p>
+            <p className="text-3xl font-bold" style={{color: settings.theme === 'dark' ? '#FFFFFF' : '#1A1C1E'}}>{settings.currency}{Number(stats.amount).toFixed(2)}</p>
           </div>
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color: settings.theme === 'dark' ? 'var(--m3-on-surface-variant)' : '#49454F'}}>Total Quantity</p>
@@ -353,7 +370,7 @@ function MilkView({ filterDate, setFilterDate, settings }) {
                     </div>
                     <div className="text-right">
                       <p className="font-bold" style={{color: entry.isPaused ? 'var(--m3-on-surface-muted)' : 'var(--m3-on-surface)'}}>
-                         {entry.isPaused ? '-' : `${settings.currency}${entry.total}`}
+                         {entry.isPaused ? '-' : `${settings.currency}${Number(entry.total).toFixed(2)}`}
                        </p>
                     </div>
                   </div>
@@ -374,7 +391,23 @@ function MilkView({ filterDate, setFilterDate, settings }) {
         <div className="space-y-4">
           <div>
             <label className="text-xs font-semibold uppercase tracking-wider pl-1" style={{color:'#6750A4'}}>Date</label>
-            <input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="m3-input mt-1 text-sm" />
+            <input 
+              type="date" 
+              value={formData.date} 
+              onChange={e => {
+                const newDate = e.target.value;
+                if (!editingEntry) {
+                  setFormData({
+                    date: newDate,
+                    qty: getEffectiveMilkQty(newDate, settings),
+                    price: getEffectiveMilkPrice(newDate, settings)
+                  });
+                } else {
+                  setFormData({ ...formData, date: newDate });
+                }
+              }} 
+              className="m3-input mt-1 text-sm" 
+            />
           </div>
           <div className="flex flex-col gap-4">
             <div className="min-w-0">

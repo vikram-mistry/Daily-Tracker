@@ -1,92 +1,114 @@
 # 🥛 Trackit Pro
 
-**Trackit Pro** is a premium, mobile-first personal tracking application designed specifically for iOS Safari. Built with an offline-first philosophy, it allows you to track daily essentials like milk, gas, water, and household expenses without needing a backend server.
+**Trackit Pro** is a personal tracking Progressive Web App (PWA) designed specifically for iPhone and mobile web. Built with an **offline-first philosophy** and an **Apple Human Interface Guidelines (HIG)** aesthetic, Trackit Pro makes it effortless to monitor daily milk deliveries, manage cooking gas cylinder lifecycles, and track monthly household utility costs.
 
-![Trackit Pro Banner](https://img.shields.io/badge/Trackit--Pro-Premium-blue?style=for-the-badge)
-![PWA](https://img.shields.io/badge/PWA-Ready-green?style=for-the-badge)
-![Offline First](https://img.shields.io/badge/Offline-First-orange?style=for-the-badge)
+[![Live App](https://img.shields.io/badge/Live_App-Visit_Site-007AFF?style=for-the-badge&logo=safari&logoColor=white)](https://vikram-mistry.github.io/Daily-Tracker/)
+[![Version](https://img.shields.io/badge/Version-2.1.0-blue?style=for-the-badge)](https://github.com/vikram-mistry/Daily-Tracker)
+[![PWA Ready](https://img.shields.io/badge/PWA-Ready-34C759?style=for-the-badge&logo=pwa&logoColor=white)](https://vikram-mistry.github.io/Daily-Tracker/)
+[![Offline First](https://img.shields.io/badge/Offline--First-IndexedDB-FF9500?style=for-the-badge)](https://github.com/vikram-mistry/Daily-Tracker)
+[![Firebase Sync](https://img.shields.io/badge/Cloud_Sync-Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com/)
+
+---
+
+## 📱 Live App
+
+👉 **[https://vikram-mistry.github.io/Daily-Tracker/](https://vikram-mistry.github.io/Daily-Tracker/)**
+
+Add it to your iPhone Home Screen via Safari (**Share → Add to Home Screen**) for a native app experience with offline capability and instant loading.
 
 ---
 
 ## ✨ Features
 
-### 🏠 Home Hub Analytics
-*   **Interactive Expense Distribution**: A beautiful, custom SVG donut chart detailing monthly spending allocations across all categories (Milk, Gas, Grocery, Bills, Travel, etc.) with animated slice highlighting.
-*   **Gas Cylinder Longevity Predictor**: Automatically projects remaining usage days and estimated empty date based on your historical cylinder consumption logs.
-*   **Utility Bills Payment Status**: Quick-glance checklist of monthly bills (Lotus Electricity, Sadri Electricity, Water Bill) dynamically checked and flagged as `Paid` or `Unpaid`.
+### 🍎 Apple-Inspired Design System (iOS HIG)
+* **Native Look & Feel**: Built around Apple system colors (System Blue, Green, Orange, Red), SF Pro typography hierarchy, and grouped inset cards.
+* **Compact Single-Row Navigation**: Dynamic month switcher (`< Sep '26 >`) embedded beside the header title to maximize vertical content space.
+* **Docked iOS Tab Bar**: Full-width bottom navigation accounting for `env(safe-area-inset-bottom)` and minimum 44×44px touch targets.
+* **Flawless Dark Mode**: Context-aware color tokens (`--bg`, `--surface`, `--label-primary`, `--separator`) provide a high-contrast experience without neon oversaturation.
+
+### 🏠 Home Dashboard
+* **Monthly Spending Breakdown**: Clean, scannable overview displaying total monthly spend itemized into Milk and Gas with category badges.
+* **Gas Cylinder Longevity Card**: Real-time forecast estimating remaining days and projected empty date based on your historical cylinder consumption logs.
+* **Milk Delivery Summary**: Monthly volume tracking (Liters delivered) and total expense.
 
 ### 🥛 Milk Tracker
-*   **Monthly Calendar View**: Visual tracking of daily milk intake.
-*   **Bulk Actions**: Easily "Bulk Pause" milk delivery for vacations or holidays.
-*   **Automatic Totals**: Real-time calculation of monthly quantity and total cost.
-*   **Smart Entry**: Quick-add or edit entries with a single tap.
-*   **Delete Safeguards**: Accidental deletion prevention using responsive bottom-sheet confirmation dialogs.
-*   **Premium Aesthetic**: Features a custom "Buffalo Milk" glass icon for a personalized touch.
+* **Interactive Calendar Grid**: At-a-glance view of daily milk deliveries with color-coded status (green for delivered, orange for paused, and blue accent ring for today).
+* **Delivery Progress**: Visual indicator tracking days delivered in the month (e.g., `2 of 30 days`) with a blue progress bar that fills up over the month.
+* **Bulk Pause & Quick Pause**: Select multiple dates to mark vacations or holidays in one tap, or right-click / long-press any date to toggle pause immediately.
+* **One-Tap WhatsApp Share**: Instantly generates an itemized milk bill report (including Society address, daily breakdown, paused dates, and total amount due) and opens it directly in WhatsApp.
+* **Native System Share**: Compatible with iOS Share Sheet, AirDrop, Messages, or clipboard copy.
+* **Swipe Gestures**: Swipe left to delete with confirmation or swipe right to edit any logged entry.
 
-### 🌊 Water Intake (Hydration)
-*   **Apple-Style Animation**: Premium "Liquid Glass" animation with curvy waves and rising bubbles.
-*   **Interactive History**: Tap any date in the calendar to update the glass and view/delete that day's intake.
-*   **Daily Goals**: Set your 4L (or custom) target and watch the glass fill up.
-*   **Monthly Trends**: A dedicated calendar view showing total hydration for every day of the month.
+### ⛽ Gas Cylinder Management
+* **Cylinder Lifecycle Tracking**: Record installation date, empty/replacement date, refill amount, cylinder weight (kg), and vendor notes.
+* **Automatic Usage Metrics**: Accurately computes active usage duration (in days) per cylinder, including cross-month spans.
+* **Cylinder History**: Grouped inset cards with "Active" status badges, quick-view modal sheets, and swipe-to-manage actions.
 
-### ⛽ Gas Management
-*   **Cylinder Lifecycle**: Track installation and uninstallation dates.
-*   **Usage Insights**: Automatically calculates how many days each cylinder lasted.
-*   **History**: Maintain a complete log of your gas consumption and spending with delete confirmation safeguards.
+### ⚙️ Settings & Schedule Automation
+* **Rate Change Schedule**: Define future or past milk price changes (e.g. ₹84 to ₹90/L effective from Sept 1). Entries on or after the effective date automatically update with safety safeguards preserving earlier historical records.
+* **Quantity Change Schedule**: Schedule daily quantity adjustments (e.g. 1.5L to 1L effective from Sept 30) with selective date reconciliation.
+* **Gas Defaults**: Set your default cylinder refill weight (default 14.2 kg).
+* **Currency & Appearance**: Customize currency symbol (₹, $, €, etc.) and toggle between Light and Dark themes.
 
-### ➕ Household Expenses
-*   **Categorized Tracking**: Dedicated modules for **Grocery**, **Electricity (Lotus & Sadri)**, **Water Bill**, and **Other**.
-*   **Smart Navigation**: Grocery logging is accessible directly via the central FAB (Floating Action Button) menu.
-*   **Detailed Records**: Track purchase dates, payment accounts, and specific notes.
-*   **Monthly Summaries**: View exactly where your money is going each month.
-
-### ☁️ Cloud Sync & Account
-*   **Google Authentication**: Secure single-tap sign-in with your Google account.
-*   **Automated Cloud Backups**: Seamlessly sync your data to private Firebase Cloud Firestore storage, enabling reliable cross-device sync and automatic backups.
-*   **Unified Access**: A global profile menu on the top-left of every tab provides quick account status, profile details, and manual sync commands.
-
-### 🌓 Advanced Dark Mode & Glassmorphism
-*   **Glassmorphic Headers & Nav**: Highly sophisticated semi-transparent top header (`rgba(26,24,37,0.65)`) and bottom navigation bar, offering beautiful real-time background blurring as you scroll.
-*   **Dynamic Theme-Aware Cards**: All tracker cards (Milk, Gas, Water, and Custom category cards) dynamically shift between pastel gradients in light mode and deep, rich gradients in dark mode.
-*   **Portal Dark Mode Alignment**: Portals and popup dialogs (BottomSheets) are fully integrated with the dark mode theme and adapt instantly.
+### ☁️ Cloud Sync & Data Safeguards
+* **Google Authentication**: Single-tap sign-in to securely link your data to your Google account.
+* **Real-Time Bi-Directional Sync**: Background sync with Firebase Cloud Firestore using Last-Write-Wins and union-merge rule preservation.
+* **100% Offline Support**: Full CRUD capability powered by local browser IndexedDB; seamlessly syncs when your connection is restored.
+* **JSON Backup & Restore**: One-tap manual export of all records (`settings`, `milk`, `gas`) as a JSON file, with immediate restore and re-sync support.
 
 ---
 
 ## 🛠 Tech Stack
 
-*   **Frontend**: React + Vite
-*   **Styling**: Tailwind CSS v4
-*   **Animations**: Framer Motion
-*   **Icons**: Lucide React
-*   **Database**: IndexedDB (Native Browser Storage) + Firebase Cloud Firestore (Secure Cloud Sync)
+* **Framework**: [React](https://react.dev/) + [Vite](https://vitejs.dev/)
+* **Styling**: [Tailwind CSS v4](https://tailwindcss.com/)
+* **Animations**: [Framer Motion](https://www.framer.com/motion/)
+* **Icons**: [Lucide React](https://lucide.dev/)
+* **Local Storage**: IndexedDB (Native Web API)
+* **Cloud Backend**: [Firebase](https://firebase.google.com/) (Cloud Firestore & Authentication)
+* **PWA**: [vite-plugin-pwa](https://vite-pwa-org.netlify.app/) (Service Worker with auto-update caching)
 
 ---
 
-## 🚀 Installation (iPhone)
+## 📲 How to Install on iPhone
 
-1.  Open the [Live URL](https://vikram-mistry.github.io/trackit-pro/) in **Safari**.
-2.  Tap the **Share** button (box with upward arrow).
-3.  Scroll down and select **"Add to Home Screen"**.
-4.  The app will now appear on your home screen with a custom icon and work exactly like a native app.
+1. Open **[https://vikram-mistry.github.io/Daily-Tracker/](https://vikram-mistry.github.io/Daily-Tracker/)** in **Safari**.
+2. Tap the **Share** button (the square with an upward arrow at the bottom of the screen).
+3. Scroll down and tap **"Add to Home Screen"**.
+4. Tap **Add** in the top right corner.
+5. Trackit Pro will appear on your Home Screen as a standalone, fullscreen iOS app.
 
 ---
 
 ## 💻 Development & Deployment
 
-### Local Setup
+### Local Development
 ```bash
+# Clone the repository
+git clone https://github.com/vikram-mistry/Daily-Tracker.git
+
+# Navigate to project directory
+cd Daily-Tracker
+
+# Install dependencies
 npm install
+
+# Start development server
 npm run dev
 ```
 
-### Deploy to GitHub Pages
+### Production Build & Deploy
 ```bash
+# Build for production
+npm run build
+
+# Deploy to GitHub Pages
 npm run deploy
 ```
 
-### Backup & Restore
-In addition to automated Google Cloud Sync, you can export your entire database as a JSON file from the **Settings** menu and restore it manually on any device.
-
 ---
 
-*Made with ❤️ by Vikram Mistry*
+## 📄 License & Credits
+
+Designed and developed by **Vikram Mistry**.  
+Built for personal daily tracking with privacy and offline reliability first.

@@ -1,8 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Milk, Flame, HelpCircle
-} from 'lucide-react';
+import { Milk, Flame, HelpCircle } from 'lucide-react';
 import { db } from '../db';
 import { GlassCard, StickyHeader } from '../components/UI';
 import { auth } from '../firebase';
@@ -12,24 +10,14 @@ export default function HomeView({ filterDate, setFilterDate, settings }) {
   const [milkEntries, setMilkEntries] = useState([]);
   const [gasEntries, setGasEntries] = useState([]);
 
-  const [activeSlice, setActiveSlice] = useState(null);
-
-  // Reset active slice when month changes to prevent stale highlights
   useEffect(() => {
-    setActiveSlice(null);
-  }, [filterDate]);
-
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((u) => {
-      setUser(u);
-    });
+    const unsubscribe = auth.onAuthStateChanged((u) => setUser(u));
     return unsubscribe;
   }, []);
 
   const headerTitle = useMemo(() => {
     if (user?.displayName) {
-      const firstName = user.displayName.split(' ')[0];
-      return `Hello ${firstName}`;
+      return `Hello ${user.displayName.split(' ')[0]}`;
     }
     return 'Hello Vikram';
   }, [user]);
@@ -38,70 +26,50 @@ export default function HomeView({ filterDate, setFilterDate, settings }) {
     let active = true;
     async function loadAllData() {
       try {
-        const [milk, gas] = await Promise.all([
-          db.getAll('milk'),
-          db.getAll('gas')
-        ]);
-
+        const [milk, gas] = await Promise.all([db.getAll('milk'), db.getAll('gas')]);
         if (active) {
           setMilkEntries(milk || []);
           setGasEntries(gas || []);
         }
       } catch (err) {
-        console.error("Failed to load data for dashboard", err);
+        console.error('Failed to load data for dashboard', err);
       }
     }
     loadAllData();
 
     const handleSync = () => loadAllData();
     window.addEventListener('db-synced', handleSync);
-
     return () => {
       active = false;
       window.removeEventListener('db-synced', handleSync);
     };
   }, [filterDate]);
 
-  // Aggregate Calculations (Milk & Gas)
+  /* ── Aggregate calculations ─────────── */
   const calculations = useMemo(() => {
     const yearStr = String(filterDate.getFullYear());
     const monthStr = String(filterDate.getMonth() + 1).padStart(2, '0');
     const targetMonth = `${yearStr}-${monthStr}`;
 
-    // 1. Milk
-    const milkThisMonth = milkEntries.filter(e => e && e.date && e.date.startsWith(targetMonth));
+    const milkThisMonth = milkEntries.filter((e) => e && e.date && e.date.startsWith(targetMonth));
     const milkSpend = milkThisMonth.reduce((sum, e) => sum + (e.isPaused ? 0 : Number(e.total || 0)), 0);
     const milkLiters = milkThisMonth.reduce((sum, e) => sum + (e.isPaused ? 0 : Number(e.qty || 0)), 0);
 
-    // 2. Gas
     const gasSpend = gasEntries
-      .filter(e => e && e.installDate && e.installDate.startsWith(targetMonth))
+      .filter((e) => e && e.installDate && e.installDate.startsWith(targetMonth))
       .reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
-    // Compile into chart-ready data
-    const items = [
-      { key: 'milk', label: 'Milk', value: milkSpend, color: '#6750A4', icon: Milk },
-      { key: 'gas', label: 'Gas', value: gasSpend, color: '#E67E22', icon: Flame }
-    ];
+    const totalSpend = milkSpend + gasSpend;
 
-    const activeItems = items.filter(item => item.value > 0);
-    const totalSpend = activeItems.reduce((sum, item) => sum + item.value, 0);
-
-    return {
-      activeItems,
-      totalSpend,
-      milkLiters,
-      milkSpend,
-      gasSpend
-    };
+    return { totalSpend, milkSpend, milkLiters, gasSpend };
   }, [milkEntries, gasEntries, filterDate]);
 
-  // Gas Cylinder Longevity Evaluator
+  /* ── Gas cylinder prediction ────────── */
   const gasPrediction = useMemo(() => {
-    const activeCylinder = gasEntries.find(e => !e.uninstallDate);
-    const completedCylinders = gasEntries.filter(e => e.uninstallDate && e.installDate);
+    const activeCylinder = gasEntries.find((e) => !e.uninstallDate);
+    const completedCylinders = gasEntries.filter((e) => e.uninstallDate && e.installDate);
 
-    let avgLifespan = 45; // Default fallback
+    let avgLifespan = 45;
     if (completedCylinders.length > 0) {
       const totalDays = completedCylinders.reduce((sum, e) => {
         const start = new Date(e.installDate);
@@ -117,7 +85,7 @@ export default function HomeView({ filterDate, setFilterDate, settings }) {
       const daysActive = Math.ceil((today - start) / (1000 * 60 * 60 * 24));
       const remainingDays = Math.max(0, avgLifespan - daysActive);
       const percentLeft = Math.round(Math.max(0, (remainingDays / avgLifespan) * 100));
-      const estUninstall = new Date(start.getTime() + remainingDays * 24 * 60 * 60 * 1000);
+      const estUninstall = new Date(start.getTime() + avgLifespan * 24 * 60 * 60 * 1000);
 
       return {
         hasActive: true,
@@ -125,218 +93,132 @@ export default function HomeView({ filterDate, setFilterDate, settings }) {
         remainingDays,
         percentLeft,
         estUninstallDate: estUninstall.toLocaleDateString('en-US', { day: 'numeric', month: 'short' }),
-        avgLifespan
+        avgLifespan,
       };
     }
 
     return { hasActive: false, avgLifespan };
   }, [gasEntries]);
 
-  // Donut SVG Setup
-  const radius = 50;
-  const strokeWidth = 14;
-  const circumference = 2 * Math.PI * radius; // ~314.16
-
-  const donutSlices = useMemo(() => {
-    const gapPercent = 0.008; // small gap between slices
-    const totalGap = calculations.activeItems.length > 1 ? gapPercent * calculations.activeItems.length : 0;
-    const usablePercent = 1 - totalGap;
-    let accumulatedPercent = 0;
-    const slices = [];
-    for (const item of calculations.activeItems) {
-      const rawPercent = item.value / calculations.totalSpend;
-      const scaledPercent = rawPercent * usablePercent;
-      const strokeDashoffset = circumference - (scaledPercent * circumference);
-      const rotation = (accumulatedPercent * 360) - 90;
-      accumulatedPercent += scaledPercent + gapPercent;
-      slices.push({
-        ...item,
-        percent: rawPercent,
-        strokeDashoffset,
-        rotation
-      });
-    }
-    return slices;
-  }, [calculations.activeItems, calculations.totalSpend, circumference]);
-
-  const activeSliceData = useMemo(() => {
-    if (!activeSlice) return null;
-    return donutSlices.find(s => s.key === activeSlice);
-  }, [activeSlice, donutSlices]);
-
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-4 pb-8">
       <StickyHeader title={headerTitle} date={filterDate} setDate={setFilterDate} />
 
-      {/* Expense Summary & Donut Card */}
-      <GlassCard className="p-6 flex flex-col items-center">
-        <h3 className="text-xs font-bold uppercase tracking-wider mb-4" style={{ color: 'var(--m3-on-surface-muted)' }}>
-          Monthly Expense Distribution
-        </h3>
+      {/* ── Monthly Overview ──────────────── */}
+      <GlassCard className="p-5">
+        <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--label-tertiary)' }}>
+          Monthly Overview
+        </p>
 
         {calculations.totalSpend > 0 ? (
-          <div className="flex flex-col items-center w-full gap-6">
-            {/* SVG Donut Chart */}
-            <div className="relative w-40 h-40 flex items-center justify-center">
-              <svg key={`donut-${filterDate.getMonth()}-${filterDate.getFullYear()}`} width="100%" height="100%" viewBox="0 0 130 130" className="overflow-visible">
-                {/* Background base circle */}
-                <circle cx="65" cy="65" r={radius} fill="transparent" stroke="var(--m3-input-bg)" strokeWidth={strokeWidth} />
-                
-                {donutSlices.map((slice, idx) => (
-                  <motion.circle
-                    key={`${slice.key}-${filterDate.getMonth()}-${filterDate.getFullYear()}`}
-                    cx="65"
-                    cy="65"
-                    r={radius}
-                    fill="transparent"
-                    stroke={slice.color}
-                    strokeWidth={activeSlice === slice.key ? strokeWidth + 3 : strokeWidth}
-                    strokeDasharray={circumference}
-                    strokeLinecap="round"
-                    initial={{ strokeDashoffset: circumference }}
-                    animate={{ strokeDashoffset: slice.strokeDashoffset }}
-                    transition={{ duration: 0.8, ease: 'easeOut', delay: idx * 0.05 }}
-                    style={{ 
-                      transform: `rotate(${slice.rotation}deg)`, 
-                      transformOrigin: '65px 65px',
-                      cursor: 'pointer'
-                    }}
-                    onClick={() => setActiveSlice(activeSlice === slice.key ? null : slice.key)}
-                  />
-                ))}
-              </svg>
+          <>
+            <p className="text-[34px] font-bold tracking-tight leading-none mb-4" style={{ color: 'var(--label-primary)' }}>
+              {settings.currency}{calculations.totalSpend.toFixed(0)}
+            </p>
 
-              {/* Total display inside circle */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--m3-on-surface-muted)' }}>
-                  {activeSliceData ? activeSliceData.label : 'Total Spend'}
+            <div style={{ borderTop: '0.5px solid var(--separator)' }}>
+              {/* Milk row */}
+              <div className="flex items-center justify-between py-3" style={{ borderBottom: '0.5px solid var(--separator)' }}>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--accent-light)' }}>
+                    <Milk size={16} style={{ color: 'var(--accent)' }} />
+                  </div>
+                  <span className="text-[15px] font-medium" style={{ color: 'var(--label-primary)' }}>Milk</span>
+                </div>
+                <span className="text-[15px] font-semibold tabular-nums" style={{ color: 'var(--label-primary)' }}>
+                  {settings.currency}{calculations.milkSpend.toFixed(0)}
                 </span>
-                <span className="text-2xl font-black" style={{ color: 'var(--m3-on-surface)' }}>
-                  {settings.currency}
-                  {activeSliceData ? activeSliceData.value.toFixed(0) : calculations.totalSpend.toFixed(0)}
+              </div>
+
+              {/* Gas row */}
+              <div className="flex items-center justify-between py-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--orange-light)' }}>
+                    <Flame size={16} style={{ color: 'var(--orange)' }} />
+                  </div>
+                  <span className="text-[15px] font-medium" style={{ color: 'var(--label-primary)' }}>Gas</span>
+                </div>
+                <span className="text-[15px] font-semibold tabular-nums" style={{ color: 'var(--label-primary)' }}>
+                  {settings.currency}{calculations.gasSpend.toFixed(0)}
                 </span>
-                {activeSliceData && (
-                  <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400">
-                    {Math.round(activeSliceData.percent * 100)}%
-                  </span>
-                )}
               </div>
             </div>
-
-            {/* List breakdown under chart */}
-            <div className="w-full grid grid-cols-2 gap-3">
-              {donutSlices.map(slice => (
-                <button
-                  key={slice.key}
-                  onClick={() => setActiveSlice(activeSlice === slice.key ? null : slice.key)}
-                  className="flex items-center gap-2 p-2 rounded-xl text-left transition-colors"
-                  style={{
-                    background: activeSlice === slice.key ? 'var(--m3-input-bg)' : 'transparent',
-                    border: activeSlice === slice.key ? '1px solid var(--m3-input-border)' : '1px solid transparent'
-                  }}
-                >
-                  <div className="w-3.5 h-3.5 rounded-full flex-shrink-0" style={{ backgroundColor: slice.color }} />
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold truncate" style={{ color: 'var(--m3-on-surface)' }}>{slice.label}</p>
-                    <p className="text-[10px] font-bold" style={{ color: 'var(--m3-on-surface-muted)' }}>
-                      {settings.currency}{slice.value.toFixed(0)} ({Math.round(slice.percent * 100)}%)
-                    </p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
+          </>
         ) : (
-          <div className="py-12 flex flex-col items-center justify-center text-center gap-3">
-            <HelpCircle size={40} style={{ color: 'var(--m3-on-surface-muted)' }} />
-            <p className="text-sm font-semibold" style={{ color: 'var(--m3-on-surface-muted)' }}>
-              No expenses logged for this month.
+          <div className="py-10 flex flex-col items-center justify-center text-center gap-2">
+            <HelpCircle size={32} style={{ color: 'var(--label-tertiary)' }} />
+            <p className="text-[13px]" style={{ color: 'var(--label-secondary)' }}>
+              No expenses logged this month.
             </p>
           </div>
         )}
       </GlassCard>
 
-      {/* Grid of Highlight Cards */}
-      <div className="grid grid-cols-1 gap-4">
-        {/* Gas Prediction Card */}
-        <GlassCard 
-          className="p-5 relative overflow-hidden"
-          style={{
-            background: settings.theme === 'dark' 
-              ? 'linear-gradient(135deg, #3D2515 0%, #1A120B 100%)' 
-              : 'linear-gradient(135deg, #FFEECD 0%, #FFF9EE 100%)',
-            borderColor: settings.theme === 'dark' ? 'rgba(230, 126, 34, 0.25)' : 'rgba(255, 255, 255, 0.6)'
-          }}
-        >
-          <div className="flex justify-between items-start z-10 relative">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: settings.theme === 'dark' ? '#FFB74D' : '#D35400' }}>
-                Gas Cylinder Status
-              </p>
-              {gasPrediction.hasActive ? (
-                <>
-                  <p className="text-2xl font-black" style={{ color: 'var(--m3-on-surface)' }}>
-                    {gasPrediction.remainingDays} Days Remaining
-                  </p>
-                  <p className="text-xs mt-1 font-semibold" style={{ color: 'var(--m3-on-surface-muted)' }}>
-                    Est. Empty: {gasPrediction.estUninstallDate} ({gasPrediction.percentLeft}% Left)
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className="text-lg font-black" style={{ color: 'var(--m3-on-surface)' }}>
-                    No Active Cylinder
-                  </p>
-                  <p className="text-xs mt-1" style={{ color: 'var(--m3-on-surface-muted)' }}>
-                    Go to Gas tab to start a new cylinder log.
-                  </p>
-                </>
-              )}
-            </div>
-            <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-orange-100 dark:bg-orange-950 text-orange-600 dark:text-orange-400">
-              <Flame size={20} />
-            </div>
+      {/* ── Gas Cylinder Status ────────────── */}
+      <GlassCard className="p-5">
+        <div className="flex justify-between items-start">
+          <div className="flex-1">
+            <p className="text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--orange)' }}>
+              Gas Cylinder
+            </p>
+            {gasPrediction.hasActive ? (
+              <>
+                <p className="text-[28px] font-bold tracking-tight leading-tight" style={{ color: 'var(--label-primary)' }}>
+                  {gasPrediction.remainingDays}
+                  <span className="text-[17px] font-medium ml-1" style={{ color: 'var(--label-secondary)' }}>days left</span>
+                </p>
+                <p className="text-[13px] mt-1" style={{ color: 'var(--label-secondary)' }}>
+                  Est. empty: {gasPrediction.estUninstallDate} · {gasPrediction.percentLeft}% remaining
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-[17px] font-semibold" style={{ color: 'var(--label-primary)' }}>
+                  No Active Cylinder
+                </p>
+                <p className="text-[13px] mt-0.5" style={{ color: 'var(--label-secondary)' }}>
+                  Go to Gas tab to start a new cylinder log.
+                </p>
+              </>
+            )}
           </div>
-          {gasPrediction.hasActive && (
-            <div className="w-full bg-orange-200 dark:bg-orange-900/50 h-2 rounded-full mt-4 overflow-hidden">
-              <motion.div 
-                initial={{ width: 0 }}
-                animate={{ width: `${gasPrediction.percentLeft}%` }}
-                className="bg-orange-500 h-full rounded-full"
-                transition={{ duration: 1, ease: 'easeOut' }}
-              />
-            </div>
-          )}
-        </GlassCard>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center ml-3" style={{ background: 'var(--orange-light)' }}>
+            <Flame size={20} style={{ color: 'var(--orange)' }} />
+          </div>
+        </div>
+        {gasPrediction.hasActive && (
+          <div className="w-full h-1.5 rounded-full mt-4 overflow-hidden" style={{ background: 'var(--fill-tertiary)' }}>
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${gasPrediction.percentLeft}%` }}
+              className="h-full rounded-full"
+              style={{ background: 'var(--orange)' }}
+              transition={{ duration: 0.8, ease: 'easeOut' }}
+            />
+          </div>
+        )}
+      </GlassCard>
 
-        {/* Milk Card */}
-        <GlassCard 
-          className="p-5"
-          style={{
-            background: settings.theme === 'dark' 
-              ? 'linear-gradient(135deg, #2A3C5C 0%, #1A2840 100%)' 
-              : 'linear-gradient(135deg, #C8E6FF 0%, #E8F4FF 100%)',
-            borderColor: settings.theme === 'dark' ? 'rgba(103, 80, 164, 0.25)' : 'rgba(255, 255, 255, 0.6)'
-          }}
-        >
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: settings.theme === 'dark' ? '#90CAF9' : '#1F618D' }}>
-                Milk Delivery Status
-              </p>
-              <p className="text-2xl font-black" style={{ color: 'var(--m3-on-surface)' }}>
-                {calculations.milkLiters} Liters
-              </p>
-              <p className="text-xs mt-1 font-semibold" style={{ color: 'var(--m3-on-surface-muted)' }}>
-                Month Spend: {settings.currency}{calculations.milkSpend.toFixed(0)}
-              </p>
-            </div>
-            <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400">
-              <Milk size={20} />
-            </div>
+      {/* ── Milk Summary ──────────────────── */}
+      <GlassCard className="p-5">
+        <div className="flex justify-between items-start">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--accent)' }}>
+              Milk Delivery
+            </p>
+            <p className="text-[28px] font-bold tracking-tight leading-tight" style={{ color: 'var(--label-primary)' }}>
+              {calculations.milkLiters}
+              <span className="text-[17px] font-medium ml-1" style={{ color: 'var(--label-secondary)' }}>liters</span>
+            </p>
+            <p className="text-[13px] mt-1" style={{ color: 'var(--label-secondary)' }}>
+              {settings.currency}{calculations.milkSpend.toFixed(0)} spent this month
+            </p>
           </div>
-        </GlassCard>
-      </div>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center ml-3" style={{ background: 'var(--accent-light)' }}>
+            <Milk size={20} style={{ color: 'var(--accent)' }} />
+          </div>
+        </div>
+      </GlassCard>
     </div>
   );
 }

@@ -1,11 +1,6 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { createPortal } from 'react-dom';
-import { motion, AnimatePresence, useAnimation } from 'framer-motion';
-import { 
-  Milk, Flame, Plus, Settings, Calendar, ChevronLeft, ChevronRight, 
-  Trash2, Edit3, X, Check, Droplet, Zap, Wifi, ShoppingCart, 
-  Wrench, Package, PauseCircle, PlayCircle, Download, Upload, Info, Share2, LayoutGrid, Train
-} from 'lucide-react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Flame, Plus, Trash2, Edit3, X } from 'lucide-react';
 import { db } from '../db';
 import { GlassCard, SwipeableItem, BottomSheet, StickyHeader } from '../components/UI';
 
@@ -57,21 +52,18 @@ function GasView({ filterDate, setFilterDate, settings }) {
 
     entries.forEach(entry => {
       const install = new Date(entry.installDate);
-      const uninstall = entry.uninstallDate ? new Date(entry.uninstallDate) : new Date(); // Active assumed until today
+      const uninstall = entry.uninstallDate ? new Date(entry.uninstallDate) : new Date();
 
-      // Check if cylinder was active during this month
       const startOfMonth = new Date(year, month, 1);
       const endOfMonth = new Date(year, month + 1, 0);
 
       if (install <= endOfMonth && uninstall >= startOfMonth) {
-        // It overlaps with the selected month
         const overlapStart = install > startOfMonth ? install : startOfMonth;
         const overlapEnd = uninstall < endOfMonth ? uninstall : endOfMonth;
         
         const daysInMonth = Math.ceil((overlapEnd - overlapStart) / (1000 * 60 * 60 * 24)) + 1;
         activeDaysThisMonth += daysInMonth;
 
-        // If installed in this month, count towards spend/cylinders
         if (install.getMonth() === month && install.getFullYear() === year) {
           cylindersUsed++;
           totalSpend += Number(entry.amount);
@@ -108,7 +100,10 @@ function GasView({ filterDate, setFilterDate, settings }) {
     setEditingEntry(null);
     setFormData({ 
       installDate: new Date().toISOString().split('T')[0], 
-      uninstallDate: '', amount: '', weight: settings.gasWeight, notes: '' 
+      uninstallDate: '', 
+      amount: '', 
+      weight: settings.gasWeight, 
+      notes: '' 
     });
     setIsModalOpen(true);
   };
@@ -118,124 +113,252 @@ function GasView({ filterDate, setFilterDate, settings }) {
       <StickyHeader title="Gas Tracker" date={filterDate} setDate={setFilterDate} />
 
       {/* Summary Card */}
-      <GlassCard 
-        className="p-5 mb-6 relative overflow-hidden" 
-        style={{
-          background: settings.theme === 'dark' 
-            ? 'linear-gradient(135deg, #57341C 0%, #3D2515 100%)' 
-            : 'linear-gradient(135deg, #FFE0C8 0%, #FFECD8 100%)',
-          borderColor: settings.theme === 'dark' ? 'rgba(230, 126, 34, 0.4)' : 'rgba(255, 255, 255, 0.6)'
-        }}
-      >
-        <img src="./gas-icon.png" alt="Gas" className="absolute pointer-events-none" style={{width:'100px', height:'100px', right:'0px', top:'45%', transform:'translateY(-50%)', objectFit:'contain', opacity: settings.theme === 'dark' ? 0.7 : 0.85}} />
-        <div className="grid grid-cols-2 gap-4 relative z-10">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color: settings.theme === 'dark' ? 'var(--m3-on-surface-variant)' : '#49454F'}}>New Cylinders</p>
-            <p className="text-3xl font-bold" style={{color: settings.theme === 'dark' ? '#FFFFFF' : '#1C1B1F'}}>{stats.cylindersUsed}</p>
+      <GlassCard className="p-4 mb-4">
+        <div className="flex items-center justify-between">
+          <div className="grid grid-cols-3 gap-2 flex-1 text-center">
+            <div>
+              <p className="text-[10px] uppercase tracking-wider mb-0.5" style={{ color: 'var(--label-tertiary)' }}>New Cylinders</p>
+              <p className="text-[17px] font-bold tabular-nums" style={{ color: 'var(--label-primary)' }}>{stats.cylindersUsed}</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-wider mb-0.5" style={{ color: 'var(--label-tertiary)' }}>Total Spend</p>
+              <p className="text-[17px] font-bold tabular-nums" style={{ color: 'var(--label-primary)' }}>{settings.currency}{stats.totalSpend}</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-wider mb-0.5" style={{ color: 'var(--label-tertiary)' }}>Active Days</p>
+              <p className="text-[17px] font-bold tabular-nums" style={{ color: 'var(--orange)' }}>{stats.activeDaysThisMonth}d</p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color: settings.theme === 'dark' ? 'var(--m3-on-surface-variant)' : '#49454F'}}>Total Spend</p>
-            <p className="text-3xl font-bold" style={{color: settings.theme === 'dark' ? '#FFFFFF' : '#1C1B1F'}}>{settings.currency}{stats.totalSpend}</p>
-          </div>
-          <div className="col-span-2 pt-3" style={{borderTop: settings.theme === 'dark' ? '1px solid rgba(255,255,255,0.15)' : '1px solid rgba(230,126,34,0.15)'}}>
-            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color: settings.theme === 'dark' ? 'var(--m3-on-surface-variant)' : '#49454F'}}>Usage Days This Month</p>
-            <p className="text-xl font-bold" style={{color: settings.theme === 'dark' ? '#FFB74D' : '#E67E22'}}>{stats.activeDaysThisMonth} Days</p>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center ml-2 flex-shrink-0" style={{ background: 'var(--orange-light)' }}>
+            <Flame size={20} style={{ color: 'var(--orange)' }} />
           </div>
         </div>
       </GlassCard>
 
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-base font-bold" style={{color:'var(--m3-on-surface)'}}>Cylinder History</h3>
-        <motion.button whileTap={{scale:0.95}} onClick={openAdd} className="text-sm font-semibold px-4 py-1.5 rounded-full flex items-center gap-1" style={{background:'linear-gradient(135deg,#FF9A5C,#E67E22)', color:'#fff', boxShadow:'0 2px 10px rgba(230,126,34,0.25)'}}>
-          <Plus size={16}/> Add New
-        </motion.button>
+      {/* Header and Add button */}
+      <div className="flex justify-between items-center mb-3">
+        <p className="text-[13px] font-semibold uppercase tracking-wider" style={{ color: 'var(--label-tertiary)' }}>
+          Cylinder History
+        </p>
+        <button 
+          onClick={openAdd} 
+          className="text-[13px] font-medium px-3.5 py-1 rounded-full flex items-center gap-1 text-white" 
+          style={{ background: 'var(--orange)' }}
+        >
+          <Plus size={14} strokeWidth={2.5} /> Add Cylinder
+        </button>
       </div>
 
-      <div className="space-y-4">
-        {entries.length === 0 && <p className="text-center py-4 text-sm" style={{color:'var(--m3-on-surface-muted)'}}>No gas records found.</p>}
+      {/* Cylinder List */}
+      <div className="space-y-2 pb-6">
+        {entries.length === 0 && (
+          <p className="text-center py-8 text-[13px]" style={{ color: 'var(--label-secondary)' }}>
+            No gas records found.
+          </p>
+        )}
         {entries.map((entry, idx) => {
-           const daysUsed = calculateDays(entry.installDate, entry.uninstallDate);
-           const isActive = !entry.uninstallDate;
-            return (
-             <SwipeableItem key={entry.id} onDelete={() => setDeleteConfirmId(entry.id)} onEdit={() => openEdit(entry)}>
-               <div onClick={() => { setViewingEntry(entry); setIsViewModalOpen(true); }} className="flex justify-between items-start">
-                 <div className="flex items-start gap-4">
-                   <div className={`w-12 h-12 mt-1 rounded-2xl flex items-center justify-center`} style={{background: isActive ? '#FFE0C8' : '#F5F5F5', border: isActive ? '1.5px solid #E67E22' : '1px solid #EDE7F6', color: isActive ? '#E67E22' : '#79747E'}}>
-                     <Flame size={24} />
-                   </div>
-                   <div>
-                     <div className="flex items-center gap-2">
-                       <p className="font-bold text-lg" style={{color:'var(--m3-on-surface)'}}>Cylinder #{entries.length - idx}</p>
-                       {isActive && <span className="text-[9px] uppercase px-2 py-0.5 rounded-full font-bold" style={{background:'#FF9A5C', color:'#fff'}}>Active</span>}
-                     </div>
-                     <p className="text-xs mt-1" style={{color:'#79747E'}}>Installed: {new Date(entry.installDate).toLocaleDateString()}</p>
-                     {entry.uninstallDate && (
-                        <p className="text-xs mt-0.5" style={{color:'#79747E'}}>Ended: {new Date(entry.uninstallDate).toLocaleDateString()}</p>
-                     )}
-                   </div>
-                 </div>
-                 <div className="text-right">
-                   <p className="text-xl font-bold" style={{color:'var(--m3-on-surface)'}}>{settings.currency}{entry.amount}</p>
-                   <p className="text-sm font-semibold mt-1" style={{color: isActive ? '#E67E22' : '#79747E'}}>{daysUsed} Days</p>
-                 </div>
-               </div>
-             </SwipeableItem>
-            )
-         })}
+          const daysUsed = calculateDays(entry.installDate, entry.uninstallDate);
+          const isActive = !entry.uninstallDate;
+          return (
+            <SwipeableItem key={entry.id} onDelete={() => setDeleteConfirmId(entry.id)} onEdit={() => openEdit(entry)}>
+              <div 
+                onClick={() => { setViewingEntry(entry); setIsViewModalOpen(true); }} 
+                className="flex justify-between items-center cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" 
+                    style={{ 
+                      background: isActive ? 'var(--orange-light)' : 'var(--fill-tertiary)', 
+                      color: isActive ? 'var(--orange)' : 'var(--label-tertiary)' 
+                    }}
+                  >
+                    <Flame size={20} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-[15px]" style={{ color: 'var(--label-primary)' }}>
+                        Cylinder #{entries.length - idx}
+                      </p>
+                      {isActive && (
+                        <span 
+                          className="text-[10px] uppercase px-2 py-0.5 rounded-full font-bold" 
+                          style={{ background: 'var(--orange-light)', color: 'var(--orange)' }}
+                        >
+                          Active
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[12px] mt-0.5" style={{ color: 'var(--label-secondary)' }}>
+                      Installed: {new Date(entry.installDate).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </p>
+                    {entry.uninstallDate && (
+                      <p className="text-[11px]" style={{ color: 'var(--label-tertiary)' }}>
+                        Ended: {new Date(entry.uninstallDate).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-[16px] font-bold tabular-nums" style={{ color: 'var(--label-primary)' }}>
+                    {settings.currency}{entry.amount}
+                  </p>
+                  <p className="text-[12px] font-medium mt-0.5 tabular-nums" style={{ color: isActive ? 'var(--orange)' : 'var(--label-secondary)' }}>
+                    {daysUsed} Days
+                  </p>
+                </div>
+              </div>
+            </SwipeableItem>
+          );
+        })}
       </div>
 
-      <BottomSheet isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingEntry ? "Edit Cylinder" : "Add Cylinder"} isCentered={true}>
-         <div className="space-y-4">
-          <div className="flex flex-col gap-4">
-            <div className="min-w-0">
-              <label className="text-xs font-semibold uppercase tracking-wider pl-1 block truncate" style={{color:'#6750A4'}}>Install Date</label>
-              <input type="date" value={formData.installDate} onChange={e => setFormData({...formData, installDate: e.target.value})} className="m3-input mt-1" />
+      {/* Add/Edit Modal */}
+      <BottomSheet 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        title={editingEntry ? "Edit Cylinder" : "Add Cylinder"} 
+        isCentered={true}
+      >
+        <div className="space-y-4">
+          <div className="space-y-3">
+            <div>
+              <label className="text-[11px] font-semibold uppercase tracking-wider pl-0.5" style={{ color: 'var(--orange)' }}>
+                Install Date
+              </label>
+              <input 
+                type="date" 
+                value={formData.installDate} 
+                onChange={e => setFormData({ ...formData, installDate: e.target.value })} 
+                className="m3-input mt-1 text-[15px]" 
+              />
             </div>
-            <div className="min-w-0">
-              <label className="text-xs font-semibold uppercase tracking-wider pl-1 block truncate" style={{color:'#6750A4'}}>End Date (Optional)</label>
-              <input type="date" value={formData.uninstallDate} onChange={e => setFormData({...formData, uninstallDate: e.target.value})} className="m3-input mt-1" />
+            <div>
+              <label className="text-[11px] font-semibold uppercase tracking-wider pl-0.5" style={{ color: 'var(--orange)' }}>
+                End Date (Optional)
+              </label>
+              <input 
+                type="date" 
+                value={formData.uninstallDate} 
+                onChange={e => setFormData({ ...formData, uninstallDate: e.target.value })} 
+                className="m3-input mt-1 text-[15px]" 
+              />
             </div>
           </div>
-          <div className="flex flex-col gap-4">
-            <div className="min-w-0">
-              <label className="text-xs font-semibold uppercase tracking-wider pl-1" style={{color:'#6750A4'}}>Amount</label>
-               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2" style={{color:'var(--m3-on-surface-muted)'}}>{settings.currency}</span>
-                <input type="number" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="m3-input pl-8 mt-1 text-xl font-bold" placeholder="0.00" />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[11px] font-semibold uppercase tracking-wider pl-0.5" style={{ color: 'var(--orange)' }}>
+                Amount ({settings.currency})
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px]" style={{ color: 'var(--label-secondary)' }}>
+                  {settings.currency}
+                </span>
+                <input 
+                  type="number" 
+                  value={formData.amount} 
+                  onChange={e => setFormData({ ...formData, amount: e.target.value })} 
+                  className="m3-input pl-7 mt-1 text-xl font-semibold" 
+                  placeholder="0.00" 
+                />
               </div>
             </div>
-            <div className="min-w-0">
-              <label className="text-xs font-semibold uppercase tracking-wider pl-1" style={{color:'#6750A4'}}>Weight (KG)</label>
-              <input type="number" step="0.1" value={formData.weight} onChange={e => setFormData({...formData, weight: e.target.value})} className="m3-input mt-1 text-xl font-bold" />
+            <div>
+              <label className="text-[11px] font-semibold uppercase tracking-wider pl-0.5" style={{ color: 'var(--orange)' }}>
+                Weight (KG)
+              </label>
+              <input 
+                type="number" 
+                step="0.1" 
+                value={formData.weight} 
+                onChange={e => setFormData({ ...formData, weight: e.target.value })} 
+                className="m3-input mt-1 text-xl font-semibold" 
+              />
             </div>
           </div>
-          <div className="pt-4 flex gap-3">
-             {editingEntry && (
-                <motion.button whileTap={{scale:0.97}} onClick={() => handleDelete(editingEntry.id)} className="flex-1 font-bold py-4 rounded-2xl" style={{background:'#FFEBEB', color:'#C0392B'}}>Delete</motion.button>
-             )}
-            <motion.button whileTap={{scale:0.97}} onClick={handleSave} className="flex-[2] font-bold py-4 rounded-2xl" style={{background:'linear-gradient(135deg,#FF9A5C,#E67E22)', color:'#fff', boxShadow:'0 4px 16px rgba(230,126,34,0.3)'}}>
+          <div>
+            <label className="text-[11px] font-semibold uppercase tracking-wider pl-0.5" style={{ color: 'var(--label-secondary)' }}>
+              Notes (Optional)
+            </label>
+            <input 
+              type="text" 
+              value={formData.notes || ''} 
+              onChange={e => setFormData({ ...formData, notes: e.target.value })} 
+              className="m3-input mt-1 text-[15px]" 
+              placeholder="e.g. Bharat Gas / HP Gas"
+            />
+          </div>
+          <div className="pt-3 flex gap-2.5">
+            {editingEntry && (
+              <button 
+                onClick={() => handleDelete(editingEntry.id)} 
+                className="flex-1 font-semibold py-3 rounded-xl text-[15px]" 
+                style={{ background: 'var(--red-light)', color: 'var(--red)' }}
+              >
+                Delete
+              </button>
+            )}
+            <button 
+              onClick={handleSave} 
+              className="flex-[2] font-semibold py-3 rounded-xl text-[15px] text-white" 
+              style={{ background: 'var(--orange)' }}
+            >
               Save Cylinder
-            </motion.button>
+            </button>
           </div>
         </div>
       </BottomSheet>
 
-      <BottomSheet isOpen={isViewModalOpen} onClose={() => setIsViewModalOpen(false)} title="Gas Details" isCentered={true}>
+      {/* View Details Modal */}
+      <BottomSheet 
+        isOpen={isViewModalOpen} 
+        onClose={() => setIsViewModalOpen(false)} 
+        title="Cylinder Details" 
+        isCentered={true}
+      >
         {viewingEntry && (
-          <div className="space-y-4 text-sm" style={{color:'var(--m3-on-surface)'}}>
-            <div className="flex justify-between border-b pb-2" style={{borderColor:'var(--m3-input-border)'}}><span className="font-semibold text-gray-500">Install Date:</span> <span>{new Date(viewingEntry.installDate).toLocaleDateString()}</span></div>
-            <div className="flex justify-between border-b pb-2" style={{borderColor:'var(--m3-input-border)'}}><span className="font-semibold text-gray-500">End Date:</span> <span>{viewingEntry.uninstallDate ? new Date(viewingEntry.uninstallDate).toLocaleDateString() : 'Active'}</span></div>
-            <div className="flex justify-between border-b pb-2" style={{borderColor:'var(--m3-input-border)'}}><span className="font-semibold text-gray-500">Amount:</span> <span className="font-bold">{settings.currency}{viewingEntry.amount}</span></div>
-            <div className="flex justify-between border-b pb-2" style={{borderColor:'var(--m3-input-border)'}}><span className="font-semibold text-gray-500">Weight:</span> <span>{viewingEntry.weight} kg</span></div>
-            <div className="pt-2">
-              <span className="font-semibold text-gray-500 block mb-1">Notes:</span>
-              <p className="p-3 rounded-xl border" style={{background:'var(--m3-input-bg)', borderColor:'var(--m3-input-border)'}}>{viewingEntry.notes || 'No notes available'}</p>
+          <div className="space-y-3 text-[15px]">
+            <div className="flex justify-between py-2.5" style={{ borderBottom: '0.5px solid var(--separator)' }}>
+              <span style={{ color: 'var(--label-secondary)' }}>Install Date</span>
+              <span className="font-medium" style={{ color: 'var(--label-primary)' }}>
+                {new Date(viewingEntry.installDate).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </span>
             </div>
+            <div className="flex justify-between py-2.5" style={{ borderBottom: '0.5px solid var(--separator)' }}>
+              <span style={{ color: 'var(--label-secondary)' }}>End Date</span>
+              <span className="font-medium" style={{ color: 'var(--label-primary)' }}>
+                {viewingEntry.uninstallDate ? new Date(viewingEntry.uninstallDate).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Active'}
+              </span>
+            </div>
+            <div className="flex justify-between py-2.5" style={{ borderBottom: '0.5px solid var(--separator)' }}>
+              <span style={{ color: 'var(--label-secondary)' }}>Amount</span>
+              <span className="font-bold tabular-nums" style={{ color: 'var(--label-primary)' }}>
+                {settings.currency}{viewingEntry.amount}
+              </span>
+            </div>
+            <div className="flex justify-between py-2.5" style={{ borderBottom: '0.5px solid var(--separator)' }}>
+              <span style={{ color: 'var(--label-secondary)' }}>Weight</span>
+              <span className="font-medium" style={{ color: 'var(--label-primary)' }}>
+                {viewingEntry.weight} kg
+              </span>
+            </div>
+            {viewingEntry.notes && (
+              <div className="pt-1">
+                <span className="text-[13px] block mb-1" style={{ color: 'var(--label-secondary)' }}>Notes</span>
+                <p className="p-3 rounded-xl text-[14px]" style={{ background: 'var(--input-bg)', color: 'var(--label-primary)' }}>
+                  {viewingEntry.notes}
+                </p>
+              </div>
+            )}
             
-            <div className="pt-4 flex gap-3">
-              <motion.button whileTap={{scale:0.97}} onClick={() => setIsViewModalOpen(false)} className="w-full font-bold py-3 rounded-2xl" style={{background:'var(--m3-input-bg)', color:'var(--m3-on-surface)'}}>
-                Close
-              </motion.button>
+            <div className="pt-3">
+              <button 
+                onClick={() => setIsViewModalOpen(false)} 
+                className="w-full font-semibold py-3 rounded-xl text-[15px]" 
+                style={{ background: 'var(--fill-tertiary)', color: 'var(--label-primary)' }}
+              >
+                Done
+              </button>
             </div>
           </div>
         )}
@@ -249,32 +372,29 @@ function GasView({ filterDate, setFilterDate, settings }) {
         isCentered={true}
       >
         <div className="space-y-4">
-          <p style={{ color: 'var(--m3-on-surface-variant)' }}>
+          <p className="text-[15px]" style={{ color: 'var(--label-secondary)' }}>
             Are you sure you want to delete this gas cylinder record? This action cannot be undone.
           </p>
-          <div className="flex gap-3 mt-4">
-            <motion.button 
-              whileTap={{ scale: 0.97 }} 
+          <div className="flex gap-2.5 mt-4">
+            <button 
               onClick={() => setDeleteConfirmId(null)} 
-              className="flex-1 font-bold py-3.5 rounded-2xl border" 
-              style={{ background: 'var(--m3-input-bg)', borderColor: 'var(--m3-input-border)', color: 'var(--m3-on-surface)' }}
+              className="flex-1 font-semibold py-3 rounded-xl text-[15px]" 
+              style={{ background: 'var(--fill-tertiary)', color: 'var(--label-primary)' }}
             >
               Cancel
-            </motion.button>
-            <motion.button 
-              whileTap={{ scale: 0.97 }} 
+            </button>
+            <button 
               onClick={() => { handleDelete(deleteConfirmId); setDeleteConfirmId(null); }} 
-              className="flex-1 font-bold py-3.5 rounded-2xl text-white" 
-              style={{ background: '#E05C5C' }}
+              className="flex-1 font-semibold py-3 rounded-xl text-[15px] text-white" 
+              style={{ background: 'var(--red)' }}
             >
               Delete
-            </motion.button>
+            </button>
           </div>
         </div>
       </BottomSheet>
     </div>
   );
 }
-
 
 export default GasView;

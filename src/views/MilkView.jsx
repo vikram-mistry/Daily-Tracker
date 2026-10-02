@@ -1,10 +1,7 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { createPortal } from 'react-dom';
-import { motion, AnimatePresence, useAnimation } from 'framer-motion';
-import { 
-  Milk, Flame, Plus, Settings, Calendar, ChevronLeft, ChevronRight, 
-  Trash2, Edit3, X, Check, Droplet, Zap, Wifi, ShoppingCart, 
-  Wrench, Package, PauseCircle, PlayCircle, Download, Upload, Info, Share2, LayoutGrid, Train
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Droplet, PauseCircle, Share2, Plus, Trash2, Edit3,
 } from 'lucide-react';
 import { db, getEffectiveMilkPrice, getEffectiveMilkQty } from '../db';
 import { GlassCard, SwipeableItem, BottomSheet, StickyHeader } from '../components/UI';
@@ -13,19 +10,18 @@ function MilkView({ filterDate, setFilterDate, settings }) {
   const [entries, setEntries] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null);
-  const [isListExpanded, setIsListExpanded] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
-  
+
   // Selection Mode for Pause
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedDates, setSelectedDates] = useState([]);
 
   // Form State
   const todayStr = new Date().toISOString().split('T')[0];
-  const [formData, setFormData] = useState({ 
-    date: todayStr, 
-    qty: getEffectiveMilkQty(todayStr, settings), 
-    price: getEffectiveMilkPrice(todayStr, settings) 
+  const [formData, setFormData] = useState({
+    date: todayStr,
+    qty: getEffectiveMilkQty(todayStr, settings),
+    price: getEffectiveMilkPrice(todayStr, settings),
   });
 
   const loadEntries = useCallback(async () => {
@@ -33,30 +29,29 @@ function MilkView({ filterDate, setFilterDate, settings }) {
     const yearStr = String(filterDate.getFullYear());
     const monthStr = String(filterDate.getMonth() + 1).padStart(2, '0');
     const targetMonth = `${yearStr}-${monthStr}`;
-
-    const filtered = all.filter(e => e && e.date && e.date.startsWith(targetMonth));
+    const filtered = all.filter((e) => e && e.date && e.date.startsWith(targetMonth));
     setEntries(filtered.sort((a, b) => (b.date || '').localeCompare(a.date || '')));
   }, [filterDate]);
 
   useEffect(() => { loadEntries(); }, [loadEntries]);
 
-  // Real-time listener for cloud sync completion
   useEffect(() => {
     const handleSync = () => loadEntries();
     window.addEventListener('db-synced', handleSync);
     return () => window.removeEventListener('db-synced', handleSync);
   }, [loadEntries]);
 
-  // Calculations
+  /* ── Stats ─────────────────────────── */
   const stats = useMemo(() => {
     let qty = 0, amount = 0, active = 0, pause = 0;
-    entries.forEach(e => {
-      if (e.isPaused) { pause++; } 
+    entries.forEach((e) => {
+      if (e.isPaused) pause++;
       else { active++; qty += Number(e.qty); amount += Number(e.total); }
     });
     return { qty, amount, active, pause };
   }, [entries]);
 
+  /* ── Handlers ──────────────────────── */
   const handleSave = async () => {
     const total = formData.qty * formData.price;
     const item = {
@@ -65,7 +60,7 @@ function MilkView({ filterDate, setFilterDate, settings }) {
       qty: formData.qty,
       price: formData.price,
       total,
-      isPaused: false
+      isPaused: false,
     };
     await db.put('milk', item);
     setIsModalOpen(false);
@@ -79,19 +74,19 @@ function MilkView({ filterDate, setFilterDate, settings }) {
   };
 
   const togglePauseStatus = async (dateStr) => {
-    const existing = entries.find(e => e.date === dateStr);
+    const existing = entries.find((e) => e.date === dateStr);
     if (existing) {
       if (!existing.isPaused) {
         await db.put('milk', { ...existing, isPaused: true, qty: 0, total: 0 });
       } else {
         const effQty = getEffectiveMilkQty(dateStr, settings);
         const effPrice = getEffectiveMilkPrice(dateStr, settings);
-        await db.put('milk', { 
-          ...existing, 
-          isPaused: false, 
-          qty: effQty, 
-          price: effPrice, 
-          total: Number((effQty * effPrice).toFixed(2)) 
+        await db.put('milk', {
+          ...existing,
+          isPaused: false,
+          qty: effQty,
+          price: effPrice,
+          total: Number((effQty * effPrice).toFixed(2)),
         });
       }
     } else {
@@ -116,22 +111,20 @@ function MilkView({ filterDate, setFilterDate, settings }) {
 
   const openAdd = (dateStr = new Date().toISOString().split('T')[0]) => {
     setEditingEntry(null);
-    setFormData({ 
-      date: dateStr, 
-      qty: getEffectiveMilkQty(dateStr, settings), 
-      price: getEffectiveMilkPrice(dateStr, settings) 
+    setFormData({
+      date: dateStr,
+      qty: getEffectiveMilkQty(dateStr, settings),
+      price: getEffectiveMilkPrice(dateStr, settings),
     });
     setIsModalOpen(true);
   };
 
-  // Generate a text report and share via native share sheet
+  /* ── Share Report ──────────────────── */
   const handleShareReport = async () => {
-    const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     const monthYear = `${monthNames[filterDate.getMonth()]} ${filterDate.getFullYear()}`;
-    
-    // Sort entries ascending by date for the report
-    const sorted = [...entries].filter(e => !e.isPaused).sort((a, b) => new Date(a.date) - new Date(b.date));
-    const pausedDays = entries.filter(e => e.isPaused);
+    const sorted = [...entries].filter((e) => !e.isPaused).sort((a, b) => new Date(a.date) - new Date(b.date));
+    const pausedDays = entries.filter((e) => e.isPaused);
 
     const lines = [
       `🏠 *Lotus Residency CHS Milk Bill Report — ${monthYear}*`,
@@ -144,22 +137,24 @@ function MilkView({ filterDate, setFilterDate, settings }) {
       `━━━━━━━━━━━━━━━━━━━━━━━━`,
       `📋 *Daily Breakdown:*`,
       ``,
-      ...sorted.map(e => {
+      ...sorted.map((e) => {
         const d = new Date(e.date);
         const day = String(d.getDate()).padStart(2, '0');
-        const mon = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()];
+        const mon = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
         return `  ${day} ${mon}  —  ${e.qty}L  ×  ${settings.currency}${e.price}  =  ${settings.currency}${Number(e.total).toFixed(2)}`;
       }),
-      ...(pausedDays.length > 0 ? [
-        ``,
-        `⏸️ *Paused Dates:*`,
-        ...pausedDays.map(e => {
-          const d = new Date(e.date);
-          const day = String(d.getDate()).padStart(2, '0');
-          const mon = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()];
-          return `  ${day} ${mon}  —  No Delivery`;
-        })
-      ] : []),
+      ...(pausedDays.length > 0
+        ? [
+            ``,
+            `⏸️ *Paused Dates:*`,
+            ...pausedDays.map((e) => {
+              const d = new Date(e.date);
+              const day = String(d.getDate()).padStart(2, '0');
+              const mon = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
+              return `  ${day} ${mon}  —  No Delivery`;
+            }),
+          ]
+        : []),
       ``,
       `━━━━━━━━━━━━━━━━━━━━━━━━`,
       `💳 *Please pay: ${settings.currency}${stats.amount.toFixed(2)}*`,
@@ -168,302 +163,321 @@ function MilkView({ filterDate, setFilterDate, settings }) {
     ];
 
     const reportText = lines.join('\n');
-
     try {
       if (navigator.share) {
         await navigator.share({ title: `Lotus Residency CHS Milk Bill Report – ${monthYear}`, text: reportText });
       } else {
-        // Fallback: copy to clipboard
         await navigator.clipboard.writeText(reportText);
         alert('Report copied to clipboard!');
       }
     } catch (err) {
-      // User cancelled share — ignore
+      // User cancelled share
     }
   };
 
-  // Generate Calendar Days
+  /* ── Calendar days ─────────────────── */
   const daysInMonth = new Date(filterDate.getFullYear(), filterDate.getMonth() + 1, 0).getDate();
   const calYearStr = String(filterDate.getFullYear());
   const calMonthStr = String(filterDate.getMonth() + 1).padStart(2, '0');
-  const calendarDays = Array.from({length: daysInMonth}, (_, i) => {
-    return `${calYearStr}-${calMonthStr}-${String(i + 1).padStart(2, '0')}`;
-  });
+  const calendarDays = Array.from({ length: daysInMonth }, (_, i) =>
+    `${calYearStr}-${calMonthStr}-${String(i + 1).padStart(2, '0')}`
+  );
+  const firstDayOffset = new Date(filterDate.getFullYear(), filterDate.getMonth(), 1).getDay();
 
   return (
     <div>
-      <StickyHeader title="Milk Tracker" date={filterDate} setDate={setFilterDate} />
-      
-      {/* Summary Card */}
-      <GlassCard 
-        className="p-5 mb-6 relative overflow-hidden" 
-        style={{
-          background: settings.theme === 'dark' 
-            ? 'linear-gradient(135deg, #2A3C5C 0%, #3A2E5C 100%)' 
-            : 'linear-gradient(135deg, #C8E6FF 0%, #EDE7F6 100%)',
-          borderColor: settings.theme === 'dark' ? 'rgba(103, 80, 164, 0.4)' : 'rgba(255, 255, 255, 0.6)'
-        }}
-      >
-        <img src="./cow-icon.png" alt="Happy Cow" className="absolute pointer-events-none" style={{width:'100px', height:'100px', right:'0px', bottom:'20px', objectFit:'contain', opacity: settings.theme === 'dark' ? 0.7 : 0.85}} />
-        <div className="grid grid-cols-2 gap-4 relative z-10">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color: settings.theme === 'dark' ? 'var(--m3-on-surface-variant)' : '#49454F'}}>Total Amount</p>
-            <p className="text-3xl font-bold" style={{color: settings.theme === 'dark' ? '#FFFFFF' : '#1A1C1E'}}>{settings.currency}{Number(stats.amount).toFixed(2)}</p>
-          </div>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color: settings.theme === 'dark' ? 'var(--m3-on-surface-variant)' : '#49454F'}}>Total Quantity</p>
-            <p className="text-3xl font-bold" style={{color: settings.theme === 'dark' ? '#FFFFFF' : '#1A1C1E'}}>{stats.qty} L</p>
-          </div>
-          <div className="pt-3" style={{borderTop: settings.theme === 'dark' ? '1px solid rgba(255,255,255,0.15)' : '1px solid rgba(103,80,164,0.15)'}}>
-            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color: settings.theme === 'dark' ? 'var(--m3-on-surface-variant)' : '#49454F'}}>Active Days</p>
-            <p className="text-xl font-bold" style={{color: settings.theme === 'dark' ? '#81C784' : '#1B6E3A'}}>{stats.active}</p>
-          </div>
-          <div className="pt-3" style={{borderTop: settings.theme === 'dark' ? '1px solid rgba(255,255,255,0.15)' : '1px solid rgba(103,80,164,0.15)'}}>
-            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{color: settings.theme === 'dark' ? 'var(--m3-on-surface-variant)' : '#49454F'}}>Pause Days</p>
-            <p className="text-xl font-bold" style={{color: settings.theme === 'dark' ? '#FFB74D' : '#B85C00'}}>{stats.pause}</p>
-          </div>
-        </div>
+      <StickyHeader title="Milk" date={filterDate} setDate={setFilterDate} />
 
-        {/* Share Report Button */}
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={handleShareReport}
-          className="relative z-10 mt-4 flex items-center justify-center w-10 h-10 rounded-full"
-          style={{background:'linear-gradient(135deg,#6750A4,#4A90D9)', color:'#fff', boxShadow:'0 4px 12px rgba(103,80,164,0.3)'}}
-        >
-          <Share2 size={18} />
-        </motion.button>
+      {/* ── Summary Row ───────────────────── */}
+      <GlassCard className="p-4 mb-4">
+        <div className="flex items-center justify-between">
+          <div className="grid grid-cols-4 gap-1 flex-1">
+            <StatCell label="Total" value={`${settings.currency}${stats.amount.toFixed(0)}`} />
+            <StatCell label="Qty" value={`${stats.qty}L`} />
+            <StatCell label="Active" value={stats.active} color="var(--green)" />
+            <StatCell label="Paused" value={stats.pause} color="var(--orange)" />
+          </div>
+          <button
+            onClick={handleShareReport}
+            className="w-9 h-9 rounded-full flex items-center justify-center ml-3 flex-shrink-0"
+            style={{ background: 'var(--accent-light)' }}
+          >
+            <Share2 size={16} style={{ color: 'var(--accent)' }} />
+          </button>
+        </div>
       </GlassCard>
 
-      {/* Calendar Grid */}
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-base font-bold" style={{color:'var(--m3-on-surface)'}}>Daily Tracking</h3>
-        <motion.button
-          whileTap={{scale:0.95}}
+      {/* ── Calendar Header ───────────────── */}
+      <div className="flex justify-between items-center mb-3">
+        <p className="text-[13px] font-semibold uppercase tracking-wider" style={{ color: 'var(--label-tertiary)' }}>
+          Daily Tracking
+        </p>
+        <button
           onClick={() => { setIsSelectMode(!isSelectMode); setSelectedDates([]); }}
-          className="text-sm font-semibold px-4 py-1.5 rounded-full transition-colors"
-          style={isSelectMode 
-            ? {
-                background: settings.theme === 'dark' ? '#047857' : '#A7F3D0', 
-                color: settings.theme === 'dark' ? '#FFFFFF' : '#064E3B'
-              } 
-            : {
-                background: 'var(--m3-input-bg)', 
-                color: 'var(--m3-on-surface)',
-                border: '1px solid var(--m3-input-border)'
-              }
-          }
+          className="text-[13px] font-medium px-3 py-1 rounded-full"
+          style={{
+            background: isSelectMode ? 'var(--green-light)' : 'var(--fill-quaternary)',
+            color: isSelectMode ? 'var(--green)' : 'var(--label-secondary)',
+          }}
         >
           {isSelectMode ? 'Cancel' : 'Bulk Pause'}
-        </motion.button>
+        </button>
       </div>
 
-      <div className="grid grid-cols-7 gap-2 mb-6">
-        {['S','M','T','W','T','F','S'].map((d, i) => (
-          <div key={i} className="text-center text-[10px] font-bold" style={{color:'#79747E'}}>{d}</div>
-        ))}  
-        
-        {/* Empty slots for offset */}
-        {Array.from({length: new Date(filterDate.getFullYear(), filterDate.getMonth(), 1).getDay()}).map((_, i) => (
-          <div key={`empty-${i}`} />
-        ))}
+      {/* ── Calendar Grid ─────────────────── */}
+      <GlassCard className="p-3 mb-4">
+        <div className="grid grid-cols-7 gap-1.5 mb-1">
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+            <div key={i} className="text-center text-[11px] font-medium py-1" style={{ color: 'var(--label-tertiary)' }}>
+              {d}
+            </div>
+          ))}
+        </div>
 
-        {calendarDays.map(dateStr => {
-          const entry = entries.find(e => e.date === dateStr);
-          const isSelected = selectedDates.includes(dateStr);
-          const dayNum = parseInt(dateStr.split('-')[2], 10);
-          const isToday = dateStr === new Date().toISOString().split('T')[0];
+        <div className="grid grid-cols-7 gap-1.5">
+          {/* Empty offset cells */}
+          {Array.from({ length: firstDayOffset }).map((_, i) => (
+            <div key={`empty-${i}`} />
+          ))}
 
-          return (
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              key={dateStr}
-              onClick={() => {
-                if (isSelectMode) {
-                  setSelectedDates(prev => prev.includes(dateStr) ? prev.filter(d => d !== dateStr) : [...prev, dateStr]);
-                } else {
-                  if (entry && entry.isPaused) togglePauseStatus(dateStr); // Unpause
-                  else if (entry) openEdit(entry);
-                  else openAdd(dateStr);
-                }
-              }}
-              onContextMenu={(e) => { e.preventDefault(); togglePauseStatus(dateStr); }} // Quick pause on long press/right click
-              className={`
-                aspect-square rounded-2xl flex flex-col items-center justify-center relative transition-all border
-                ${isToday ? (settings.theme === 'dark' ? 'border-[#34D399]' : 'border-[#27AE90]') : 'border-transparent'}
-                ${isSelected ? (settings.theme === 'dark' ? 'border-[#34D399]' : 'border-[#047857]') : 
-                  entry?.isPaused ? (settings.theme === 'dark' ? 'border-dashed border-[#FBBF24]' : 'border-dashed border-[#F59E0B]') : 
-                  entry ? (settings.theme === 'dark' ? 'border-[#34D399]/30' : 'border-[#27AE90]/30') : 'border-transparent'}
-              `}
-              style={{
-                background: isSelected 
-                  ? (settings.theme === 'dark' ? '#047857' : '#A7F3D0') 
-                  : entry?.isPaused 
-                    ? (settings.theme === 'dark' ? 'rgba(245,158,11,0.2)' : '#FEF3C7') 
-                    : entry 
-                      ? (settings.theme === 'dark' ? 'rgba(167,243,208,0.2)' : 'rgba(194,240,216,0.4)') 
-                      : 'rgba(103,80,164,0.06)'
-              }}
-            >
-              <span className="text-sm font-semibold" style={{
-                color: isSelected 
-                  ? (settings.theme === 'dark' ? '#FFFFFF' : '#064E3B') 
-                  : entry?.isPaused
-                    ? (settings.theme === 'dark' ? '#FDE047' : '#78350F')
-                    : entry 
-                      ? 'var(--m3-on-surface)' 
-                      : 'var(--m3-on-surface-muted)'
-              }}>{dayNum}</span>
-              {entry && !entry.isPaused && <span className="text-[9px] font-bold" style={{color: settings.theme === 'dark' ? '#34D399' : '#27AE90'}}>{entry.qty}L</span>}
-              {entry?.isPaused && <PauseCircle size={12} className="mt-1 absolute bottom-1" style={{color: settings.theme === 'dark' ? '#FBBF24' : '#D97706'}} />}
-            </motion.button>
-          );
-        })}
-      </div>
+          {calendarDays.map((dateStr) => {
+            const entry = entries.find((e) => e.date === dateStr);
+            const isSelected = selectedDates.includes(dateStr);
+            const dayNum = parseInt(dateStr.split('-')[2], 10);
+            const isToday = dateStr === new Date().toISOString().split('T')[0];
 
-      {/* Bulk Action Bar */}
+            let bg = 'transparent';
+            let textColor = 'var(--label-primary)';
+            let border = 'none';
+
+            if (isSelected) {
+              bg = 'var(--accent)';
+              textColor = '#FFFFFF';
+            } else if (entry?.isPaused) {
+              bg = 'var(--orange-light)';
+              textColor = 'var(--orange)';
+            } else if (entry) {
+              bg = 'var(--green-light)';
+              textColor = 'var(--label-primary)';
+            } else {
+              bg = 'var(--fill-quaternary)';
+              textColor = 'var(--label-secondary)';
+            }
+
+            if (isToday && !isSelected) {
+              border = '2px solid var(--accent)';
+            }
+
+            return (
+              <button
+                key={dateStr}
+                onClick={() => {
+                  if (isSelectMode) {
+                    setSelectedDates((prev) =>
+                      prev.includes(dateStr) ? prev.filter((d) => d !== dateStr) : [...prev, dateStr]
+                    );
+                  } else {
+                    if (entry && entry.isPaused) togglePauseStatus(dateStr);
+                    else if (entry) openEdit(entry);
+                    else openAdd(dateStr);
+                  }
+                }}
+                onContextMenu={(e) => { e.preventDefault(); togglePauseStatus(dateStr); }}
+                className="aspect-square rounded-lg flex flex-col items-center justify-center relative"
+                style={{ background: bg, border, minHeight: 40 }}
+              >
+                <span className="text-[13px] font-medium" style={{ color: textColor }}>{dayNum}</span>
+                {entry && !entry.isPaused && (
+                  <span className="text-[9px] font-semibold" style={{ color: 'var(--green)' }}>
+                    {entry.qty}L
+                  </span>
+                )}
+                {entry?.isPaused && (
+                  <PauseCircle size={10} className="absolute bottom-0.5" style={{ color: 'var(--orange)' }} />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </GlassCard>
+
+      {/* ── Bulk Action Bar ───────────────── */}
       <AnimatePresence>
         {isSelectMode && selectedDates.length > 0 && (
-          <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="fixed bottom-24 left-4 right-4 z-40">
-            <motion.button whileTap={{scale:0.97}} onClick={handleBulkPause} className="w-full font-bold py-4 rounded-2xl shadow-xl flex items-center justify-center gap-2" style={{background:'linear-gradient(135deg,#FF9A5C,#E67E22)', color:'#fff'}}>
-              <PauseCircle size={20} /> Mark {selectedDates.length} {selectedDates.length === 1 ? 'Day' : 'Days'} as Paused
-            </motion.button>
+          <motion.div
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 50, opacity: 0 }}
+            className="fixed bottom-24 left-4 right-4 z-40 max-w-md mx-auto"
+          >
+            <button
+              onClick={handleBulkPause}
+              className="w-full font-semibold py-3.5 rounded-xl flex items-center justify-center gap-2 text-[15px] text-white"
+              style={{ background: 'var(--orange)' }}
+            >
+              <PauseCircle size={18} />
+              Mark {selectedDates.length} {selectedDates.length === 1 ? 'Day' : 'Days'} as Paused
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* List View (Recent) */}
-      <div className="mt-8">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-base font-bold" style={{color:'var(--m3-on-surface)'}}>Entries List</h3>
-          <motion.button
-            whileTap={{scale:0.95}}
-            onClick={() => setIsListExpanded(!isListExpanded)}
-            className="text-sm font-semibold px-4 py-1.5 rounded-full"
-            style={{
-              background: 'var(--m3-input-bg)', 
-              color: 'var(--m3-on-surface)',
-              border: '1px solid var(--m3-input-border)'
-            }}
+      {/* ── Entries List ──────────────────── */}
+      <div className="mt-2">
+        <div className="flex justify-between items-center mb-3">
+          <p className="text-[13px] font-semibold uppercase tracking-wider" style={{ color: 'var(--label-tertiary)' }}>
+            Entries
+          </p>
+          <button
+            onClick={() => openAdd()}
+            className="text-[13px] font-medium px-3 py-1 rounded-full flex items-center gap-1"
+            style={{ background: 'var(--accent)', color: '#fff' }}
           >
-            {isListExpanded ? 'Collapse' : 'Expand'}
-          </motion.button>
+            <Plus size={14} /> Add
+          </button>
         </div>
-        
-        <AnimatePresence>
-          {isListExpanded && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden"
-            >
-              {entries.length === 0 && <p className="text-center py-4 text-sm" style={{color:'var(--m3-on-surface-muted)'}}>No entries this month.</p>}
-              {entries.map(entry => (
-                <SwipeableItem key={entry.id} onDelete={() => setDeleteConfirmId(entry.id)} onEdit={() => openEdit(entry)}>
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center`} style={{background: entry.isPaused ? 'var(--m3-error-container)' : 'var(--m3-primary-container)', color: entry.isPaused ? 'var(--m3-on-error-container)' : 'var(--m3-on-primary-container)'}}>
-                        {entry.isPaused ? <PauseCircle size={20}/> : <Droplet size={20}/>}
-                      </div>
-                      <div>
-                        <p className="font-semibold" style={{color:'var(--m3-on-surface)'}}>{new Date(entry.date).toLocaleDateString('en-US', {day: 'numeric', month: 'short'})}</p>
-                        <p className="text-xs" style={{color:'var(--m3-on-surface-muted)'}}>{entry.isPaused ? 'Paused' : `${entry.qty}L @ ${settings.currency}${entry.price}`}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold" style={{color: entry.isPaused ? 'var(--m3-on-surface-muted)' : 'var(--m3-on-surface)'}}>
-                         {entry.isPaused ? '-' : `${settings.currency}${Number(entry.total).toFixed(2)}`}
-                       </p>
-                    </div>
-                  </div>
-                </SwipeableItem>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
+
+        {entries.length === 0 && (
+          <p className="text-center py-6 text-[13px]" style={{ color: 'var(--label-secondary)' }}>
+            No entries this month.
+          </p>
+        )}
+
+        {entries.map((entry) => (
+          <SwipeableItem key={entry.id} onDelete={() => setDeleteConfirmId(entry.id)} onEdit={() => openEdit(entry)}>
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center"
+                  style={{
+                    background: entry.isPaused ? 'var(--orange-light)' : 'var(--accent-light)',
+                    color: entry.isPaused ? 'var(--orange)' : 'var(--accent)',
+                  }}
+                >
+                  {entry.isPaused ? <PauseCircle size={18} /> : <Droplet size={18} />}
+                </div>
+                <div>
+                  <p className="text-[15px] font-medium" style={{ color: 'var(--label-primary)' }}>
+                    {new Date(entry.date).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}
+                  </p>
+                  <p className="text-[12px]" style={{ color: 'var(--label-secondary)' }}>
+                    {entry.isPaused ? 'Paused' : `${entry.qty}L @ ${settings.currency}${entry.price}`}
+                  </p>
+                </div>
+              </div>
+              <p className="text-[15px] font-semibold tabular-nums" style={{ color: entry.isPaused ? 'var(--label-tertiary)' : 'var(--label-primary)' }}>
+                {entry.isPaused ? '—' : `${settings.currency}${Number(entry.total).toFixed(2)}`}
+              </p>
+            </div>
+          </SwipeableItem>
+        ))}
       </div>
 
-      {/* Add/Edit Modal */}
-      <BottomSheet 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        title={editingEntry ? "Edit Milk Entry" : "Add Milk Entry"}
+      {/* ── Add/Edit Modal ────────────────── */}
+      <BottomSheet
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={editingEntry ? 'Edit Milk Entry' : 'Add Milk Entry'}
         isCentered={true}
       >
         <div className="space-y-4">
           <div>
-            <label className="text-xs font-semibold uppercase tracking-wider pl-1" style={{color:'#6750A4'}}>Date</label>
-            <input 
-              type="date" 
-              value={formData.date} 
-              onChange={e => {
+            <label className="text-[11px] font-semibold uppercase tracking-wider pl-0.5" style={{ color: 'var(--accent)' }}>
+              Date
+            </label>
+            <input
+              type="date"
+              value={formData.date}
+              onChange={(e) => {
                 const newDate = e.target.value;
                 if (!editingEntry) {
                   setFormData({
                     date: newDate,
                     qty: getEffectiveMilkQty(newDate, settings),
-                    price: getEffectiveMilkPrice(newDate, settings)
+                    price: getEffectiveMilkPrice(newDate, settings),
                   });
                 } else {
                   setFormData({ ...formData, date: newDate });
                 }
-              }} 
-              className="m3-input mt-1 text-sm" 
+              }}
+              className="m3-input mt-1 text-[15px]"
             />
           </div>
-          <div className="flex flex-col gap-4">
-            <div className="min-w-0">
-              <label className="text-xs font-semibold uppercase tracking-wider pl-1" style={{color:'#6750A4'}}>Quantity (L)</label>
-              <input type="number" step="0.5" value={formData.qty} onChange={e => setFormData({...formData, qty: e.target.value})} className="m3-input mt-1 text-xl font-bold" />
-            </div>
-            <div className="min-w-0">
-              <label className="text-xs font-semibold uppercase tracking-wider pl-1" style={{color:'#6750A4'}}>Price/L</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{color:'var(--m3-on-surface-muted)'}}>{settings.currency}</span>
-                <input type="number" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="m3-input mt-1 pl-7 text-xl font-bold" />
-              </div>
+          <div>
+            <label className="text-[11px] font-semibold uppercase tracking-wider pl-0.5" style={{ color: 'var(--accent)' }}>
+              Quantity (L)
+            </label>
+            <input
+              type="number"
+              step="0.5"
+              value={formData.qty}
+              onChange={(e) => setFormData({ ...formData, qty: e.target.value })}
+              className="m3-input mt-1 text-xl font-semibold"
+            />
+          </div>
+          <div>
+            <label className="text-[11px] font-semibold uppercase tracking-wider pl-0.5" style={{ color: 'var(--accent)' }}>
+              Price / L
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px]" style={{ color: 'var(--label-secondary)' }}>
+                {settings.currency}
+              </span>
+              <input
+                type="number"
+                value={formData.price}
+                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                className="m3-input mt-1 pl-7 text-xl font-semibold"
+              />
             </div>
           </div>
-          <div className="pt-4 flex gap-3">
-             {editingEntry && (
-                <motion.button whileTap={{scale:0.97}} onClick={() => handleDelete(editingEntry.id)} className="flex-1 font-bold py-4 rounded-2xl" style={{background:'#FFEBEB', color:'#C0392B'}}>Delete</motion.button>
-             )}
-            <motion.button whileTap={{scale:0.97}} onClick={handleSave} className="flex-[2] font-bold py-4 rounded-2xl" style={{background:'linear-gradient(135deg,#6750A4,#4A90D9)', color:'#fff', boxShadow:'0 4px 16px rgba(103,80,164,0.3)'}}>
+          <div className="pt-3 flex gap-2.5">
+            {editingEntry && (
+              <button
+                onClick={() => handleDelete(editingEntry.id)}
+                className="flex-1 font-semibold py-3 rounded-xl text-[15px]"
+                style={{ background: 'var(--red-light)', color: 'var(--red)' }}
+              >
+                Delete
+              </button>
+            )}
+            <button
+              onClick={handleSave}
+              className="flex-[2] font-semibold py-3 rounded-xl text-[15px] text-white"
+              style={{ background: 'var(--accent)' }}
+            >
               Save Entry
-            </motion.button>
+            </button>
           </div>
         </div>
       </BottomSheet>
 
-      {/* Delete Confirmation Modal */}
-      <BottomSheet 
-        isOpen={deleteConfirmId !== null} 
-        onClose={() => setDeleteConfirmId(null)} 
-        title="Delete Record?" 
+      {/* ── Delete Confirmation ────────────── */}
+      <BottomSheet
+        isOpen={deleteConfirmId !== null}
+        onClose={() => setDeleteConfirmId(null)}
+        title="Delete Record?"
         isCentered={true}
       >
         <div className="space-y-4">
-          <p style={{ color: 'var(--m3-on-surface-variant)' }}>
+          <p className="text-[15px]" style={{ color: 'var(--label-secondary)' }}>
             Are you sure you want to delete this milk entry? This action cannot be undone.
           </p>
-          <div className="flex gap-3 mt-4">
-            <motion.button 
-              whileTap={{ scale: 0.97 }} 
-              onClick={() => setDeleteConfirmId(null)} 
-              className="flex-1 font-bold py-3.5 rounded-2xl border" 
-              style={{ background: 'var(--m3-input-bg)', borderColor: 'var(--m3-input-border)', color: 'var(--m3-on-surface)' }}
+          <div className="flex gap-2.5 mt-4">
+            <button
+              onClick={() => setDeleteConfirmId(null)}
+              className="flex-1 font-semibold py-3 rounded-xl text-[15px]"
+              style={{ background: 'var(--fill-tertiary)', color: 'var(--label-primary)' }}
             >
               Cancel
-            </motion.button>
-            <motion.button 
-              whileTap={{ scale: 0.97 }} 
-              onClick={() => { handleDelete(deleteConfirmId); setDeleteConfirmId(null); }} 
-              className="flex-1 font-bold py-3.5 rounded-2xl text-white" 
-              style={{ background: '#E05C5C' }}
+            </button>
+            <button
+              onClick={() => { handleDelete(deleteConfirmId); setDeleteConfirmId(null); }}
+              className="flex-1 font-semibold py-3 rounded-xl text-[15px] text-white"
+              style={{ background: 'var(--red)' }}
             >
               Delete
-            </motion.button>
+            </button>
           </div>
         </div>
       </BottomSheet>
@@ -471,5 +485,14 @@ function MilkView({ filterDate, setFilterDate, settings }) {
   );
 }
 
+/* ── Compact stat cell ───────────────── */
+function StatCell({ label, value, color }) {
+  return (
+    <div className="text-center">
+      <p className="text-[10px] uppercase tracking-wider mb-0.5" style={{ color: 'var(--label-tertiary)' }}>{label}</p>
+      <p className="text-[15px] font-bold tabular-nums" style={{ color: color || 'var(--label-primary)' }}>{value}</p>
+    </div>
+  );
+}
 
 export default MilkView;

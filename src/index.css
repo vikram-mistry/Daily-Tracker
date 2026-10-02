@@ -1,79 +1,78 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Display:wght@400;500;700&display=swap');
 
 /* ==========================================
-   MATERIAL YOU — LIGHT THEME (DEFAULT)
+   APPLE HIG-INSPIRED — LIGHT THEME (DEFAULT)
    ========================================== */
 :root,
 [data-theme="light"] {
+  /* System Backgrounds */
+  --bg: #F2F2F7;
+  --bg-secondary: #FFFFFF;
+
   /* Surfaces */
-  --m3-bg: linear-gradient(160deg, #F0EBFF 0%, #E8F4FF 40%, #E8FFF4 100%);
-  --m3-bg-app: linear-gradient(160deg, #F8F4FF 0%, #EEF6FF 50%, #F0FFF8 100%);
-  --m3-card: rgba(255, 255, 255, 0.85);
-  --m3-card-inner: #FFFFFF;
-  --m3-card-border: rgba(255, 255, 255, 0.6);
-  --m3-card-shadow: 0 2px 16px rgba(103, 80, 164, 0.10);
-  --m3-sheet-bg: #FFFFFF;
-  --m3-sheet-border: #EDE7F6;
-  --m3-swipe-outer: #F0EBFF;
-  --m3-swipe-inner: #FFFFFF;
-  --m3-swipe-inner-border: #EDE7F6;
-  --m3-swipe-inner-shadow: 0 1px 6px rgba(103, 80, 164, 0.08);
-  --m3-nav-gradient: linear-gradient(to top, rgba(248,244,255,1) 60%, rgba(248,244,255,0) 100%);
-  --m3-nav-bg: rgba(255, 255, 255, 0.72);
-  --m3-nav-border: rgba(237, 231, 246, 0.8);
-  --m3-nav-shadow: 0 4px 24px rgba(103, 80, 164, 0.12);
-  --m3-header-bg: rgba(248, 244, 255, 0.72);
-  --m3-header-border: rgba(103, 80, 164, 0.08);
-  --m3-fab-border: rgba(248, 244, 255, 1);
-  --m3-input-bg: #F3EEFF;
-  --m3-input-border: #D0B8FF;
-  --m3-select-bg: #F3EEFF;
-  --m3-select-border: #D0B8FF;
+  --surface: #FFFFFF;
+  --surface-border: rgba(0, 0, 0, 0.04);
+  --surface-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.03);
 
-  /* Material You Containers */
-  --m3-primary-container: #EADDFF;
-  --m3-on-primary-container: #21005D;
-  --m3-error-container: #F9DEDC;
-  --m3-on-error-container: #410E0B;
+  /* Sheet */
+  --sheet-bg: #FFFFFF;
+  --sheet-border: rgba(0, 0, 0, 0.06);
+  --sheet-shadow: 0 -1px 40px rgba(0, 0, 0, 0.12);
+  --sheet-handle: rgba(60, 60, 67, 0.3);
 
-  /* Text */
-  --m3-on-surface: #1C1B1F;
-  --m3-on-surface-variant: #49454F;
-  --m3-on-surface-muted: #79747E;
+  /* Navigation */
+  --nav-bg: rgba(249, 249, 249, 0.94);
+  --nav-border: rgba(0, 0, 0, 0.15);
+  --nav-active: #007AFF;
+  --nav-inactive: #8E8E93;
 
-  /* Dividers */
-  --m3-divider: rgba(103, 80, 164, 0.08);
-  --m3-card-divider: rgba(103, 80, 164, 0.12);
+  /* Header */
+  --header-bg: rgba(242, 242, 247, 0.94);
+  --header-border: rgba(0, 0, 0, 0.15);
 
-  /* Nav icon */
-  --m3-nav-icon-active-bg: #EADDFF;
-  --m3-nav-icon-active-color: #6750A4;
-  --m3-nav-icon-color: #79747E;
+  /* Labels */
+  --label-primary: #000000;
+  --label-secondary: rgba(60, 60, 67, 0.6);
+  --label-tertiary: rgba(60, 60, 67, 0.3);
 
-  /* Icon button */
-  --m3-icon-btn-active-bg: #EADDFF;
-  --m3-icon-btn-active-color: #6750A4;
-  --m3-icon-btn-bg: #F3EEFF;
-  --m3-icon-btn-color: #79747E;
-  --m3-icon-btn-hover: #EDE7F6;
+  /* System Colors */
+  --accent: #007AFF;
+  --accent-light: rgba(0, 122, 255, 0.1);
+  --green: #34C759;
+  --green-light: rgba(52, 199, 89, 0.1);
+  --orange: #FF9500;
+  --orange-light: rgba(255, 149, 0, 0.1);
+  --red: #FF3B30;
+  --red-light: rgba(255, 59, 48, 0.1);
+  --yellow: #FFCC00;
+  --teal: #5AC8FA;
 
-  /* Close button */
-  --m3-close-btn-bg: #F3EEFF;
-  --m3-close-btn-color: #6750A4;
+  /* Fills */
+  --fill-primary: rgba(120, 120, 128, 0.2);
+  --fill-secondary: rgba(120, 120, 128, 0.16);
+  --fill-tertiary: rgba(118, 118, 128, 0.12);
+  --fill-quaternary: rgba(116, 116, 128, 0.08);
 
-  /* Section label */
-  --m3-section-label: #79747E;
+  /* Separators */
+  --separator: rgba(60, 60, 67, 0.12);
+  --separator-opaque: #C6C6C8;
 
-  /* Scrollbar */
-  --m3-scrollbar: rgba(103, 80, 164, 0.2);
+  /* Input */
+  --input-bg: rgba(118, 118, 128, 0.12);
+  --input-border: transparent;
+  --input-focus: var(--accent);
 
-  font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  line-height: 1.5;
+  /* Swipe */
+  --swipe-outer-bg: rgba(118, 118, 128, 0.08);
+  --swipe-inner-bg: #FFFFFF;
+  --swipe-inner-border: rgba(0, 0, 0, 0.06);
+
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
+  line-height: 1.47;
   font-weight: 400;
   color-scheme: light;
-  color: var(--m3-on-surface);
-  background: var(--m3-bg);
+  color: var(--label-primary);
+  background: var(--bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -81,74 +80,63 @@
 }
 
 /* ==========================================
-   MATERIAL YOU — DARK THEME
+   APPLE HIG-INSPIRED — DARK THEME
    ========================================== */
 [data-theme="dark"] {
-  /* Surfaces */
-  --m3-bg: linear-gradient(160deg, #12101A 0%, #0E1520 40%, #0F1A14 100%);
-  --m3-bg-app: linear-gradient(160deg, #1A1825 0%, #131C2A 50%, #131A18 100%);
-  --m3-card: rgba(35, 32, 48, 0.90);
-  --m3-card-inner: #211E2E;
-  --m3-card-border: rgba(103, 80, 164, 0.25);
-  --m3-card-shadow: 0 2px 20px rgba(0, 0, 0, 0.4);
-  --m3-sheet-bg: #211E2E;
-  --m3-sheet-border: rgba(103, 80, 164, 0.3);
-  --m3-swipe-outer: #2D2840;
-  --m3-swipe-inner: #2A2740;
-  --m3-swipe-inner-border: rgba(103, 80, 164, 0.2);
-  --m3-swipe-inner-shadow: 0 1px 8px rgba(0,0,0,0.3);
-  --m3-nav-gradient: linear-gradient(to top, rgba(18,16,26,1) 60%, rgba(18,16,26,0) 100%);
-  --m3-nav-bg: rgba(30, 27, 44, 0.65);
-  --m3-nav-border: rgba(103, 80, 164, 0.35);
-  --m3-nav-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
-  --m3-header-bg: rgba(26, 24, 37, 0.65);
-  --m3-header-border: rgba(103, 80, 164, 0.15);
-  --m3-fab-border: rgba(18, 16, 26, 1);
-  --m3-input-bg: #2D2840;
-  --m3-input-border: #4A4565;
-  --m3-select-bg: #2D2840;
-  --m3-select-border: #4A4565;
+  --bg: #000000;
+  --bg-secondary: #1C1C1E;
 
-  /* Material You Containers */
-  --m3-primary-container: #4F378B;
-  --m3-on-primary-container: #EADDFF;
-  --m3-error-container: #8C1D18;
-  --m3-on-error-container: #F9DEDC;
+  --surface: #1C1C1E;
+  --surface-border: rgba(255, 255, 255, 0.08);
+  --surface-shadow: none;
 
-  /* Text */
-  --m3-on-surface: #E8E0FF;
-  --m3-on-surface-variant: #C4BCDB;
-  --m3-on-surface-muted: #9D97B4;
+  --sheet-bg: #2C2C2E;
+  --sheet-border: rgba(255, 255, 255, 0.08);
+  --sheet-shadow: 0 -1px 40px rgba(0, 0, 0, 0.5);
+  --sheet-handle: rgba(235, 235, 245, 0.3);
 
-  /* Dividers */
-  --m3-divider: rgba(103, 80, 164, 0.15);
-  --m3-card-divider: rgba(103, 80, 164, 0.2);
+  --nav-bg: rgba(28, 28, 30, 0.94);
+  --nav-border: rgba(255, 255, 255, 0.08);
+  --nav-active: #0A84FF;
+  --nav-inactive: #8E8E93;
 
-  /* Nav icon */
-  --m3-nav-icon-active-bg: rgba(103, 80, 164, 0.3);
-  --m3-nav-icon-active-color: #D0BCFF;
-  --m3-nav-icon-color: #9D97B4;
+  --header-bg: rgba(0, 0, 0, 0.94);
+  --header-border: rgba(255, 255, 255, 0.08);
 
-  /* Icon button */
-  --m3-icon-btn-active-bg: rgba(103, 80, 164, 0.3);
-  --m3-icon-btn-active-color: #D0BCFF;
-  --m3-icon-btn-bg: rgba(103, 80, 164, 0.15);
-  --m3-icon-btn-color: #9D97B4;
-  --m3-icon-btn-hover: rgba(103, 80, 164, 0.25);
+  --label-primary: #FFFFFF;
+  --label-secondary: rgba(235, 235, 245, 0.6);
+  --label-tertiary: rgba(235, 235, 245, 0.3);
 
-  /* Close button */
-  --m3-close-btn-bg: rgba(103, 80, 164, 0.25);
-  --m3-close-btn-color: #D0BCFF;
+  --accent: #0A84FF;
+  --accent-light: rgba(10, 132, 255, 0.15);
+  --green: #30D158;
+  --green-light: rgba(48, 209, 88, 0.15);
+  --orange: #FF9F0A;
+  --orange-light: rgba(255, 159, 10, 0.15);
+  --red: #FF453A;
+  --red-light: rgba(255, 69, 58, 0.15);
+  --yellow: #FFD60A;
+  --teal: #64D2FF;
 
-  /* Section label */
-  --m3-section-label: #9D97B4;
+  --fill-primary: rgba(120, 120, 128, 0.36);
+  --fill-secondary: rgba(120, 120, 128, 0.32);
+  --fill-tertiary: rgba(118, 118, 128, 0.24);
+  --fill-quaternary: rgba(116, 116, 128, 0.18);
 
-  /* Scrollbar */
-  --m3-scrollbar: rgba(103, 80, 164, 0.3);
+  --separator: rgba(84, 84, 88, 0.65);
+  --separator-opaque: #38383A;
+
+  --input-bg: rgba(118, 118, 128, 0.24);
+  --input-border: transparent;
+  --input-focus: var(--accent);
+
+  --swipe-outer-bg: rgba(118, 118, 128, 0.16);
+  --swipe-inner-bg: #2C2C2E;
+  --swipe-inner-border: rgba(255, 255, 255, 0.08);
 
   color-scheme: dark;
-  color: var(--m3-on-surface);
-  background: var(--m3-bg);
+  color: var(--label-primary);
+  background: var(--bg);
 }
 
 /* ==========================================
@@ -160,15 +148,14 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
-  background: var(--m3-bg);
-  transition: background 0.3s ease;
+  background: var(--bg);
 }
 
 #root {
   width: 100%;
 }
 
-/* Safari specific tweaks for PWA */
+/* Safari PWA viewport */
 @supports (-webkit-touch-callout: none) {
   .min-h-screen {
     min-height: -webkit-fill-available;
@@ -189,66 +176,40 @@ html, body {
 }
 
 /* ==========================================
-   WAVE ANIMATIONS
-   ========================================== */
-@layer utilities {
-  .animate-wave { animation: wave 3s linear infinite; }
-  .animate-wave-slow { animation: wave 6s linear infinite; }
-}
-
-@keyframes wave {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-
-@keyframes wave-slow {
-  0% { transform: translateX(-50%); }
-  100% { transform: translateX(0); }
-}
-
-/* ==========================================
-   CUSTOM SCROLLBAR
-   ========================================== */
-.custom-scrollbar::-webkit-scrollbar { width: 4px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--m3-scrollbar);
-  border-radius: 10px;
-}
-
-/* ==========================================
-   MATERIAL YOU — STRUCTURAL COMPONENTS
+   COMPONENT CLASSES
    ========================================== */
 @layer components {
-  /* M3 Card */
+  /* Card surface */
   .m3-card {
-    background: var(--m3-card);
-    border: 1px solid var(--m3-card-border);
-    box-shadow: var(--m3-card-shadow);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-radius: 24px;
+    background: var(--surface);
+    border: 0.5px solid var(--surface-border);
+    box-shadow: var(--surface-shadow);
+    border-radius: 12px;
     overflow: hidden;
   }
 
-  /* M3 Input */
+  /* Text input */
   .m3-input {
     display: block;
     box-sizing: border-box;
     min-width: 0;
-    background: var(--m3-input-bg);
-    border: 1.5px solid var(--m3-input-border);
-    color: var(--m3-on-surface);
-    border-radius: 16px;
-    padding: 12px 16px;
     width: 100%;
+    background: var(--input-bg);
+    border: 1.5px solid var(--input-border);
+    color: var(--label-primary);
+    border-radius: 10px;
+    padding: 11px 14px;
     outline: none;
     font-family: inherit;
     font-size: 16px; /* 16px prevents iOS zoom on focus */
-    transition: border-color 0.2s ease;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
 
-  /* Specific handling for date inputs to ensure they match width of text inputs */
+  .m3-input:focus {
+    border-color: var(--input-focus);
+    box-shadow: 0 0 0 3px var(--accent-light);
+  }
+
   input[type="date"].m3-input,
   input[type="number"].m3-input,
   input[type="text"].m3-input {
@@ -259,55 +220,46 @@ html, body {
   }
 
   input[type="date"].m3-input {
-    min-height: 52px;
+    min-height: 48px;
   }
 
-  .m3-input:focus {
-    border-color: #6750A4;
-  }
-
-  /* M3 Select */
+  /* Select */
   .m3-select {
     box-sizing: border-box;
     min-width: 0;
-    background: var(--m3-select-bg);
-    border: 1.5px solid var(--m3-select-border);
-    color: var(--m3-on-surface);
-    border-radius: 12px;
-    padding: 8px;
     width: 100%;
+    background: var(--input-bg);
+    border: 1.5px solid var(--input-border);
+    color: var(--label-primary);
+    border-radius: 10px;
+    padding: 8px 10px;
     outline: none;
     font-family: inherit;
+    font-size: 16px;
     appearance: none;
   }
 
-  /* M3 Swipe Item */
+  /* Bottom sheet */
+  .m3-sheet {
+    background: var(--sheet-bg);
+    border: 0.5px solid var(--sheet-border);
+    box-shadow: var(--sheet-shadow);
+  }
+
+  /* Swipe item */
   .m3-swipe-outer {
-    background: var(--m3-swipe-outer);
+    background: var(--swipe-outer-bg);
   }
 
   .m3-swipe-inner {
-    background: var(--m3-swipe-inner) !important;
-    border: 1px solid var(--m3-swipe-inner-border) !important;
-    box-shadow: var(--m3-swipe-inner-shadow) !important;
+    background: var(--swipe-inner-bg) !important;
+    border: 0.5px solid var(--swipe-inner-border) !important;
+    box-shadow: var(--surface-shadow) !important;
   }
-
-  /* M3 Bottom Sheet */
-  .m3-sheet {
-    background: var(--m3-sheet-bg);
-    border: 1px solid var(--m3-sheet-border);
-    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.25);
-  }
-
-  /* M3 text utilities */
-  .m3-text-primary { color: var(--m3-on-surface); }
-  .m3-text-secondary { color: var(--m3-on-surface-variant); }
-  .m3-text-muted { color: var(--m3-on-surface-muted); }
-  .m3-divider { border-color: var(--m3-divider); }
 }
 
 /* ==========================================
-   INPUT DATE/NUMBER COLOR SCHEME
+   DATE/NUMBER INPUT COLOR SCHEME
    ========================================== */
 [data-theme="light"] input[type="date"],
 [data-theme="light"] input[type="number"],
@@ -326,35 +278,50 @@ html, body {
 }
 
 [data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(30%) sepia(20%) saturate(400%) hue-rotate(245deg);
-  opacity: 0.6;
+  filter: invert(25%) sepia(50%) saturate(800%) hue-rotate(200deg);
+  opacity: 0.5;
   cursor: pointer;
 }
 
 [data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(80%) sepia(10%) saturate(300%) hue-rotate(245deg);
-  opacity: 0.7;
+  filter: invert(75%) sepia(10%) saturate(300%) hue-rotate(200deg);
+  opacity: 0.6;
   cursor: pointer;
 }
 
 /* ==========================================
-   LOADING PULSE ANIMATION
+   LOADING SPINNER
    ========================================== */
-@keyframes m3-pulse-soft {
-  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(103,80,164,0.2); }
-  50% { transform: scale(1.02); box-shadow: 0 0 0 8px rgba(103,80,164,0); }
+@keyframes ios-spin {
+  to { transform: rotate(360deg); }
 }
 
-.m3-pulse { animation: m3-pulse-soft 2.5s ease-in-out infinite; }
+.ios-spinner {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2.5px solid var(--fill-tertiary);
+  border-top-color: var(--accent);
+  animation: ios-spin 0.7s linear infinite;
+}
 
 /* ==========================================
-   SMOOTH THEME TRANSITION
+   REDUCED MOTION
    ========================================== */
-* {
-  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
-/* Exclude animations from blanket transition */
-.animate-wave, .animate-wave-slow, .m3-pulse {
-  transition: none;
+/* ==========================================
+   CUSTOM SCROLLBAR
+   ========================================== */
+.custom-scrollbar::-webkit-scrollbar { width: 3px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--fill-secondary);
+  border-radius: 10px;
 }

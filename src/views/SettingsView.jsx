@@ -1,26 +1,30 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { createPortal } from 'react-dom';
-import { motion, AnimatePresence, useAnimation } from 'framer-motion';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  Milk, Flame, Plus, Settings, Calendar, ChevronLeft, ChevronRight, 
-  Trash2, Edit3, X, Check, Droplet, PauseCircle, PlayCircle, Download, Upload, Info, Share2,
-  LogIn, LogOut, RefreshCw, Clock, History, CheckCircle2
+  Plus, Calendar, Trash2, Edit3, Droplet, Download, Upload, Info, 
+  ChevronRight, CheckCircle2, ShieldAlert
 } from 'lucide-react';
 import { db, getEffectiveMilkPrice, getEffectiveMilkQty, reconcileMilkPriceFromDate, reconcileMilkQtyFromDate } from '../db';
-import { GlassCard, SwipeableItem, BottomSheet, StickyHeader } from '../components/UI';
+import { GlassCard, BottomSheet, StickyHeader } from '../components/UI';
 import { auth, provider, signInWithPopup, signOut } from '../firebase';
 
-// Static top-level component to avoid re-mounting inputs on parent re-render (fixes keyboard blur bug)
-const SettingBlock = ({ label, children }) => (
-  <div className="flex justify-between items-center py-4 last:border-0" style={{ borderBottom: '1px solid var(--m3-divider)' }}>
-    <span className="font-medium" style={{ color: 'var(--m3-on-surface)' }}>{label}</span>
-    <div className="w-1/2 text-right">{children}</div>
+// Static iOS grouped table row
+const SettingsRow = ({ label, children, isLast = false, isDestructive = false }) => (
+  <div 
+    className="flex justify-between items-center py-3 px-4 min-h-[44px]" 
+    style={{ borderBottom: isLast ? 'none' : '0.5px solid var(--separator)' }}
+  >
+    <span 
+      className="text-[15px] font-normal" 
+      style={{ color: isDestructive ? 'var(--red)' : 'var(--label-primary)' }}
+    >
+      {label}
+    </span>
+    <div className="flex items-center justify-end">{children}</div>
   </div>
 );
 
 function SettingsView({ settings, updateSettings, db }) {
   const [user, setUser] = useState(auth.currentUser);
-  const [syncing, setSyncing] = useState(false);
 
   // Local draft states for general & gas inputs to prevent keyboard blur
   const [currencyDraft, setCurrencyDraft] = useState(settings.currency ?? '₹');
@@ -54,44 +58,9 @@ function SettingsView({ settings, updateSettings, db }) {
   });
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((u) => {
-      setUser(u);
-    });
+    const unsubscribe = auth.onAuthStateChanged((u) => setUser(u));
     return unsubscribe;
   }, []);
-
-  const handleGoogleLogin = async () => {
-    try {
-      await signInWithPopup(auth, provider);
-      alert('Logged in successfully! Syncing your data...');
-    } catch (e) {
-      alert('Login failed: ' + e.message);
-    }
-  };
-
-  const handleSignOut = async () => {
-    if (window.confirm('Are you sure you want to sign out? Your offline data remains safe.')) {
-      try {
-        await signOut(auth);
-        setUser(null);
-        alert('Logged out successfully.');
-      } catch (e) {
-        alert('Sign out failed.');
-      }
-    }
-  };
-
-  const handleSync = async () => {
-    setSyncing(true);
-    try {
-      await db.syncUpAndDown();
-      alert('Sync Complete!');
-    } catch (e) {
-      alert('Sync failed: ' + e.message);
-    } finally {
-      setSyncing(false);
-    }
-  };
 
   const handleExport = async () => {
     try {
@@ -336,234 +305,236 @@ function SettingsView({ settings, updateSettings, db }) {
   };
 
   return (
-    <div className="pb-8">
+    <div className="pb-12">
       <StickyHeader title="Settings" hideMonthFilter={true} />
 
       <div className="space-y-6">
-        {/* General Settings */}
+        {/* ── General Section ────────────── */}
         <section>
-          <h3 className="text-xs font-bold uppercase tracking-widest pl-4 mb-2" style={{ color: '#79747E' }}>General</h3>
-          <GlassCard className="px-5">
-            <SettingBlock label="Currency Symbol">
-              <div className="flex items-center justify-end gap-2">
-                <input 
-                  type="text" 
-                  value={currencyDraft} 
-                  onChange={e => setCurrencyDraft(e.target.value)} 
-                  onBlur={commitCurrency}
-                  onKeyDown={e => e.key === 'Enter' && commitCurrency()}
-                  className="m3-input text-right w-12" 
-                  style={{ padding: '8px', borderRadius: '12px' }} 
-                />
-                <span className="text-sm font-medium" style={{ color: 'var(--m3-on-surface-muted)' }}>Symbol</span>
-              </div>
-            </SettingBlock>
-            <SettingBlock label="Theme">
-              <select value={settings.theme} onChange={e => updateSettings({ theme: e.target.value })} className="m3-select text-right">
-                <option value="light">Light Mode</option>
-                <option value="dark">Dark Mode</option>
+          <p className="text-[12px] font-semibold uppercase tracking-wider pl-4 mb-2" style={{ color: 'var(--label-tertiary)' }}>
+            General
+          </p>
+          <GlassCard>
+            <SettingsRow label="Currency Symbol">
+              <input 
+                type="text" 
+                value={currencyDraft} 
+                onChange={e => setCurrencyDraft(e.target.value)} 
+                onBlur={commitCurrency}
+                onKeyDown={e => e.key === 'Enter' && commitCurrency()}
+                className="text-right font-medium w-14 py-1 px-2 rounded-lg"
+                style={{ background: 'var(--fill-tertiary)', color: 'var(--label-primary)' }}
+              />
+            </SettingsRow>
+            <SettingsRow label="Appearance" isLast={true}>
+              <select 
+                value={settings.theme} 
+                onChange={e => updateSettings({ theme: e.target.value })} 
+                className="text-right font-medium py-1 px-2 rounded-lg appearance-none cursor-pointer"
+                style={{ background: 'var(--fill-tertiary)', color: 'var(--label-primary)' }}
+              >
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
               </select>
-            </SettingBlock>
+            </SettingsRow>
           </GlassCard>
         </section>
 
-        {/* Milk Settings */}
+        {/* ── Milk Rates & Delivery Schedule ── */}
         <section>
-          <div className="pl-4 pr-1 mb-2">
-            <h3 className="text-xs font-bold uppercase tracking-widest" style={{ color: '#79747E' }}>Milk Rates &amp; Delivery Schedule</h3>
-            <p className="text-[11px] mt-0.5" style={{ color: 'var(--m3-on-surface-muted)' }}>
-              Scheduled rates &amp; quantities automatically pre-fill as defaults when adding entries in the Milk tab.
+          <div className="px-4 mb-2">
+            <p className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: 'var(--label-tertiary)' }}>
+              Milk Rates &amp; Schedule
+            </p>
+            <p className="text-[12px] mt-0.5" style={{ color: 'var(--label-secondary)' }}>
+              Scheduled rates &amp; quantities pre-fill as defaults for milk delivery logs.
             </p>
           </div>
 
           {/* Price Rate Schedule */}
-          <div className="mb-5">
-            <div className="flex justify-between items-center pl-4 pr-2 mb-2">
-              <div className="min-w-0 pr-2">
-                <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#79747E' }}>Price Rate Schedule</span>
-                <p className="text-[12px] font-semibold" style={{ color: '#6750A4' }}>
-                  Current Rate: {settings.currency}{currentActiveRate} / L
-                </p>
-              </div>
-              <motion.button 
-                whileTap={{ scale: 0.95 }}
+          <div className="mb-4">
+            <div className="flex justify-between items-center px-4 mb-2">
+              <span className="text-[13px] font-medium" style={{ color: 'var(--accent)' }}>
+                Active Rate: {settings.currency}{currentActiveRate} / L
+              </span>
+              <button 
                 onClick={openAddPriceModal}
-                className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm whitespace-nowrap flex-shrink-0"
-                style={{ background: 'linear-gradient(135deg, #6750A4, #4A90D9)', color: '#fff' }}
+                className="text-[12px] font-semibold px-3 py-1 rounded-full flex items-center gap-1 text-white"
+                style={{ background: 'var(--accent)' }}
               >
-                <Plus size={14} /> Change Rate
-              </motion.button>
+                <Plus size={13} strokeWidth={2.5} /> Change Rate
+              </button>
             </div>
 
-            <GlassCard className="p-3">
+            <GlassCard className="p-2 space-y-1.5">
               {sortedPriceHistory.length === 0 ? (
-                <div className="py-4 text-center">
-                  <p className="text-xs" style={{ color: 'var(--m3-on-surface-muted)' }}>
+                <div className="py-3 px-3 text-center">
+                  <p className="text-[13px]" style={{ color: 'var(--label-secondary)' }}>
                     Using base rate of {settings.currency}{currentActiveRate}/L.
-                  </p>
-                  <p className="text-[11px] mt-1 font-medium" style={{ color: '#6750A4' }}>
-                    Tap "+ Change Rate" to set a new price from a specific date.
                   </p>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {sortedPriceHistory.map((rule) => {
-                    const isActive = rule.id === activePriceRuleId;
-                    return (
-                      <div 
-                        key={rule.id} 
-                        className="flex items-center justify-between p-3 rounded-xl border transition-all"
-                        style={{
-                          background: isActive ? (settings.theme === 'dark' ? 'rgba(52, 211, 153, 0.12)' : '#E8F5E9') : 'var(--m3-input-bg)',
-                          borderColor: isActive ? (settings.theme === 'dark' ? '#34D399' : '#81C784') : 'var(--m3-input-border)'
-                        }}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm" style={{ background: 'var(--m3-primary-container)', color: 'var(--m3-on-primary-container)' }}>
-                            {settings.currency}
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-base" style={{ color: 'var(--m3-on-surface)' }}>
-                                {settings.currency}{rule.price} <span className="text-xs font-normal text-[var(--m3-on-surface-muted)]">/ L</span>
-                              </span>
-                              {isActive && (
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: '#2E7D32', color: '#fff' }}>
-                                  Active
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-xs flex items-center gap-1 mt-0.5" style={{ color: 'var(--m3-on-surface-muted)' }}>
-                              <Calendar size={11} /> From {formatDateDisplay(rule.fromDate)}
-                            </p>
-                          </div>
+                sortedPriceHistory.map((rule) => {
+                  const isActive = rule.id === activePriceRuleId;
+                  return (
+                    <div 
+                      key={rule.id} 
+                      className="flex items-center justify-between p-3 rounded-lg"
+                      style={{
+                        background: isActive ? 'var(--green-light)' : 'var(--fill-quaternary)',
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[13px]" 
+                          style={{ 
+                            background: isActive ? 'var(--green)' : 'var(--fill-tertiary)', 
+                            color: isActive ? '#fff' : 'var(--label-secondary)' 
+                          }}
+                        >
+                          {settings.currency}
                         </div>
-
-                        <div className="flex items-center gap-1">
-                          <motion.button 
-                            whileTap={{ scale: 0.9 }}
-                            onClick={() => openEditPriceModal(rule)}
-                            className="p-2 rounded-full"
-                            style={{ color: '#4A90D9' }}
-                            title="Edit"
-                          >
-                            <Edit3 size={16} />
-                          </motion.button>
-                          <motion.button 
-                            whileTap={{ scale: 0.9 }}
-                            onClick={() => handleDeletePriceRule(rule.id)}
-                            className="p-2 rounded-full"
-                            style={{ color: '#E05C5C' }}
-                            title="Delete"
-                          >
-                            <Trash2 size={16} />
-                          </motion.button>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-[15px] tabular-nums" style={{ color: 'var(--label-primary)' }}>
+                              {settings.currency}{rule.price} <span className="text-[12px] font-normal" style={{ color: 'var(--label-secondary)' }}>/ L</span>
+                            </span>
+                            {isActive && (
+                              <span 
+                                className="text-[10px] font-bold px-2 py-0.5 rounded-full" 
+                                style={{ background: 'var(--green)', color: '#fff' }}
+                              >
+                                Active
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] flex items-center gap-1 mt-0.5" style={{ color: 'var(--label-secondary)' }}>
+                            <Calendar size={11} /> From {formatDateDisplay(rule.fromDate)}
+                          </p>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
+
+                      <div className="flex items-center gap-1">
+                        <button 
+                          onClick={() => openEditPriceModal(rule)}
+                          className="p-2 rounded-full"
+                          style={{ color: 'var(--accent)' }}
+                          title="Edit"
+                        >
+                          <Edit3 size={15} />
+                        </button>
+                        <button 
+                          onClick={() => handleDeletePriceRule(rule.id)}
+                          className="p-2 rounded-full"
+                          style={{ color: 'var(--red)' }}
+                          title="Delete"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
               )}
             </GlassCard>
           </div>
 
           {/* Quantity Schedule */}
           <div>
-            <div className="flex justify-between items-center pl-4 pr-2 mb-2">
-              <div className="min-w-0 pr-2">
-                <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#79747E' }}>Quantity Schedule</span>
-                <p className="text-[12px] font-semibold" style={{ color: '#16A085' }}>
-                  Current: {currentActiveQty} L / day
-                </p>
-              </div>
-              <motion.button 
-                whileTap={{ scale: 0.95 }}
+            <div className="flex justify-between items-center px-4 mb-2">
+              <span className="text-[13px] font-medium" style={{ color: 'var(--green)' }}>
+                Active Quantity: {currentActiveQty} L / day
+              </span>
+              <button 
                 onClick={openAddQtyModal}
-                className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm whitespace-nowrap flex-shrink-0"
-                style={{ background: 'linear-gradient(135deg, #1ABC9C, #16A085)', color: '#fff' }}
+                className="text-[12px] font-semibold px-3 py-1 rounded-full flex items-center gap-1 text-white"
+                style={{ background: 'var(--green)' }}
               >
-                <Plus size={14} /> Change Qty
-              </motion.button>
+                <Plus size={13} strokeWidth={2.5} /> Change Qty
+              </button>
             </div>
 
-            <GlassCard className="p-3">
+            <GlassCard className="p-2 space-y-1.5">
               {sortedQtyHistory.length === 0 ? (
-                <div className="py-4 text-center">
-                  <p className="text-xs" style={{ color: 'var(--m3-on-surface-muted)' }}>
+                <div className="py-3 px-3 text-center">
+                  <p className="text-[13px]" style={{ color: 'var(--label-secondary)' }}>
                     Using base quantity of {currentActiveQty} L.
-                  </p>
-                  <p className="text-[11px] mt-1 font-medium" style={{ color: '#16A085' }}>
-                    Tap "+ Change Qty" to set a new quantity from a specific date.
                   </p>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {sortedQtyHistory.map((rule) => {
-                    const isActive = rule.id === activeQtyRuleId;
-                    return (
-                      <div 
-                        key={rule.id} 
-                        className="flex items-center justify-between p-3 rounded-xl border transition-all"
-                        style={{
-                          background: isActive ? (settings.theme === 'dark' ? 'rgba(26, 188, 156, 0.12)' : '#E0F2F1') : 'var(--m3-input-bg)',
-                          borderColor: isActive ? (settings.theme === 'dark' ? '#1ABC9C' : '#80CBC4') : 'var(--m3-input-border)'
-                        }}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm" style={{ background: 'rgba(26, 188, 156, 0.15)', color: '#16A085' }}>
-                            <Droplet size={18} />
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-base" style={{ color: 'var(--m3-on-surface)' }}>
-                                {rule.qty} <span className="text-xs font-normal text-[var(--m3-on-surface-muted)]">L / day</span>
-                              </span>
-                              {isActive && (
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: '#00796B', color: '#fff' }}>
-                                  Active
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-xs flex items-center gap-1 mt-0.5" style={{ color: 'var(--m3-on-surface-muted)' }}>
-                              <Calendar size={11} /> From {formatDateDisplay(rule.fromDate)}
-                            </p>
-                          </div>
+                sortedQtyHistory.map((rule) => {
+                  const isActive = rule.id === activeQtyRuleId;
+                  return (
+                    <div 
+                      key={rule.id} 
+                      className="flex items-center justify-between p-3 rounded-lg"
+                      style={{
+                        background: isActive ? 'var(--green-light)' : 'var(--fill-quaternary)',
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[13px]" 
+                          style={{ 
+                            background: isActive ? 'var(--green)' : 'var(--fill-tertiary)', 
+                            color: isActive ? '#fff' : 'var(--label-secondary)' 
+                          }}
+                        >
+                          <Droplet size={15} />
                         </div>
-
-                        <div className="flex items-center gap-1">
-                          <motion.button 
-                            whileTap={{ scale: 0.9 }}
-                            onClick={() => openEditQtyModal(rule)}
-                            className="p-2 rounded-full"
-                            style={{ color: '#4A90D9' }}
-                            title="Edit"
-                          >
-                            <Edit3 size={16} />
-                          </motion.button>
-                          <motion.button 
-                            whileTap={{ scale: 0.9 }}
-                            onClick={() => handleDeleteQtyRule(rule.id)}
-                            className="p-2 rounded-full"
-                            style={{ color: '#E05C5C' }}
-                            title="Delete"
-                          >
-                            <Trash2 size={16} />
-                          </motion.button>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-[15px] tabular-nums" style={{ color: 'var(--label-primary)' }}>
+                              {rule.qty} <span className="text-[12px] font-normal" style={{ color: 'var(--label-secondary)' }}>L / day</span>
+                            </span>
+                            {isActive && (
+                              <span 
+                                className="text-[10px] font-bold px-2 py-0.5 rounded-full" 
+                                style={{ background: 'var(--green)', color: '#fff' }}
+                              >
+                                Active
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] flex items-center gap-1 mt-0.5" style={{ color: 'var(--label-secondary)' }}>
+                            <Calendar size={11} /> From {formatDateDisplay(rule.fromDate)}
+                          </p>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
+
+                      <div className="flex items-center gap-1">
+                        <button 
+                          onClick={() => openEditQtyModal(rule)}
+                          className="p-2 rounded-full"
+                          style={{ color: 'var(--accent)' }}
+                          title="Edit"
+                        >
+                          <Edit3 size={15} />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteQtyRule(rule.id)}
+                          className="p-2 rounded-full"
+                          style={{ color: 'var(--red)' }}
+                          title="Delete"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
               )}
             </GlassCard>
           </div>
         </section>
 
-        {/* Gas Settings */}
+        {/* ── Gas Defaults ───────────────── */}
         <section>
-          <h3 className="text-xs font-bold uppercase tracking-widest pl-4 mb-2" style={{ color: '#79747E' }}>Gas Defaults</h3>
-          <GlassCard className="px-5">
-            <SettingBlock label="Cylinder Weight (KG)">
+          <p className="text-[12px] font-semibold uppercase tracking-wider pl-4 mb-2" style={{ color: 'var(--label-tertiary)' }}>
+            Gas Defaults
+          </p>
+          <GlassCard>
+            <SettingsRow label="Cylinder Weight (KG)" isLast={true}>
               <input 
                 type="number" 
                 step="0.1" 
@@ -571,49 +542,80 @@ function SettingsView({ settings, updateSettings, db }) {
                 onChange={e => setGasWeightDraft(e.target.value)}
                 onBlur={commitGasWeight}
                 onKeyDown={e => e.key === 'Enter' && commitGasWeight()}
-                className="m3-input text-right w-24" 
-                style={{ padding: '8px', borderRadius: '12px' }} 
+                className="text-right font-medium w-20 py-1 px-2 rounded-lg"
+                style={{ background: 'var(--fill-tertiary)', color: 'var(--label-primary)' }}
               />
-            </SettingBlock>
+            </SettingsRow>
           </GlassCard>
         </section>
 
-        {/* Data Management */}
+        {/* ── Data & Storage ─────────────── */}
         <section>
-          <h3 className="text-xs font-bold uppercase tracking-widest pl-4 mb-2" style={{ color: 'var(--m3-section-label)' }}>Data &amp; Storage</h3>
-          <GlassCard className="p-2">
-            <button onClick={handleExport} className="w-full flex items-center justify-between p-4 rounded-xl transition-colors" style={{ color: 'var(--m3-on-surface)' }}>
-              <span className="flex items-center gap-3"><Download size={20} style={{ color: '#4A90D9' }} /> Backup Data (JSON)</span>
-              <ChevronRight size={16} style={{ color: 'var(--m3-on-surface-muted)' }} />
+          <p className="text-[12px] font-semibold uppercase tracking-wider pl-4 mb-2" style={{ color: 'var(--label-tertiary)' }}>
+            Data &amp; Storage
+          </p>
+          <GlassCard>
+            <button 
+              onClick={handleExport} 
+              className="w-full flex items-center justify-between py-3.5 px-4 cursor-pointer"
+              style={{ borderBottom: '0.5px solid var(--separator)' }}
+            >
+              <span className="flex items-center gap-3 text-[15px]" style={{ color: 'var(--label-primary)' }}>
+                <Download size={18} style={{ color: 'var(--accent)' }} /> Backup Data (JSON)
+              </span>
+              <ChevronRight size={16} style={{ color: 'var(--label-tertiary)' }} />
             </button>
             <div className="relative w-full">
-              <input type="file" accept=".json" onChange={handleImport} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
-              <div className="w-full flex items-center justify-between p-4 rounded-xl transition-colors" style={{ color: 'var(--m3-on-surface)' }}>
-                <span className="flex items-center gap-3"><Upload size={20} style={{ color: '#E67E22' }} /> Restore Backup</span>
-                <ChevronRight size={16} style={{ color: 'var(--m3-on-surface-muted)' }} />
+              <input 
+                type="file" 
+                accept=".json" 
+                onChange={handleImport} 
+                className="absolute inset-0 opacity-0 cursor-pointer z-10" 
+              />
+              <div 
+                className="w-full flex items-center justify-between py-3.5 px-4"
+                style={{ borderBottom: '0.5px solid var(--separator)' }}
+              >
+                <span className="flex items-center gap-3 text-[15px]" style={{ color: 'var(--label-primary)' }}>
+                  <Upload size={18} style={{ color: 'var(--orange)' }} /> Restore Backup
+                </span>
+                <ChevronRight size={16} style={{ color: 'var(--label-tertiary)' }} />
               </div>
             </div>
-            <button onClick={async () => {
-              if (window.confirm('Are you sure you want to delete ALL data? This cannot be undone.')) {
-                await db.clearAll(); window.location.reload();
-              }
-            }} className="w-full flex items-center justify-between p-4 rounded-xl transition-colors" style={{ color: '#C0392B' }}>
-              <span className="flex items-center gap-3"><Trash2 size={20} /> Delete All Data</span>
+            <button 
+              onClick={async () => {
+                if (window.confirm('Are you sure you want to delete ALL data? This action cannot be undone.')) {
+                  await db.clearAll(); 
+                  window.location.reload();
+                }
+              }} 
+              className="w-full flex items-center justify-between py-3.5 px-4 cursor-pointer"
+            >
+              <span className="flex items-center gap-3 text-[15px]" style={{ color: 'var(--red)' }}>
+                <Trash2 size={18} /> Delete All Data
+              </span>
+              <ChevronRight size={16} style={{ color: 'var(--label-tertiary)' }} />
             </button>
           </GlassCard>
         </section>
 
-        {/* Footer */}
-        <div className="pt-8 pb-12 flex flex-col items-center justify-center text-center">
-          <div className="w-12 h-12 rounded-full mb-3 flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#EADDFF,#C8E6FF)' }}>
-            <Info size={20} style={{ color: '#6750A4' }} />
+        {/* ── App Footer ─────────────────── */}
+        <div className="pt-6 pb-6 flex flex-col items-center justify-center text-center">
+          <div 
+            className="w-10 h-10 rounded-xl mb-2 flex items-center justify-center" 
+            style={{ background: 'var(--fill-tertiary)' }}
+          >
+            <Info size={18} style={{ color: 'var(--accent)' }} />
           </div>
-          <p className="text-sm font-bold tracking-widest uppercase mb-1" style={{ color: '#1C1B1F' }}>Trackit Pro</p>
-          <p className="text-[10px] mb-4" style={{ color: '#79747E' }}>Version 1.2.0 • Local Offline DB with Firebase Sync</p>
-          <div className="flex gap-2 text-[10px] px-3 py-1 rounded-full" style={{ background: '#F3EEFF', color: '#79747E', border: '1px solid #EDE7F6' }}>
-            <span>React</span>•<span>Tailwind</span>•<span>IndexedDB</span>•<span>PWA</span>
-          </div>
-          <p className="text-xs mt-6 font-semibold" style={{ color: '#6750A4' }}>Made by Vikram Mistry</p>
+          <p className="text-[13px] font-semibold uppercase tracking-wider" style={{ color: 'var(--label-primary)' }}>
+            Trackit Pro
+          </p>
+          <p className="text-[11px] mt-0.5" style={{ color: 'var(--label-secondary)' }}>
+            Version 1.2.0 • Offline DB with Cloud Sync
+          </p>
+          <p className="text-[12px] mt-3 font-medium" style={{ color: 'var(--accent)' }}>
+            Made by Vikram Mistry
+          </p>
         </div>
       </div>
 
@@ -626,51 +628,55 @@ function SettingsView({ settings, updateSettings, db }) {
       >
         <div className="space-y-4">
           <div>
-            <label className="text-xs font-semibold uppercase tracking-wider pl-1" style={{ color: '#6750A4' }}>Effective From Date</label>
+            <label className="text-[11px] font-semibold uppercase tracking-wider pl-0.5" style={{ color: 'var(--accent)' }}>
+              Effective From Date
+            </label>
             <input 
               type="date" 
               value={priceForm.fromDate} 
               onChange={e => setPriceForm({ ...priceForm, fromDate: e.target.value })} 
-              className="m3-input mt-1 text-sm" 
+              className="m3-input mt-1 text-[15px]" 
             />
           </div>
 
           <div>
-            <label className="text-xs font-semibold uppercase tracking-wider pl-1" style={{ color: '#6750A4' }}>Price Per Liter ({settings.currency})</label>
+            <label className="text-[11px] font-semibold uppercase tracking-wider pl-0.5" style={{ color: 'var(--accent)' }}>
+              Price Per Liter ({settings.currency})
+            </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold" style={{ color: 'var(--m3-on-surface-muted)' }}>{settings.currency}</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] font-bold" style={{ color: 'var(--label-secondary)' }}>
+                {settings.currency}
+              </span>
               <input 
                 type="number" 
                 step="any" 
                 placeholder="e.g. 90"
                 value={priceForm.price} 
                 onChange={e => setPriceForm({ ...priceForm, price: e.target.value })} 
-                className="m3-input mt-1 pl-7 text-xl font-bold" 
+                className="m3-input mt-1 pl-7 text-xl font-semibold" 
               />
             </div>
           </div>
 
-          <p className="text-xs leading-relaxed p-3 rounded-xl" style={{ background: 'var(--m3-input-bg)', color: 'var(--m3-on-surface-muted)' }}>
-            💡 This rate applies strictly to deliveries on or after this date. All earlier deliveries remain completely untouched.
+          <p className="text-[12px] leading-relaxed p-3 rounded-xl" style={{ background: 'var(--fill-quaternary)', color: 'var(--label-secondary)' }}>
+            This rate applies strictly to deliveries on or after this date. All earlier deliveries remain completely untouched.
           </p>
 
-          <div className="pt-2 flex gap-3">
-            <motion.button 
-              whileTap={{ scale: 0.97 }} 
+          <div className="pt-2 flex gap-2.5">
+            <button 
               onClick={() => setPriceModalOpen(false)} 
-              className="flex-1 font-bold py-3.5 rounded-2xl border" 
-              style={{ background: 'var(--m3-input-bg)', borderColor: 'var(--m3-input-border)', color: 'var(--m3-on-surface)' }}
+              className="flex-1 font-semibold py-3 rounded-xl text-[15px]" 
+              style={{ background: 'var(--fill-tertiary)', color: 'var(--label-primary)' }}
             >
               Cancel
-            </motion.button>
-            <motion.button 
-              whileTap={{ scale: 0.97 }} 
+            </button>
+            <button 
               onClick={handleSavePriceRule} 
-              className="flex-[2] font-bold py-3.5 rounded-2xl text-white shadow-lg" 
-              style={{ background: 'linear-gradient(135deg, #6750A4, #4A90D9)' }}
+              className="flex-[2] font-semibold py-3 rounded-xl text-[15px] text-white" 
+              style={{ background: 'var(--accent)' }}
             >
               Save &amp; Apply
-            </motion.button>
+            </button>
           </div>
         </div>
       </BottomSheet>
@@ -684,17 +690,21 @@ function SettingsView({ settings, updateSettings, db }) {
       >
         <div className="space-y-4">
           <div>
-            <label className="text-xs font-semibold uppercase tracking-wider pl-1" style={{ color: '#16A085' }}>Effective From Date</label>
+            <label className="text-[11px] font-semibold uppercase tracking-wider pl-0.5" style={{ color: 'var(--green)' }}>
+              Effective From Date
+            </label>
             <input 
               type="date" 
               value={qtyForm.fromDate} 
               onChange={e => setQtyForm({ ...qtyForm, fromDate: e.target.value })} 
-              className="m3-input mt-1 text-sm" 
+              className="m3-input mt-1 text-[15px]" 
             />
           </div>
 
           <div>
-            <label className="text-xs font-semibold uppercase tracking-wider pl-1" style={{ color: '#16A085' }}>Daily Quantity (Liters)</label>
+            <label className="text-[11px] font-semibold uppercase tracking-wider pl-0.5" style={{ color: 'var(--green)' }}>
+              Daily Quantity (Liters)
+            </label>
             <div className="relative">
               <input 
                 type="number" 
@@ -702,32 +712,30 @@ function SettingsView({ settings, updateSettings, db }) {
                 placeholder="e.g. 1.5"
                 value={qtyForm.qty} 
                 onChange={e => setQtyForm({ ...qtyForm, qty: e.target.value })} 
-                className="m3-input mt-1 text-xl font-bold" 
+                className="m3-input mt-1 text-xl font-semibold" 
               />
             </div>
           </div>
 
-          <p className="text-xs leading-relaxed p-3 rounded-xl" style={{ background: 'var(--m3-input-bg)', color: 'var(--m3-on-surface-muted)' }}>
-            💡 This quantity applies strictly to deliveries on or after this date. All earlier deliveries remain completely untouched.
+          <p className="text-[12px] leading-relaxed p-3 rounded-xl" style={{ background: 'var(--fill-quaternary)', color: 'var(--label-secondary)' }}>
+            This quantity applies strictly to deliveries on or after this date. All earlier deliveries remain completely untouched.
           </p>
 
-          <div className="pt-2 flex gap-3">
-            <motion.button 
-              whileTap={{ scale: 0.97 }} 
+          <div className="pt-2 flex gap-2.5">
+            <button 
               onClick={() => setQtyModalOpen(false)} 
-              className="flex-1 font-bold py-3.5 rounded-2xl border" 
-              style={{ background: 'var(--m3-input-bg)', borderColor: 'var(--m3-input-border)', color: 'var(--m3-on-surface)' }}
+              className="flex-1 font-semibold py-3 rounded-xl text-[15px]" 
+              style={{ background: 'var(--fill-tertiary)', color: 'var(--label-primary)' }}
             >
               Cancel
-            </motion.button>
-            <motion.button 
-              whileTap={{ scale: 0.97 }} 
+            </button>
+            <button 
               onClick={handleSaveQtyRule} 
-              className="flex-[2] font-bold py-3.5 rounded-2xl text-white shadow-lg" 
-              style={{ background: 'linear-gradient(135deg, #1ABC9C, #16A085)' }}
+              className="flex-[2] font-semibold py-3 rounded-xl text-[15px] text-white" 
+              style={{ background: 'var(--green)' }}
             >
               Save &amp; Apply
-            </motion.button>
+            </button>
           </div>
         </div>
       </BottomSheet>

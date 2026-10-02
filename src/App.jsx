@@ -1,13 +1,10 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { createPortal } from 'react-dom';
-import { motion, AnimatePresence, useAnimation } from 'framer-motion';
-import { 
-  Milk, Flame, Settings, Calendar, ChevronLeft, ChevronRight, 
-  Trash2, Edit3, X, Check, PauseCircle, PlayCircle, Download, Upload, Info, Share2,
-  Home, LogIn, LogOut, RefreshCw, User
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Milk, Flame, Settings, Home, LogIn, LogOut, RefreshCw, User,
 } from 'lucide-react';
 import { db, DEFAULT_SETTINGS } from './db';
-import { GlassCard, BottomSheet, StickyHeader } from './components/UI';
+import { BottomSheet } from './components/UI';
 import HomeView from './views/HomeView';
 import MilkView from './views/MilkView';
 import GasView from './views/GasView';
@@ -15,15 +12,15 @@ import SettingsView from './views/SettingsView';
 import { auth, provider, signInWithPopup, signOut, updateProfile } from './firebase';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('home'); // home, milk, gas, settings
+  const [activeTab, setActiveTab] = useState('home');
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [isReady, setIsReady] = useState(false);
-  
-  // Firebase Auth and Sync State
+
+  // Firebase Auth & Sync
   const [user, setUser] = useState(auth.currentUser);
   const [syncing, setSyncing] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  
+
   // Global Month/Year filter
   const [filterDate, setFilterDate] = useState(new Date());
 
@@ -36,15 +33,13 @@ export default function App() {
           const fresh = await db.get('settings', 'main');
           if (fresh) setSettings(fresh);
         } catch (e) {
-          console.error("Auth sync error", e);
+          console.error('Auth sync error', e);
         }
         const googlePhoto = u.providerData?.[0]?.photoURL;
         if (googlePhoto && googlePhoto !== u.photoURL) {
           updateProfile(u, { photoURL: googlePhoto })
-            .then(() => {
-              setUser(prev => prev ? { ...prev, photoURL: googlePhoto } : null);
-            })
-            .catch((e) => console.log("Google photo cache synced", e));
+            .then(() => setUser((prev) => (prev ? { ...prev, photoURL: googlePhoto } : null)))
+            .catch((e) => console.log('Google photo cache synced', e));
         }
       }
     });
@@ -52,13 +47,12 @@ export default function App() {
     const handleOpenProfile = () => setIsProfileOpen(true);
     window.addEventListener('open-profile', handleOpenProfile);
 
-    // Live listener to keep settings in sync whenever db-synced fires
     const handleDbSynced = async () => {
       try {
         const fresh = await db.get('settings', 'main');
         if (fresh) setSettings(fresh);
       } catch (err) {
-        console.error("Failed to refresh settings on db-synced", err);
+        console.error('Failed to refresh settings on db-synced', err);
       }
     };
     window.addEventListener('db-synced', handleDbSynced);
@@ -114,11 +108,11 @@ export default function App() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const storedSettings = await db.get('settings', 'main');
-        if (storedSettings) setSettings(storedSettings);
+        const stored = await db.get('settings', 'main');
+        if (stored) setSettings(stored);
         else await db.put('settings', DEFAULT_SETTINGS);
       } catch (err) {
-        console.error("Failed to load DB", err);
+        console.error('Failed to load DB', err);
       } finally {
         setIsReady(true);
       }
@@ -128,121 +122,175 @@ export default function App() {
 
   const updateSettings = async (newSettings) => {
     const current = (await db.get('settings', 'main')) || DEFAULT_SETTINGS;
-    const updated = {
-      ...current,
-      ...newSettings,
-      updatedAt: Date.now()
-    };
+    const updated = { ...current, ...newSettings, updatedAt: Date.now() };
     setSettings(updated);
     await db.put('settings', updated);
     return updated;
   };
 
-  // Sync document body theme attribute for React Portals
   useEffect(() => {
     document.body.setAttribute('data-theme', settings.theme);
   }, [settings.theme]);
 
-  if (!isReady) return (
-    <div style={{minHeight:'100vh', background:'linear-gradient(160deg,#F0EBFF 0%,#E8F4FF 40%,#E8FFF4 100%)', display:'flex', alignItems:'center', justifyContent:'center'}}>
-      <div style={{display:'flex', flexDirection:'column', alignItems:'center', gap:'16px'}}>
-        <div className="m3-pulse" style={{width:48, height:48, borderRadius:'50%', background:'linear-gradient(135deg,#EADDFF,#C8E6FF)'}} />
-        <p style={{color:'#6750A4', fontWeight:600, fontSize:14}}>Loading Trackit…</p>
+  /* ── Loading ─────────────────────────── */
+  if (!isReady)
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          background: 'var(--bg)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+          <div className="ios-spinner" />
+          <p style={{ color: 'var(--label-secondary)', fontWeight: 500, fontSize: 13 }}>
+            Loading…
+          </p>
+        </div>
       </div>
-    </div>
-  );
+    );
 
+  /* ── Render ──────────────────────────── */
   return (
-    <div className="min-h-screen w-full" data-theme={settings.theme} style={{background:'var(--m3-bg)', color:'var(--m3-on-surface)'}}>
-      {/* Mobile Wrapper */}
-      <div className="max-w-md mx-auto h-screen flex flex-col relative overflow-hidden" style={{background:'var(--m3-bg-app)'}}>
-        
-        {/* Main Content Area - Scrollable */}
-        <div className="flex-1 overflow-y-auto pb-24 scroll-smooth">
+    <div
+      className="min-h-screen w-full"
+      data-theme={settings.theme}
+      style={{ background: 'var(--bg)', color: 'var(--label-primary)' }}
+    >
+      <div
+        className="max-w-md mx-auto h-screen flex flex-col relative overflow-hidden"
+        style={{ background: 'var(--bg)' }}
+      >
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto pb-20 scroll-smooth">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="p-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.12 }}
+              className="px-4 pb-4"
             >
-              {activeTab === 'home' && <HomeView filterDate={filterDate} setFilterDate={setFilterDate} settings={settings} />}
-              {activeTab === 'milk' && <MilkView filterDate={filterDate} setFilterDate={setFilterDate} settings={settings} />}
-              {activeTab === 'gas' && <GasView filterDate={filterDate} setFilterDate={setFilterDate} settings={settings} />}
-              {activeTab === 'settings' && <SettingsView settings={settings} updateSettings={updateSettings} db={db} />}
+              {activeTab === 'home' && (
+                <HomeView filterDate={filterDate} setFilterDate={setFilterDate} settings={settings} />
+              )}
+              {activeTab === 'milk' && (
+                <MilkView filterDate={filterDate} setFilterDate={setFilterDate} settings={settings} />
+              )}
+              {activeTab === 'gas' && (
+                <GasView filterDate={filterDate} setFilterDate={setFilterDate} settings={settings} />
+              )}
+              {activeTab === 'settings' && (
+                <SettingsView settings={settings} updateSettings={updateSettings} db={db} />
+              )}
             </motion.div>
           </AnimatePresence>
         </div>
 
-        {/* Bottom Navigation Bar */}
-        <div className="absolute bottom-0 w-full px-4 pb-6 pt-2 z-40" style={{background:'var(--m3-nav-gradient)'}}>
-          <div className="flex items-center justify-around rounded-full py-2 px-3" style={{background:'var(--m3-nav-bg)', backdropFilter:'blur(24px)', WebkitBackdropFilter:'blur(24px)', border:'1px solid var(--m3-nav-border)', boxShadow:'var(--m3-nav-shadow)'}}>
-            <NavIcon icon={Home} label="Home" isActive={activeTab === 'home'} onClick={() => setActiveTab('home')} />
-            <NavIcon icon={Milk} label="Milk" isActive={activeTab === 'milk'} onClick={() => setActiveTab('milk')} />
-            <NavIcon icon={Flame} label="Gas" isActive={activeTab === 'gas'} onClick={() => setActiveTab('gas')} />
-            <NavIcon icon={Settings} label="Settings" isActive={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
+        {/* ── iOS Tab Bar ──────────────────── */}
+        <div
+          className="absolute bottom-0 w-full z-40"
+          style={{
+            background: 'var(--nav-bg)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            borderTop: '0.5px solid var(--nav-border)',
+          }}
+        >
+          <div
+            className="flex items-stretch justify-around"
+            style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+          >
+            <TabItem icon={Home} label="Home" active={activeTab === 'home'} onClick={() => setActiveTab('home')} />
+            <TabItem icon={Milk} label="Milk" active={activeTab === 'milk'} onClick={() => setActiveTab('milk')} />
+            <TabItem icon={Flame} label="Gas" active={activeTab === 'gas'} onClick={() => setActiveTab('gas')} />
+            <TabItem icon={Settings} label="Settings" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
           </div>
         </div>
 
-        {/* Google Cloud Sync / Profile Modal */}
-        <BottomSheet isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} title="Account & Sync" isCentered={true}>
+        {/* ── Profile / Sync Sheet ─────────── */}
+        <BottomSheet
+          isOpen={isProfileOpen}
+          onClose={() => setIsProfileOpen(false)}
+          title="Account & Sync"
+          isCentered={true}
+        >
           {user ? (
-            <div className="space-y-6 text-center py-2" style={{color:'var(--m3-on-surface)'}}>
+            <div className="space-y-5 text-center py-1">
               <div className="flex flex-col items-center gap-2">
                 {user.photoURL ? (
-                  <img src={user.photoURL} alt="Avatar" className="w-16 h-16 rounded-full border shadow-sm" />
+                  <img
+                    src={user.photoURL}
+                    alt="Avatar"
+                    className="w-16 h-16 rounded-full shadow-sm"
+                    referrerPolicy="no-referrer"
+                  />
                 ) : (
-                  <div className="w-16 h-16 rounded-full flex items-center justify-center bg-purple-100 text-purple-600 font-bold text-2xl">
+                  <div
+                    className="w-16 h-16 rounded-full flex items-center justify-center font-bold text-2xl"
+                    style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}
+                  >
                     {user.displayName ? user.displayName[0] : 'U'}
                   </div>
                 )}
                 <div>
-                  <h3 className="font-bold text-lg">{user.displayName || 'Google User'}</h3>
-                  <p className="text-sm text-gray-500">{user.email}</p>
+                  <h3 className="font-semibold text-[17px]" style={{ color: 'var(--label-primary)' }}>
+                    {user.displayName || 'Google User'}
+                  </h3>
+                  <p className="text-[13px]" style={{ color: 'var(--label-secondary)' }}>
+                    {user.email}
+                  </p>
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <motion.button
-                  whileTap={{ scale: 0.97 }}
+              <div className="space-y-2.5">
+                <button
                   onClick={handleSync}
                   disabled={syncing}
-                  className="w-full flex items-center justify-center gap-2 font-bold py-3.5 rounded-2xl text-sm text-white"
-                  style={{background:'linear-gradient(135deg,#7C3AED,#6750A4)', opacity: syncing ? 0.7 : 1}}
+                  className="w-full flex items-center justify-center gap-2 font-semibold py-3 rounded-xl text-[15px] text-white"
+                  style={{ background: 'var(--accent)', opacity: syncing ? 0.6 : 1 }}
                 >
-                  <RefreshCw size={18} className={syncing ? 'animate-spin' : ''} />
-                  {syncing ? 'Syncing Cloud...' : 'Sync Data Now'}
-                </motion.button>
+                  <RefreshCw size={17} className={syncing ? 'animate-spin' : ''} />
+                  {syncing ? 'Syncing…' : 'Sync Data Now'}
+                </button>
 
-                <motion.button
-                  whileTap={{ scale: 0.97 }}
+                <button
                   onClick={handleSignOut}
-                  className="w-full flex items-center justify-center gap-2 font-bold py-3.5 rounded-2xl text-sm border text-red-500 border-red-200"
+                  className="w-full flex items-center justify-center gap-2 font-semibold py-3 rounded-xl text-[15px]"
+                  style={{ color: 'var(--red)' }}
                 >
-                  <LogOut size={18} />
+                  <LogOut size={17} />
                   Sign Out
-                </motion.button>
+                </button>
               </div>
             </div>
           ) : (
-            <div className="text-center py-4" style={{color:'var(--m3-on-surface)'}}>
-              <div className="w-16 h-16 mx-auto rounded-full bg-purple-50 flex items-center justify-center mb-4 text-purple-600 border border-purple-100">
-                <User size={32} />
-              </div>
-              <h3 className="font-bold text-lg mb-2">Cloud Backup & Sync</h3>
-              <p className="text-sm text-gray-500 mb-6 px-4">Sync your expenses securely to your private cloud storage and access them across all your devices.</p>
-              
-              <motion.button
-                whileTap={{ scale: 0.97 }}
-                onClick={handleGoogleLogin}
-                className="w-full flex items-center justify-center gap-3 font-bold py-4 rounded-2xl text-sm text-white shadow-md"
-                style={{background:'linear-gradient(135deg,#6750A4,#4A90D9)'}}
+            <div className="text-center py-3">
+              <div
+                className="w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4"
+                style={{ background: 'var(--accent-light)' }}
               >
-                <LogIn size={20} />
+                <User size={28} style={{ color: 'var(--accent)' }} />
+              </div>
+              <h3 className="font-semibold text-[17px] mb-1" style={{ color: 'var(--label-primary)' }}>
+                Cloud Backup & Sync
+              </h3>
+              <p className="text-[13px] mb-5 px-2" style={{ color: 'var(--label-secondary)' }}>
+                Sync your data securely with your Google account and access it across all your devices.
+              </p>
+
+              <button
+                onClick={handleGoogleLogin}
+                className="w-full flex items-center justify-center gap-2.5 font-semibold py-3.5 rounded-xl text-[15px] text-white"
+                style={{ background: 'var(--accent)' }}
+              >
+                <LogIn size={18} />
                 Sign in with Google
-              </motion.button>
+              </button>
             </div>
           )}
         </BottomSheet>
@@ -251,12 +299,27 @@ export default function App() {
   );
 }
 
-const NavIcon = ({ icon: Icon, label, isActive, onClick }) => (
-  <motion.button whileTap={{scale:0.9}} onClick={onClick} className="flex flex-col items-center gap-1 w-16">
-    <div className="p-1.5 rounded-full transition-all duration-300" style={{background: isActive ? 'var(--m3-nav-icon-active-bg)' : 'transparent'}}>
-      <Icon size={22} strokeWidth={isActive ? 2.5 : 2} style={{color: isActive ? 'var(--m3-nav-icon-active-color)' : 'var(--m3-nav-icon-color)'}} />
-    </div>
-    <span className="text-[10px] font-semibold transition-colors duration-300" style={{color: isActive ? 'var(--m3-nav-icon-active-color)' : 'var(--m3-nav-icon-color)'}}>{label}</span>
-  </motion.button>
-);
-
+/* ── Tab Bar Item ──────────────────────── */
+function TabItem({ icon: Icon, label, active, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex flex-col items-center justify-center gap-0.5 min-w-[60px] min-h-[44px] pt-1.5 pb-1 flex-1"
+    >
+      <Icon
+        size={22}
+        strokeWidth={active ? 2.2 : 1.5}
+        style={{ color: active ? 'var(--nav-active)' : 'var(--nav-inactive)' }}
+      />
+      <span
+        className="text-[10px] leading-tight"
+        style={{
+          color: active ? 'var(--nav-active)' : 'var(--nav-inactive)',
+          fontWeight: active ? 500 : 400,
+        }}
+      >
+        {label}
+      </span>
+    </button>
+  );
+}
